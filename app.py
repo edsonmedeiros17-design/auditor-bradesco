@@ -3,12 +3,11 @@ import pdfplumber
 import pandas as pd
 import re
 
-# Configuração da página
+# --- CONFIGURAÇÃO DA INTERFACE ---
 st.set_page_config(page_title="Auditor Bradesco", layout="wide")
+st.title("🏦 Robô Auditor de Extratos - Bradesco")
 
-st.title("🏦 Robô de Auditoria de Extratos")
-
-# 1. Dicionário de Alvos
+# --- DICIONÁRIO DE FILTROS ---
 DICIONARIO_ALVOS = {
     "Mora Crédito Pessoal": "MORA CREDITO PESSOAL",
     "Encargos": "ENCARGOS",
@@ -20,46 +19,58 @@ DICIONARIO_ALVOS = {
     "Anuidade Cartão": "CARTAO CREDITO ANUIDADE"
 }
 
-# 2. Seleção na Barra Lateral
-st.sidebar.header("Filtros de Busca")
-opcoes_selecionadas = st.sidebar.multiselect(
-    "Selecione os tipos de desconto:",
-    options=list(DICIONARIO_ALVOS.keys()),
-    default=list(DICIONARIO_ALVOS.keys())
-)
+# --- BARRA LATERAL (ESTILO CAIXINHA DE SELEÇÃO) ---
+st.sidebar.header("Selecione os tipos de desconto")
 
-def analisar_pdf(file, filtros):
-    dados = []
-    termos = [DICIONARIO_ALVOS[f] for f in filtros]
+# Criamos uma lista vazia para armazenar o que o usuário marcar
+selecionados_nomes = []
+
+# Criamos uma caixinha para cada item do nosso dicionário
+for nome_amigavel in DICIONARIO_ALVOS.keys():
+    # Se o usuário marcar a caixinha, adicionamos o nome à lista
+    if st.sidebar.checkbox(nome_amigavel, value=True):
+        selecionados_nomes.append(nome_amigavel)
+
+# --- LÓGICA DE PROCESSAMENTO ---
+def processar_pdf(arquivo_pdf, filtros_escolhidos):
+    dados_encontrados = []
+    # Converte os nomes das caixinhas para os termos de busca reais
+    termos_busca = [DICIONARIO_ALVOS[nome] for nome in filtros_escolhidos]
     
-    with pdfplumber.open(file) as pdf:
-        for p in pdf.pages:
-            texto = p.extract_text()
+    with pdfplumber.open(arquivo_pdf) as pdf:
+        for pagina in pdf.pages:
+            texto = pagina.extract_text()
             if texto:
-                for linha in texto.split('\n'):
-                    for termo in termos:
+                linhas = texto.split('\n')
+                for linha in linhas:
+                    for termo in termos_busca:
                         if re.search(termo, linha, re.IGNORECASE):
-                            # Tenta pegar a data
-                            data = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
-                            dados.append({
-                                "Data": data.group(1) if data else "---",
+                            data_match = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+                            data = data_match.group(1) if data_match else "S/ Data"
+                            
+                            dados_encontrados.append({
+                                "Data": data,
                                 "Categoria": [k for k, v in DICIONARIO_ALVOS.items() if v == termo][0],
-                                "Lançamento": linha.strip()
+                                "Lançamento Completo": linha.strip()
                             })
                             break
-    return pd.DataFrame(dados)
+    return pd.DataFrame(dados_encontrados)
 
-# 3. Interface principal
-arquivo = st.file_uploader("Arraste o PDF do Extrato aqui", type="pdf")
+# --- INTERFACE DE UPLOAD ---
+upload = st.file_uploader("Carregue o arquivo PDF do Extrato", type="pdf")
 
-if arquivo and opcoes_selecionadas:
-    with st.spinner("Processando..."):
-        df = analisar_pdf(arquivo, opcoes_selecionadas)
-        if not df.empty:
-            st.success(f"Sucesso! Encontramos {len(df)} itens.")
-            st.dataframe(df, use_container_width=True)
+if upload:
+    if not selecionados_nomes:
+        st.warning("⚠️ Marque pelo menos uma caixinha na barra lateral.")
+    else:
+        with st.spinner('O robô está analisando as páginas...'):
+            df_final = processar_pdf(upload, selecionados_nomes)
             
-            csv = df.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 Baixar Relatório", csv, "auditoria.csv")
-        else:
-            st.info("Nenhum item encontrado com os filtros selecionados.")
+            if not df_final.empty:
+                st.success(f"Encontramos {len(df_final)} itens!")
+                st.dataframe(df_final, use_container_width=True)
+                
+                csv = df_final.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 Baixar Relatório CSV", csv, "auditoria_bradesco.csv")
+            else:
+                st.info("Nenhum desconto encontrado com esses filtros.")
