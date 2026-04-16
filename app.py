@@ -38,7 +38,6 @@ st.markdown("""
         font-size: 2.5rem !important;
     }
 
-    /* Ajuste para a tabela aparecer branca e legível */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF;
         border-radius: 12px;
@@ -52,10 +51,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNÇÃO DE BUSCA TÉCNICA (O CORAÇÃO DO APP) ---
+# --- FUNÇÃO DE BUSCA ---
 def analisar_extrato(file, filtros_selecionados, dicionario):
     dados = []
-    # Criamos a lista de termos técnicos para busca
     termos_busca = [dicionario[f] for f in filtros_selecionados]
     
     with pdfplumber.open(file) as pdf:
@@ -65,13 +63,9 @@ def analisar_extrato(file, filtros_selecionados, dicionario):
                 linhas = texto.split('\n')
                 for linha in linhas:
                     for termo in termos_busca:
-                        # Busca o termo (ignora maiúsculas/minúsculas)
                         if re.search(termo, linha, re.IGNORECASE):
-                            # Tenta capturar a data
                             data_match = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
                             data = data_match.group(1) if data_match else "---"
-                            
-                            # Identifica qual categoria foi achada
                             cat = [k for k, v in dicionario.items() if v == termo][0]
                             
                             dados.append({
@@ -79,14 +73,13 @@ def analisar_extrato(file, filtros_selecionados, dicionario):
                                 "Categoria": cat,
                                 "Descrição Completa": linha.strip()
                             })
-                            break # Evita duplicar a mesma linha
+                            break
     return pd.DataFrame(dados)
 
-# --- CONTEÚDO PRINCIPAL ---
+# --- CONTEÚDO ---
 st.title("Auditoria de Ativos")
 st.markdown("<p style='color: #5D6D7E; font-size: 1.1rem; margin-top:-20px;'>Inteligência em Leitura de Extratos</p>", unsafe_allow_html=True)
 
-# --- DICIONÁRIO COMPLETO ---
 DICIONARIO_ALVOS = {
     "Mora Crédito Pessoal": "MORA CREDITO PESSOAL",
     "Encargos": "ENCARGOS",
@@ -106,38 +99,27 @@ DICIONARIO_ALVOS = {
     "Tarifa 2ª Via": "TAR 2 VIA"
 }
 
-# --- SIDEBAR ---
 st.sidebar.markdown("### Tipos de Descontos")
 selecionados = []
 for nome in DICIONARIO_ALVOS.keys():
     if st.sidebar.checkbox(nome, value=True):
         selecionados.append(nome)
 
-# --- INTERFACE DE UPLOAD E RESULTADOS ---
 st.markdown("<br>", unsafe_allow_html=True)
 upload = st.file_uploader("Deposite o extrato PDF para análise técnica", type="pdf")
 
 if upload:
     if not selecionados:
-        st.warning("⚠️ Por favor, selecione ao menos um filtro no menu lateral.")
+        st.warning("⚠️ Selecione filtros no menu lateral.")
     else:
-        with st.spinner('O robô está auditando o documento...'):
+        with st.spinner('Auditando documento...'):
             df_resultado = analisar_extrato(upload, selecionados, DICIONARIO_ALVOS)
-            
             if not df_resultado.empty:
-                st.success(f"Análise concluída: {len(df_resultado)} lançamentos identificados.")
+                st.success(f"Encontrados {len(df_resultado)} registros.")
                 st.dataframe(df_resultado, use_container_width=True)
-                
-                # Botão de Download
                 csv = df_resultado.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("📥 Baixar Relatório de Auditoria", csv, "auditoria_bradesco.csv", "text/csv")
+                st.download_button("📥 Baixar Relatório", csv, "auditoria.csv", "text/csv")
             else:
-                st.info("Nenhum dos descontos selecionados foi encontrado neste extrato.")
+                st.info("Nenhuma ocorrência encontrada.")
 
-# --- FOOTER ---
-st.markdown(f"""
-    <div class="footer">
-        <div class="footer-line"></div>
-        <div class="footer-text">Fundado por Edson Medeiros</div>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown(f"""<div class="footer"><div class="footer-line"></div><div class="footer-text">Fundado por Edson Medeiros</div></div>""", unsafe_allow_html=True)
