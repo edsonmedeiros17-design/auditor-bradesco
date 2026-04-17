@@ -28,7 +28,6 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* TÍTULO SOFISTICADO COM EFEITO 3D ESTILO NEW TIMES ROMAN */
     .consultoria-title {
         font-family: 'Playfair Display', serif !important;
         font-size: 4.5rem !important;
@@ -41,7 +40,6 @@ st.markdown("""
         margin-bottom: 5px;
     }
 
-    /* BOTÃO WHATSAPP PADRÃO IMAGEM */
     .btn-whatsapp {
         background-color: #25D366 !important;
         color: white !important;
@@ -57,7 +55,6 @@ st.markdown("""
     }
     .btn-whatsapp:hover { transform: scale(1.05); background-color: #128C7E !important; }
 
-    /* CARDS DE IMPACTO */
     .impact-card {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(191, 175, 131, 0.2);
@@ -67,7 +64,6 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* SEÇÃO COMO FUNCIONA */
     .how-it-works {
         background: rgba(15, 23, 42, 0.6);
         border-radius: 16px;
@@ -82,7 +78,6 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* BOX DE LOGIN */
     .login-box {
         background: rgba(255, 255, 255, 0.05);
         padding: 40px;
@@ -93,11 +88,9 @@ st.markdown("""
         text-align: center;
     }
 
-    /* SIDEBAR */
     [data-testid="stSidebar"] { background-color: #080C14 !important; border-right: 1px solid #1E293B; }
     [data-testid="stSidebar"] h3 { color: var(--gold-matte) !important; font-family: 'Cinzel', serif; }
 
-    /* ASSINATURA EDSON MEDEIROS */
     .footer-signature {
         position: fixed;
         bottom: 30px;
@@ -138,7 +131,7 @@ if not st.session_state['authenticated']:
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
-# --- 4. CABEÇALHO (DESIGN 3D + WHATSAPP REAL) ---
+# --- 4. CABEÇALHO ---
 col_head, col_cta = st.columns([2.5, 1])
 
 with col_head:
@@ -149,17 +142,24 @@ with col_cta:
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(f'<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-# --- 5. SIDEBAR (FILTROS DE BUSCA) ---
+# --- 5. SIDEBAR (NOVAS RÚBRICAS ATUALIZADAS) ---
 st.sidebar.markdown("### PARÂMETROS DE BUSCA")
 DICIONARIO_ALVOS = {
+    "Cesta / Pacote": "CESTA|PACOTE",
     "Tarifas Bancárias": "TARIFA BANCARIA",
-    "Seguros / Previdência": "SEGURO",
-    "Mora / Encargos": "MORA",
-    "Capitalização": "CAPITALIZACAO",
-    "Pacote de Serviços": "PACOTE DE SERVICOS",
-    "Taxas de Adiantamento": "ADIANT",
-    "Baixas e Débitos (BX)": r"\bBX\b"
+    "Mora": "MORA",
+    "Baixas e Débitos (BX)": r"\bBX\b",
+    "Crédito Pessoal": "PARCELA CREDITO PESSOAL",
+    "Gastos Cartão de Crédito": "GASTOS CARTAO DE CREDITO",
+    "Seguro": "SEGURO",
+    "Adiantamento": "ADIANT",
+    "Aplicações": "APLIC",
+    "Encargos": "ENCARGOS",
+    "Anuidade": "ANUIDADE",
+    "Operações Vencidas": "OPERACOES VENCIDAS",
+    "Dívidas em Atraso": "DIV. EM ATRASO"
 }
+
 selecionados = []
 for nome in DICIONARIO_ALVOS.keys():
     if st.sidebar.checkbox(nome, value=True):
@@ -169,7 +169,7 @@ for nome in DICIONARIO_ALVOS.keys():
 st.markdown("<br>", unsafe_allow_html=True)
 upload = st.file_uploader("Submeta o arquivo PDF para certificação técnica automática", type="pdf")
 
-# --- 7. LÓGICA DE AUDITORIA E CARDS DE IMPACTO ---
+# --- 7. LÓGICA DE AUDITORIA E CARDS ---
 if upload and selecionados:
     with st.spinner('Auditando dados...'):
         dados = []
@@ -192,7 +192,6 @@ if upload and selecionados:
         df = pd.DataFrame(dados)
         
         if not df.empty:
-            # CARDS DE IMPACTO (VALOR PERCEBIDO)
             c1, c2, c3 = st.columns(3)
             with c1:
                 st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">OCORRÊNCIAS</p><h2 style="color: #BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
@@ -209,7 +208,7 @@ if upload and selecionados:
         else:
             st.info("Nenhuma divergência identificada nos parâmetros selecionados.")
 
-# --- 8. SEÇÃO: COMO FUNCIONA (CONFIAÇA) ---
+# --- 8. SEÇÃO: COMO FUNCIONA ---
 st.markdown("""
     <div class="how-it-works">
         <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
