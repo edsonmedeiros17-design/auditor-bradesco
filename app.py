@@ -6,7 +6,7 @@ import re
 # --- 1. CONFIGURAÇÃO DE ELITE ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
-# --- 2. CSS CUSTOMIZADO (DESIGN INTEGRAL MANTIDO) ---
+# --- 2. CSS CUSTOMIZADO (DESIGN LUXO 3D INTEGRAL) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
@@ -25,7 +25,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN ---
+# --- 3. LOGIN (ROBERTA123) ---
 if 'authenticated' not in st.session_state:
     st.session_state['authenticated'] = False
 
@@ -55,7 +55,7 @@ with col_cta:
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(f'<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-# --- 5. SIDEBAR ---
+# --- 5. SIDEBAR (RÚBRICAS ATUALIZADAS) ---
 st.sidebar.markdown("### PARÂMETROS DE BUSCA")
 DICIONARIO_ALVOS = {
     "Cesta / Pacote": "CESTA|PACOTE",
@@ -74,11 +74,11 @@ DICIONARIO_ALVOS = {
 }
 selecionados = [nome for nome in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(nome, value=True)]
 
-# --- 6. UPLOAD E LÓGICA RÁPIDA ---
-upload = st.file_uploader("Submeta o arquivo PDF", type="pdf")
+# --- 6. UPLOAD E PROCESSAMENTO ---
+upload = st.file_uploader("Submeta o arquivo PDF para auditoria", type="pdf")
 
 if upload and selecionados:
-    with st.spinner('Processando extrato em alta velocidade...'):
+    with st.spinner('Auditando extrato...'):
         dados = []
         termos_regex = "|".join([DICIONARIO_ALVOS[f] for f in selecionados])
         
@@ -89,13 +89,10 @@ if upload and selecionados:
                 
                 for line in text.split('\n'):
                     if re.search(termos_regex, line, re.IGNORECASE):
-                        # Captura apenas o último valor monetário da linha (padrão brasileiro)
                         valores = re.findall(r'(\d[\d\.]*,\d{2})', line)
                         valor_str = valores[-1] if valores else "0,00"
-                        
                         data_m = re.search(r'(\d{2}/\d{2}/\d{4})', line)
                         
-                        # Identifica qual categoria foi encontrada
                         categoria_nome = "OUTROS"
                         for nome, regex in DICIONARIO_ALVOS.items():
                             if re.search(regex, line, re.IGNORECASE):
@@ -105,13 +102,12 @@ if upload and selecionados:
                         dados.append({
                             "DATA": data_m.group(1) if data_m else "---",
                             "CATEGORIA": categoria_nome,
-                            "DESCRIÇÃO": line.strip()[:100], # Limitado para não pesar a tabela
+                            "DESCRIÇÃO": line.strip()[:80],
                             "VALOR (R$)": valor_str
                         })
 
         if dados:
             df = pd.DataFrame(dados)
-            # Converte valores para somar no Card
             total_float = df["VALOR (R$)"].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float).sum()
             
             c1, c2, c3 = st.columns(3)
@@ -120,18 +116,20 @@ if upload and selecionados:
             with c3: st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">STATUS</p><h2 style="color: #10B981;">AUDITADO</h2></div>', unsafe_allow_html=True)
 
             st.dataframe(df, use_container_width=True, hide_index=True)
-            st.download_button("📥 BAIXAR LAUDO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria.csv")
-        else:
-            st.warning("Nenhum débito encontrado com as rúbricas selecionadas.")
+            st.download_button("📥 BAIXAR LAUDO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_medeiros.csv")
 
-# --- 7. RODAPÉ E "COMO FUNCIONA" ---
+# --- 7. RODAPÉ E DESIGN FINAL ---
 st.markdown("""
     <div class="how-it-works">
+        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 20px;">PROCESSO TÉCNICO</h3>
         <div style="display: flex; justify-content: space-around; text-align: center;">
-            <div><div class="step-number">I</div><p style="font-size: 0.8rem;">Upload Seguro</p></div>
-            <div><div class="step-number">II</div><p style="font-size: 0.8rem;">Cálculo de Valores</p></div>
-            <div><div class="step-number">III</div><p style="font-size: 0.8rem;">Laudo Técnico</p></div>
+            <div><div class="step-number">I</div><p style="font-size: 0.8rem;">Leitura Digital</p></div>
+            <div><div class="step-number">II</div><p style="font-size: 0.8rem;">Cálculo Abusivo</p></div>
+            <div><div class="step-number">III</div><p style="font-size: 0.8rem;">Certificação</p></div>
         </div>
     </div>
-    <div class="footer-signature"><p class="footer-name">Edson Medeiros</p></div>
+    <div class="footer-signature">
+        <p class="footer-name">Edson Medeiros</p>
+        <p class="footer-tech">CONSULTORIA & COMPLIANCE</p>
+    </div>
 """, unsafe_allow_html=True)
