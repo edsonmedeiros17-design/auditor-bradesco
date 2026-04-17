@@ -119,4 +119,99 @@ with col_cta:
     st.markdown("<br><br>", unsafe_allow_html=True)
     # LINK DO SEU WHATSAPP INTEGRADO AQUI
     st.markdown(f'''
-        <a href="
+        <a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">
+            Falar com Consultor ⚖️
+        </a>
+    ''', unsafe_allow_html=True)
+
+# --- 4. BARRA LATERAL (FILTROS) ---
+st.sidebar.markdown("### PARÂMETROS DE BUSCA")
+DICIONARIO_ALVOS = {
+    "Tarifas Bancárias": "TARIFA BANCARIA",
+    "Seguros / Previdência": "SEGURO",
+    "Mora / Encargos": "MORA",
+    "Capitalização": "CAPITALIZACAO",
+    "Pacote de Serviços": "PACOTE DE SERVICOS",
+    "Taxas de Adiantamento": "ADIANT",
+    "Baixas e Débitos (BX)": r"\bBX\b"
+}
+selecionados = []
+for nome in DICIONARIO_ALVOS.keys():
+    if st.sidebar.checkbox(nome, value=True):
+        selecionados.append(nome)
+
+# --- 5. INTERFACE DE UPLOAD ---
+st.markdown("<br>", unsafe_allow_html=True)
+upload = st.file_uploader("Submeta o arquivo PDF para certificação automática", type="pdf", label_visibility="visible")
+
+# --- 6. LÓGICA DE AUDITORIA ---
+if upload and selecionados:
+    with st.spinner('Realizando cruzamento técnico de dados...'):
+        dados = []
+        termos = [DICIONARIO_ALVOS[f] for f in selecionados]
+        with pdfplumber.open(upload) as pdf:
+            for p in pdf.pages:
+                texto = p.extract_text()
+                if texto:
+                    for linha in texto.split('\n'):
+                        for t in termos:
+                            if re.search(t, linha, re.IGNORECASE):
+                                data_m = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+                                dados.append({
+                                    "DATA": data_m.group(1) if data_m else "---",
+                                    "CATEGORIA": [k for k, v in DICIONARIO_ALVOS.items() if v == t][0].upper(),
+                                    "DESCRIÇÃO TÉCNICA": linha.strip()
+                                })
+                                break
+        
+        df = pd.DataFrame(dados)
+        
+        if not df.empty:
+            # Cards de Resumo
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">OCORRÊNCIAS</p><h2 style="color: #BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+            with c2:
+                st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">CATEGORIAS</p><h2 style="color: #BFAF83;">{df["CATEGORIA"].nunique()}</h2></div>', unsafe_allow_html=True)
+            with c3:
+                st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">STATUS</p><h2 style="color: #10B981;">AUDITADO</h2></div>', unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            csv = df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 BAIXAR RELATÓRIO CERTIFICADO (CSV)", csv, "auditoria_medeiros.csv", "text/csv")
+        else:
+            st.info("Nenhuma divergência identificada nos parâmetros selecionados.")
+
+# --- 7. SEÇÃO INFORMATIVA: COMO FUNCIONA ---
+st.markdown("""
+    <div class="how-it-works">
+        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
+        <div style="display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; text-align: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">I</div>
+                <p style="font-weight: 600; color: #FFF;">Upload Seguro</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">O sistema processa seu PDF em milissegundos. Seus dados nunca são armazenados.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">II</div>
+                <p style="font-weight: 600; color: #FFF;">Análise de Siglas</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Nossa inteligência identifica cobranças escondidas sob siglas bancárias complexas.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">III</div>
+                <p style="font-weight: 600; color: #FFF;">Laudo Técnico</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Você recebe a base técnica para solicitar reembolsos e correções diretamente ao banco.</p>
+            </div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- 8. FOOTER OFICIAL (NÚMERO 3) ---
+st.markdown(f"""
+    <div class="footer-signature">
+        <p class="footer-name">Edson Medeiros</p>
+        <p class="footer-tech">CONSULTORIA & COMPLIANCE</p>
+    </div>
+    """, unsafe_allow_html=True)
