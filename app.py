@@ -105,7 +105,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LÓGICA DE AUTENTICAÇÃO ---
+# --- 3. LÓGICA DE AUTENTICAÇÃO (SENHA ATUALIZADA) ---
 if 'authenticated' not in st.session_state:
     st.session_state['authenticated'] = False
 
@@ -119,7 +119,8 @@ if not st.session_state['authenticated']:
     user_password = st.text_input("Senha", type="password")
     
     if st.button("AUTENTICAR"):
-        if user_email == "edson.senabr@gmail.com" and user_password == "Edsonsena14":
+        # Login e Senha conforme solicitado
+        if user_email == "edson.senabr@gmail.com" and user_password == "Roberta123":
             st.session_state['authenticated'] = True
             st.rerun()
         else:
@@ -142,7 +143,7 @@ with col_cta:
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(f'<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-# --- 5. SIDEBAR (NOVAS RÚBRICAS ATUALIZADAS) ---
+# --- 5. SIDEBAR (RÚBRICAS ATUALIZADAS) ---
 st.sidebar.markdown("### PARÂMETROS DE BUSCA")
 DICIONARIO_ALVOS = {
     "Cesta / Pacote": "CESTA|PACOTE",
