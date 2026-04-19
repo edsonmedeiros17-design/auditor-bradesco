@@ -3,87 +3,76 @@ import pdfplumber
 import pandas as pd
 import re
 
-# 1. CONFIGURAÇÃO E VALIDAÇÃO OCULTA (GOOGLE)
+# 1. CONFIGURAÇÃO DA PÁGINA E VALIDAÇÃO GOOGLE
 st.set_page_config(page_title="Edson Medeiros | Consultoria", layout="wide")
+
+# Tag de verificação oculta para o Google Search Console
 st.markdown(f'<div style="display:none;">google-site-verification: u-8Cv23oI8_QCuHNzQA-Vwqffb58GtwXEWc7jBYJFcQ</div>', unsafe_allow_html=True)
 
-# 2. RESTAURAÇÃO DA ESTÉTICA E DESIGN
+# 2. ESTILO CSS (RODAPÉ ADICIONADO)
 st.markdown("""
 <style>
     .stApp { background-color: #0F172A; color: white; }
-    .main-title { color: #BFAF83; font-size: 3rem; font-weight: bold; text-align: center; margin-bottom: 0px; }
-    .subtitle { color: #94A3B8; text-align: center; font-size: 1.2rem; margin-bottom: 40px; }
-    
-    /* Botão WhatsApp Estilizado */
-    .btn-whatsapp {
-        background-color: #25D366; color: white !important;
-        padding: 12px 25px; border-radius: 30px;
-        text-decoration: none; font-weight: bold;
-        display: inline-block; transition: 0.3s;
+    .main-title { color: #BFAF83; font-size: 3rem; font-weight: bold; text-align: center; }
+    .btn-whatsapp { 
+        background-color: #25D366; color: white; padding: 15px; 
+        border-radius: 10px; text-decoration: none; display: block; text-align: center;
     }
-    .btn-whatsapp:hover { background-color: #128C7E; transform: scale(1.05); }
-
-    /* Selos de Segurança Sofisticados (Rodapé) */
+    /* Estilo para os selos no rodapé */
     .footer-security {
         position: fixed; left: 20px; bottom: 20px;
         display: flex; align-items: center; gap: 15px;
-        padding: 10px 15px; background: rgba(255, 255, 255, 0.03);
+        padding: 8px 15px; background: rgba(255, 255, 255, 0.05);
         border-radius: 8px; border-left: 2px solid #BFAF83; z-index: 999;
     }
     .footer-text { font-size: 10px; color: #94A3B8; line-height: 1.2; text-transform: uppercase; }
-    .footer-icon { filter: grayscale(100%); opacity: 0.6; }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. CONTROLE DE ACESSO
+# 3. AUTENTICAÇÃO
 if 'auth' not in st.session_state:
     st.session_state['auth'] = False
 
 if not st.session_state['auth']:
-    st.markdown('<h1 class="main-title">CONSULTORIA MEDEIROS</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle">SISTEMA PRIVADO DE AUDITORIA DE ATIVOS</p>', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#BFAF83;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
+    user = st.text_input("Usuário")
+    pw = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        if user == "edson.senabr@gmail.com" and pw == "Roberta123":
+            st.session_state['auth'] = True
+            st.rerun()
+        else:
+            st.error("Credenciais Inválidas")
     
-    _, col_login, _ = st.columns([1, 1, 1])
-    with col_login:
-        user = st.text_input("Usuário")
-        pw = st.text_input("Senha", type="password")
-        if st.button("ACESSAR SISTEMA", use_container_width=True):
-            if user == "edson.senabr@gmail.com" and pw == "Roberta123":
-                st.session_state['auth'] = True
-                st.rerun()
-            else:
-                st.error("Credenciais Inválidas")
-    
-    # Selos na tela de login
+    # Exibe selos também na tela de login
     st.markdown("""
     <div class="footer-security">
-        <img src="https://img.icons8.com/color/48/google-logo.png" width="20" class="footer-icon">
-        <img src="https://img.icons8.com/shield-check-mark" width="22" style="filter: invert(80%);" class="footer-icon">
-        <div class="footer-text"><b>Ambiente Seguro</b><br>Criptografia SSL & Google Safe</div>
+        <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="35" style="opacity:0.8;">
+        <img src="https://img.icons8.com/shield-check-mark" width="20" style="filter: invert(80%); opacity:0.8;">
+        <div class="footer-text"><b>Ambiente Seguro</b><br>Google Safe Browsing & SSL</div>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
 
-# 4. INTERFACE PRINCIPAL (RESTAURADA)
-st.markdown('<h1 class="main-title">Relatório de Auditoria</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Análise Técnica de Irregularidades Bancárias</p>', unsafe_allow_html=True)
+# 4. CONTEÚDO PRINCIPAL
+st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 
-col_info, col_btn = st.columns([3, 1])
-with col_btn:
+col1, col2 = st.columns([2, 1])
+with col2:
     st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-# DICIONÁRIO DE BUSCA (SUA INTELIGÊNCIA DE NEGÓCIO)
+# Parâmetros de Busca
 DICIONARIO = {
-    "Cesta / Pacote": "CESTA|PACOTE|MENSALIDADE",
-    "Tarifas": "TARIFA BANCARIA|TAR BANC",
-    "Seguros": "SEGURO|PROT",
-    "Juros/Mora": "MORA|JUROS|MULTA"
+    "Cesta / Pacote": "CESTA|PACOTE",
+    "Tarifas Bancárias": "TARIFA BANCARIA",
+    "Mora": "MORA",
+    "Seguro": "SEGURO"
 }
 
-upload = st.file_uploader("Arraste o extrato PDF aqui", type="pdf")
+upload = st.file_uploader("Submeta o arquivo PDF", type="pdf")
 
 if upload:
-    with st.spinner('Analisando extrato...'):
+    with st.spinner('Processando...'):
         dados = []
         try:
             with pdfplumber.open(upload) as pdf:
@@ -93,33 +82,32 @@ if upload:
                         for linha in text.split('\n'):
                             for nome, termo in DICIONARIO.items():
                                 if re.search(termo, linha, re.IGNORECASE):
-                                    # Captura o valor financeiro (ex: 1.250,00)
                                     valor = re.findall(r'(\d[\d\.]*,\d{2})', linha)
                                     valor_f = valor[-1] if valor else "0,00"
                                     dados.append({
                                         "DATA": "Ver extrato",
                                         "CATEGORIA": nome,
                                         "DESCRIÇÃO": linha[:80],
-                                        "VALOR (R$)": valor_f
+                                        "VALOR": valor_f
                                     })
             
             if dados:
                 df = pd.DataFrame(dados)
-                st.success(f"Foram encontradas {len(df)} possíveis irregularidades.")
+                st.write("### Ocorrências Identificadas")
                 st.dataframe(df, use_container_width=True)
                 
                 csv = df.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO (CSV)", csv, "laudo_auditoria.csv", "text/csv")
+                st.download_button("📥 BAIXAR LAUDO", csv, "laudo.csv", "text/csv")
             else:
-                st.warning("Nenhum termo de irregularidade foi encontrado neste documento.")
+                st.info("Nenhuma irregularidade encontrada.")
         except Exception as e:
-            st.error(f"Erro no processamento: {e}")
+            st.error(f"Erro ao ler PDF: {e}")
 
-# Selos também na área logada para manter a confiança
+# Selos no rodapé da área interna
 st.markdown("""
 <div class="footer-security">
-    <img src="https://img.icons8.com/color/48/google-logo.png" width="20" class="footer-icon">
-    <img src="https://img.icons8.com/shield-check-mark" width="22" style="filter: invert(80%);" class="footer-icon">
-    <div class="footer-text"><b>Sistema Protegido</b><br>Monitoramento Ativo</div>
+    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="35" style="opacity:0.8;">
+    <img src="https://img.icons8.com/shield-check-mark" width="20" style="filter: invert(80%); opacity:0.8;">
+    <div class="footer-text"><b>Sistema Protegido</b><br>Verificação Google Ativa</div>
 </div>
 """, unsafe_allow_html=True)
