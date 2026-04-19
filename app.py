@@ -31,4 +31,181 @@ try:
     
     /* Selos de Segurança Discretos */
     .footer-security {
-        position: fixed; left
+        position: fixed; left: 20px; bottom: 30px;
+        display: flex; align-items: center; gap: 15px;
+        padding: 8px 12px; background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px; border-left: 1px solid #BFAF83; z-index: 100;
+    }
+    
+    [data-testid="stSidebar"] { background-color: #080C14 !important; border-right: 1px solid #1E293B; }
+    [data-testid="stSidebar"] h3 { color: var(--gold-matte) !important; font-family: 'Cinzel', serif; }
+    .stFileUploader section { background-color: rgba(255,255,255,0.03) !important; border: 1px dashed var(--gold-matte) !important; }
+    </style>
+    """
+    st.markdown(ESTILO_CSS, unsafe_allow_html=True)
+
+    # --- 3. LÓGICA DE AUTENTICAÇÃO ---
+    if 'authenticated' not in st.session_state:
+        st.session_state['authenticated'] = False
+
+    if not st.session_state['authenticated']:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        st.markdown('<h2 style="color: #BFAF83; font-family: \'Cinzel\';">ACESSO RESTRITO</h2>', unsafe_allow_html=True)
+        
+        user_email = st.text_input("E-mail de Acesso")
+        user_password = st.text_input("Senha", type="password")
+        
+        if st.button("AUTENTICAR"):
+            if user_email == "edson.senabr@gmail.com" and user_password == "Roberta123":
+                st.session_state['authenticated'] = True
+                st.rerun()
+            else:
+                st.error("Credenciais incorretas.")
+                
+        st.markdown("<br><hr style='opacity: 0.1;'><br>", unsafe_allow_html=True)
+        st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Selos na tela de login
+        st.markdown("""
+        <div class="footer-security">
+            <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="30" style="opacity:0.6;">
+            <img src="https://img.icons8.com/shield-check-mark" width="18" style="filter: invert(80%); opacity:0.6;">
+            <div style="font-size: 8px; color: #64748B; letter-spacing: 1px;">SISTEMA<br>PROTEGIDO</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop()
+
+    # --- 4. CABEÇALHO ---
+    col_head, col_cta = st.columns([2.5, 1])
+    with col_head:
+        st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
+        st.markdown("<p style='color: #BFAF83; letter-spacing: 2px; font-weight: 300;'>AUDITORIA TÉCNICA PROPRIETÁRIA DE EXTRATOS</p>", unsafe_allow_html=True)
+    with col_cta:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
+
+    # --- 5. SIDEBAR ---
+    st.sidebar.markdown("### PARÂMETROS DE BUSCA")
+    DICIONARIO_ALVOS = {
+        "Cesta / Pacote": "CESTA|PACOTE",
+        "Tarifas Bancárias": "TARIFA BANCARIA",
+        "Mora": "MORA",
+        "Baixas e Débitos (BX)": r"\bBX\b",
+        "Crédito Pessoal": "PARCELA CREDITO PESSOAL",
+        "Gastos Cartão de Crédito": "GASTOS CARTAO DE CREDITO",
+        "Seguro": "SEGURO",
+        "Adiantamento": "ADIANT",
+        "Aplicações": "APLIC",
+        "Encargos": "ENCARGOS",
+        "Anuidade": "ANUIDADE",
+        "Operações Vencidas": "OPERACOES VENCIDAS",
+        "Dívidas em Atraso": "DIV. EM ATRASO"
+    }
+    selecionados = []
+    for nome in DICIONARIO_ALVOS.keys():
+        if st.sidebar.checkbox(nome, value=True):
+            selecionados.append(nome)
+
+    # --- 6. UPLOAD E PROCESSAMENTO SEGURO ---
+    st.markdown("<br>", unsafe_allow_html=True)
+    upload = st.file_uploader("Submeta o arquivo PDF para certificação técnica automática", type="pdf")
+
+    if upload and selecionados:
+        with st.spinner('Analisando extrato e calculando valores...'):
+            dados = []
+            termos = [DICIONARIO_ALVOS[f] for f in selecionados]
+            
+            with pdfplumber.open(upload) as pdf:
+                for p in pdf.pages:
+                    texto = p.extract_text()
+                    if texto:
+                        for linha in texto.split('\n'):
+                            for t in termos:
+                                if re.search(t, linha, re.IGNORECASE):
+                                    valor_m = re.findall(r'(\d[\d\.]*,\d{2})', linha)
+                                    valor_final = valor_m[-1] if valor_m else "0,00"
+                                    
+                                    data_m = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+                                    
+                                    categoria_atual = "DESCONHECIDO"
+                                    for k, v in DICIONARIO_ALVOS.items():
+                                        if v == t:
+                                            categoria_atual = k.upper()
+                                            break
+                                            
+                                    dados.append({
+                                        "DATA": data_m.group(1) if data_m else "---",
+                                        "CATEGORIA": categoria_atual,
+                                        "DESCRIÇÃO": linha.strip()[:100],
+                                        "VALOR (R$)": valor_final
+                                    })
+                                    break
+            
+            if dados:
+                df = pd.DataFrame(dados)
+                
+                total_recuperavel = 0.0
+                for v in df["VALOR (R$)"]:
+                    try:
+                        valor_limpo = v.replace('.', '').replace(',', '.')
+                        total_recuperavel += float(valor_limpo)
+                    except:
+                        pass
+                
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">OCORRÊNCIAS</p><h2 style="color: #BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">TOTAL RECUPERÁVEL</p><h2 style="color: #BFAF83;">R$ {total_recuperavel:,.2f}</h2></div>', unsafe_allow_html=True)
+                with c3:
+                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">STATUS</p><h2 style="color: #10B981;">AUDITADO</h2></div>', unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.dataframe(df, use_container_width=True)
+                
+                csv = df.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 BAIXAR LAUDO TÉCNICO COMPLETO", csv, "laudo_medeiros.csv", "text/csv")
+            else:
+                st.info("Nenhuma divergência identificada nos parâmetros selecionados.")
+
+    # --- 7. SEÇÃO COMO FUNCIONA E RODAPÉ ---
+    RODAPE_HTML = """
+    <div class="how-it-works">
+        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
+        <div style="display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; text-align: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">I</div>
+                <p style="font-weight: 600; color: #FFF;">Identificação Digital</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">O robô cruza siglas bancárias com o banco de dados de tarifas abusivas.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">II</div>
+                <p style="font-weight: 600; color: #FFF;">Extração de Valores</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de cada centavo debitado indevidamente no extrato.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">III</div>
+                <p style="font-weight: 600; color: #FFF;">Certificação de Ativos</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Geração de laudo técnico com o valor total para pedido de restituição.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-security">
+        <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="30" style="opacity:0.6;">
+        <img src="https://img.icons8.com/shield-check-mark" width="18" style="filter: invert(80%); opacity:0.6;">
+        <div style="font-size: 8px; color: #64748B; letter-spacing: 1px;">SISTEMA<br>PROTEGIDO</div>
+    </div>
+
+    <div class="footer-signature">
+        <p class="footer-name">Edson Medeiros</p>
+        <p class="footer-tech">CONSULTORIA & COMPLIANCE</p>
+    </div>
+    """
+    st.markdown(RODAPE_HTML, unsafe_allow_html=True)
+
+except Exception as e:
+    st.error(f"⚠️ Atenção: Ocorreu um erro interno de processamento.")
+    st.warning(f"Detalhes técnicos para correção: {e}")
