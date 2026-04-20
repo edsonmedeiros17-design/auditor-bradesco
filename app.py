@@ -4,7 +4,7 @@ import pandas as pd
 import re
 from datetime import datetime
 
-# --- 1. CONFIGURAÇÃO E ESTÉTICA PREMIUM (IMUTÁVEL) ---
+# --- 1. CONFIGURAÇÃO E ESTÉTICA PREMIUM (MANUTENÇÃO TOTAL DO DESIGN) ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
@@ -26,8 +26,8 @@ ESTILO_CSS = """
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. TELA DE ACESSO RESTRITO ---
-def login_premium():
+# --- 2. TELA DE ACESSO RESTRITO (DESIGN ORIGINAL PREFERIDO) ---
+def tela_login():
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
 
@@ -35,24 +35,24 @@ def login_premium():
         _, col_login, _ = st.columns([1, 1.5, 1])
         with col_login:
             st.markdown("<br><br><br>", unsafe_allow_html=True)
-            st.markdown("<h2 style='font-family: Cinzel; color: #BFAF83; letter-spacing: 3px;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='font-family: Cinzel; color: #BFAF83; letter-spacing: 3px; text-align: center;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
             email = st.text_input("E-mail de Acesso")
             senha = st.text_input("Senha", type="password")
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("AUTENTICAR"):
+            if st.button("AUTENTICAR", use_container_width=True):
                 if email == "edson.senabr@gmail.com" and senha == "medeirosefernandes2026":
                     st.session_state["autenticado"] = True
                     st.rerun()
                 else:
-                    st.error("Credenciais de acesso incorretas.")
+                    st.error("Credenciais incorretas.")
             
             st.markdown("<br><br>", unsafe_allow_html=True)
-            st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
+            st.markdown('<div style="text-align: center;"><a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a></div>', unsafe_allow_html=True)
         return False
     return True
 
-if login_premium():
-    # --- 3. DASHBOARD PRINCIPAL ---
+if tela_login():
+    # --- 3. DASHBOARD (IDENTIDADE VISUAL MANTIDA) ---
     col_head, col_cta = st.columns([2.5, 1])
     with col_head:
         st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
@@ -61,7 +61,7 @@ if login_premium():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Suporte Direto ⚖️</a>', unsafe_allow_html=True)
 
-    # --- 4. SIDEBAR PARÂMETROS ---
+    # --- 4. PARÂMETROS E AUDITORIA ---
     st.sidebar.markdown("### PARÂMETROS DE BUSCA")
     DICIONARIO_ALVOS = {
         "Cesta / Pacote": "CESTA|PACOTE",
@@ -86,85 +86,82 @@ if login_premium():
         d_inf = st.sidebar.date_input("Início", format="DD/MM/YYYY")
         d_sup = st.sidebar.date_input("Fim", format="DD/MM/YYYY")
 
-    # --- 5. UPLOAD E PROCESSAMENTO ---
     st.markdown("<br>", unsafe_allow_html=True)
     upload = st.file_uploader("Submeta o arquivo PDF para certificação técnica automática", type="pdf")
 
     if upload:
-        with st.spinner('Certificando Ativos...'):
+        with st.spinner('Executando Auditoria Cronológica...'):
             dados = []
             termos = [DICIONARIO_ALVOS[f] for f in selecionados]
-            data_memoria = "---"
             
             with pdfplumber.open(upload) as pdf:
                 for p in pdf.pages:
-                    texto = p.extract_text()
-                    if texto:
-                        for linha in texto.split('\n'):
-                            m_data = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
-                            if m_data: data_memoria = m_data.group(1)
-                            
-                            if usar_data:
-                                try:
-                                    dt_check = datetime.strptime(data_memoria, "%d/%m/%Y").date()
-                                    if dt_check < d_inf or dt_check > d_sup: continue
-                                except: pass
+                    linhas = p.extract_text().split('\n') if p.extract_text() else []
+                    
+                    for i, linha in enumerate(linhas):
+                        for t in termos:
+                            if re.search(t, linha, re.IGNORECASE):
+                                data_correta = "---"
+                                
+                                # LÓGICA DE DATA INTEGRADA (SUPERIOR OU INFERIOR)
+                                m_data_na_linha = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+                                if m_data_na_linha:
+                                    data_correta = m_data_na_linha.group(1)
+                                else:
+                                    # BUSCA SUPERIOR (ANEXO 2)
+                                    for j in range(i-1, -1, -1):
+                                        m_up = re.search(r'(\d{2}/\d{2}/\d{4})', linhas[j])
+                                        if m_up:
+                                            data_correta = m_up.group(1)
+                                            break
+                                    
+                                    # SE NÃO ACHOU, BUSCA INFERIOR (ANEXO 3 - CASO DO ROBÔ SE PERDER)
+                                    if data_correta == "---":
+                                        for k in range(i+1, min(i+10, len(linhas))):
+                                            m_down = re.search(r'(\d{2}/\d{2}/\d{4})', linhas[k])
+                                            if m_down:
+                                                data_correta = m_down.group(1)
+                                                break
 
-                            for t in termos:
-                                if re.search(t, linha, re.IGNORECASE):
-                                    v_m = re.findall(r'(\d[\d\.]*,\d{2})', linha)
-                                    valor = v_m[-1] if v_m else "0,00"
-                                    cat_nome = next(k for k, v in DICIONARIO_ALVOS.items() if v == t)
-                                    dados.append({"DATA": data_memoria, "CATEGORIA": cat_nome.upper(), "DESCRIÇÃO": linha.strip()[:100], "VALOR (R$)": valor})
-                                    break
+                                if usar_data and data_correta != "---":
+                                    try:
+                                        dt_check = datetime.strptime(data_correta, "%d/%m/%Y").date()
+                                        if dt_check < d_inf or dt_check > d_sup: continue
+                                    except: pass
+
+                                v_m = re.findall(r'(\d[\d\.]*,\d{2})', linha)
+                                valor = v_m[-1] if v_m else "0,00"
+                                cat_nome = next(k for k, v in DICIONARIO_ALVOS.items() if v == t)
+                                
+                                dados.append({
+                                    "DATA": data_correta,
+                                    "CATEGORIA": cat_nome.upper(),
+                                    "DESCRIÇÃO": linha.strip()[:100],
+                                    "VALOR (R$)": valor
+                                })
+                                break
 
             if dados:
                 df = pd.DataFrame(dados)
                 total_rec = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR (R$)"]])
-                cats_unicas = df["CATEGORIA"].unique()
                 
-                # --- CARDS DE IMPACTO ---
                 c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 1px;">CATEGORIAS IDENTIFICADAS</p><h2 style="color: #BFAF83; font-family: Cinzel;">{len(cats_unicas)}</h2></div>', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 1px;">TOTAL RECUPERÁVEL</p><h2 style="color: #BFAF83; font-family: Cinzel;">R$ {total_rec:,.2f}</h2></div>', unsafe_allow_html=True)
-                with c3:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 1px;">STATUS</p><h2 style="color: #10B981; font-family: Cinzel;">AUDITADO</h2></div>', unsafe_allow_html=True)
-
-                # --- RESUMO CONCISO ---
-                st.markdown("<h4 style='color: #BFAF83; font-family: Cinzel; font-size: 1rem; margin-bottom: 15px;'>DÉBITOS IDENTIFICADOS (VISÃO RESUMIDA)</h4>", unsafe_allow_html=True)
-                badges_html = "".join([f'<div class="categoria-badge">{cat}</div>' for cat in cats_unicas])
-                st.markdown(f'<div class="resumo-direto">{badges_html}</div>', unsafe_allow_html=True)
+                with c1: st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">OCORRÊNCIAS</p><h2 style="color: #BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                with c2: st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">TOTAL RECUPERÁVEL</p><h2 style="color: #BFAF83;">R$ {total_rec:,.2f}</h2></div>', unsafe_allow_html=True)
+                with c3: st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">STATUS</p><h2 style="color: #10B981;">AUDITADO</h2></div>', unsafe_allow_html=True)
 
                 st.dataframe(df, use_container_width=True)
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO COMPLETO", df.to_csv(index=False).encode('utf-8-sig'), "laudo_consultoria.csv")
-            else:
-                st.info("Nenhum débito indevido encontrado nos parâmetros selecionados.")
+                st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_edson.csv")
 
-    # --- 6. PROCESSO DE CONSULTORIA (OS 3 PASSOS REINTEGRADOS) ---
+    # --- 5. FOOTER E PROCESSOS (ESTÉTICA FINAL) ---
     st.markdown("""
     <div class="how-it-works">
-        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
+        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px;">PROCESSO DE CONSULTORIA</h3>
         <div style="display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; text-align: center;">
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">I</div>
-                <p style="font-weight: 600; color: #FFF;">Identificação Digital</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">O robô cruza siglas bancárias com o banco de dados de tarifas abusivas.</p>
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">II</div>
-                <p style="font-weight: 600; color: #FFF;">Extração de Valores</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de cada centavo debitado indevidamente no extrato.</p>
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">III</div>
-                <p style="font-weight: 600; color: #FFF;">Certificação de Ativos</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">Geração de laudo técnico com o valor total para pedido de restituição.</p>
-            </div>
+            <div style="flex: 1;"><div class="step-number">I</div><p style="font-weight: 600;">Identificação Digital</p></div>
+            <div style="flex: 1;"><div class="step-number">II</div><p style="font-weight: 600;">Extração de Valores</p></div>
+            <div style="flex: 1;"><div class="step-number">III</div><p style="font-weight: 600;">Certificação de Ativos</p></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # --- 7. ASSINATURA FINAL ---
-    st.markdown('<div class="footer-signature"><p class="footer-name">Edson Medeiros</p><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 3px;">CONSULTORIA & COMPLIANCE</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer-signature"><p class="footer-name">Edson Medeiros</p><p style="font-size: 0.7rem; color: #64748B;">CONSULTORIA & COMPLIANCE</p></div>', unsafe_allow_html=True)
