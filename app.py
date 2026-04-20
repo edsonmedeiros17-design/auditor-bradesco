@@ -3,85 +3,82 @@ import pdfplumber
 import pandas as pd
 import re
 
-# --- 1. CONFIGURAÇÃO MÁXIMA ---
-st.set_page_config(page_title="Edson Medeiros | Auditoria", layout="wide")
+# 1. CONFIGURAÇÃO DA PÁGINA
+st.set_page_config(page_title="Edson Medeiros | Consultoria", layout="wide")
 
-# Tag Google (Essencial para sua verificação)
-st.markdown('<div style="display:none;">google-site-verification: u-8Cv23oI8_QCuHNzQA-Vwqffb58GtwXEWc7jBYJFcQ</div>', unsafe_allow_html=True)
-
-# --- 2. ESTILO VISUAL ---
+# 2. ESTILO CSS (SIMPLIFICADO PARA EVITAR ERROS)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400&family=Great+Vibes&display=swap');
-    .stApp { background-color: #0F172A; color: white; font-family: 'Inter', sans-serif; }
-    .title { font-family: 'Playfair Display', serif; color: #BFAF83; font-size: 3rem; text-align: center; }
-    .footer { position: fixed; bottom: 10px; width: 100%; text-align: center; }
-    .signature { font-family: 'Great Vibes', cursive; color: #BFAF83; font-size: 1.8rem; }
+    .stApp { background-color: #0F172A; color: white; }
+    .main-title { color: #BFAF83; font-size: 3rem; font-weight: bold; text-align: center; }
+    .btn-whatsapp { 
+        background-color: #25D366; color: white; padding: 15px; 
+        border-radius: 10px; text-decoration: none; display: block; text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LOGIN ---
-if 'logado' not in st.session_state:
-    st.session_state['logado'] = False
+# 3. AUTENTICAÇÃO
+if 'auth' not in st.session_state:
+    st.session_state['auth'] = False
 
-if not st.session_state['logado']:
-    st.markdown('<h1 class="title">CONSULTORIA MEDEIROS</h1>', unsafe_allow_html=True)
-    with st.container():
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            u = st.text_input("E-mail")
-            p = st.text_input("Senha", type="password")
-            if st.button("ACESSAR", use_container_width=True):
-                if u == "edson.senabr@gmail.com" and p == "Roberta123":
-                    st.session_state['logado'] = True
-                    st.rerun()
-                else:
-                    st.error("Dados incorretos")
+if not st.session_state['auth']:
+    st.markdown("<h2 style='text-align:center; color:#BFAF83;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
+    user = st.text_input("Usuário")
+    pw = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        if user == "edson.senabr@gmail.com" and pw == "Roberta123":
+            st.session_state['auth'] = True
+            st.rerun()
+        else:
+            st.error("Credenciais Inválidas")
     st.stop()
 
-# --- 4. ÁREA DE AUDITORIA ---
-st.markdown('<h1 class="title">Relatório de Auditoria</h1>', unsafe_allow_html=True)
+# 4. CONTEÚDO PRINCIPAL
+st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 
-# Dicionário de débitos solicitado
-st.sidebar.header("FILTROS BANCÁRIOS")
-TERMOS = {
-    "Cesta/Pacote": "CESTA|PACOTE",
-    "Tarifas": "TARIFA BANCARIA",
-    "Seguros": "SEGURO",
-    "Débitos BX": r"\bBX\b",
-    "Mora": "MORA|JUROS"
+col1, col2 = st.columns([2, 1])
+with col2:
+    st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
+
+# Parâmetros de Busca
+DICIONARIO = {
+    "Cesta / Pacote": "CESTA|PACOTE",
+    "Tarifas Bancárias": "TARIFA BANCARIA",
+    "Mora": "MORA",
+    "Seguro": "SEGURO"
 }
-escolhas = [n for n in TERMOS.keys() if st.sidebar.checkbox(n, value=True)]
 
-arquivo = st.file_uploader("Envie o extrato em PDF", type="pdf")
+upload = st.file_uploader("Submeta o arquivo PDF", type="pdf")
 
-if arquivo:
-    with st.spinner("Analisando..."):
-        lista_dados = []
-        with pdfplumber.open(arquivo) as pdf:
-            for p in pdf.pages:
-                texto = p.extract_text()
-                if texto:
-                    for linha in texto.split('\n'):
-                        for item in escolhas:
-                            if re.search(TERMOS[item], linha, re.IGNORECASE):
-                                v = re.findall(r'(\d[\d\.]*,\d{2})', linha)
-                                lista_dados.append({
-                                    "CATEGORIA": item,
-                                    "DETALHE": linha[:70],
-                                    "VALOR": v[-1] if v else "0,00"
-                                })
-        if lista_dados:
-            df = pd.DataFrame(lista_dados)
-            st.table(df) # Table é mais leve que Dataframe para evitar erros
-            st.download_button("BAIXAR RESULTADO", df.to_csv(index=False).encode('utf-8'), "auditoria.csv")
-        else:
-            st.info("Nenhum item encontrado.")
-
-# --- 5. RODAPÉ ---
-st.markdown(f"""
-<div class="footer">
-    <span class="signature">Edson Medeiros</span>
-    <p style="font-size: 0.6rem; opacity: 0.5;">SITE PROTEGIDO | GOOGLE VERIFIED</p>
-</div>
-""", unsafe_allow_html=True)
+if upload:
+    with st.spinner('Processando...'):
+        dados = []
+        try:
+            with pdfplumber.open(upload) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        for linha in text.split('\n'):
+                            for nome, termo in DICIONARIO.items():
+                                if re.search(termo, linha, re.IGNORECASE):
+                                    valor = re.findall(r'(\d[\d\.]*,\d{2})', linha)
+                                    valor_f = valor[-1] if valor else "0,00"
+                                    dados.append({
+                                        "DATA": "Ver extrato",
+                                        "CATEGORIA": nome,
+                                        "DESCRIÇÃO": linha[:80],
+                                        "VALOR": valor_f
+                                    })
+            
+            if dados:
+                df = pd.DataFrame(dados)
+                st.write("### Ocorrências Identificadas")
+                st.dataframe(df, use_container_width=True)
+                
+                csv = df.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 BAIXAR LAUDO", csv, "laudo.csv", "text/csv")
+            else:
+                st.info("Nenhuma irregularidade encontrada.")
+        except Exception as e:
+            st.error(f"Erro ao ler PDF: {e}")
