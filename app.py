@@ -45,7 +45,7 @@ try:
         user_password = st.text_input("Senha", type="password")
         
         if st.button("AUTENTICAR"):
-            if user_email == "edson.senabr@gmail.com" and user_password == "Roberta123":
+            if user_email == "edson.senabr@gmail.com" and user_password == "medeirosefernandes2026":
                 st.session_state['authenticated'] = True
                 st.rerun()
             else:
