@@ -17,6 +17,8 @@ ESTILO_CSS = """
 .impact-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(191, 175, 131, 0.2); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; }
 .resumo-direto { background: rgba(191, 175, 131, 0.05); border: 1px solid rgba(191, 175, 131, 0.2); padding: 20px; border-radius: 12px; margin-bottom: 30px; }
 .categoria-badge { background: rgba(191, 175, 131, 0.15); color: #BFAF83; border: 1px solid #BFAF83; padding: 6px 15px; border-radius: 20px; font-size: 0.75rem; margin: 5px; display: inline-block; font-weight: 600; letter-spacing: 1px; }
+.how-it-works { background: rgba(15, 23, 42, 0.6); border-radius: 16px; padding: 40px; margin-top: 60px; border: 1px solid rgba(191, 175, 131, 0.1); margin-bottom: 100px; }
+.step-number { color: var(--gold-matte); font-family: 'Cinzel', serif; font-size: 1.8rem; margin-bottom: 10px; }
 .footer-signature { position: fixed; bottom: 30px; right: 40px; text-align: right; z-index: 100; }
 .footer-name { font-family: 'Great Vibes', cursive; color: var(--gold-matte); font-size: 2.2rem; margin: 0; }
 [data-testid="stSidebar"] { background-color: #080C14 !important; border-right: 1px solid #1E293B; }
@@ -24,13 +26,12 @@ ESTILO_CSS = """
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. TELA DE ACESSO RESTRITO (SENSACIONAL) ---
+# --- 2. TELA DE ACESSO RESTRITO ---
 def login_premium():
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
 
     if not st.session_state["autenticado"]:
-        # Layout centralizado para simular o print Anexo 4
         _, col_login, _ = st.columns([1, 1.5, 1])
         with col_login:
             st.markdown("<br><br><br>", unsafe_allow_html=True)
@@ -85,7 +86,7 @@ if login_premium():
         d_inf = st.sidebar.date_input("Início", format="DD/MM/YYYY")
         d_sup = st.sidebar.date_input("Fim", format="DD/MM/YYYY")
 
-    # --- 5. PROCESSAMENTO TÉCNICO ---
+    # --- 5. UPLOAD E PROCESSAMENTO ---
     st.markdown("<br>", unsafe_allow_html=True)
     upload = st.file_uploader("Submeta o arquivo PDF para certificação técnica automática", type="pdf")
 
@@ -122,7 +123,7 @@ if login_premium():
                 total_rec = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR (R$)"]])
                 cats_unicas = df["CATEGORIA"].unique()
                 
-                # --- 6. EXIBIÇÃO DE RESULTADOS INOVADORA ---
+                # --- CARDS DE IMPACTO ---
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 1px;">CATEGORIAS IDENTIFICADAS</p><h2 style="color: #BFAF83; font-family: Cinzel;">{len(cats_unicas)}</h2></div>', unsafe_allow_html=True)
@@ -131,7 +132,7 @@ if login_premium():
                 with c3:
                     st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 1px;">STATUS</p><h2 style="color: #10B981; font-family: Cinzel;">AUDITADO</h2></div>', unsafe_allow_html=True)
 
-                # RESUMO CONCISO (INOVAÇÃO SOLICITADA)
+                # --- RESUMO CONCISO ---
                 st.markdown("<h4 style='color: #BFAF83; font-family: Cinzel; font-size: 1rem; margin-bottom: 15px;'>DÉBITOS IDENTIFICADOS (VISÃO RESUMIDA)</h4>", unsafe_allow_html=True)
                 badges_html = "".join([f'<div class="categoria-badge">{cat}</div>' for cat in cats_unicas])
                 st.markdown(f'<div class="resumo-direto">{badges_html}</div>', unsafe_allow_html=True)
@@ -140,6 +141,30 @@ if login_premium():
                 st.download_button("📥 BAIXAR LAUDO TÉCNICO COMPLETO", df.to_csv(index=False).encode('utf-8-sig'), "laudo_consultoria.csv")
             else:
                 st.info("Nenhum débito indevido encontrado nos parâmetros selecionados.")
+
+    # --- 6. PROCESSO DE CONSULTORIA (OS 3 PASSOS REINTEGRADOS) ---
+    st.markdown("""
+    <div class="how-it-works">
+        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
+        <div style="display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; text-align: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">I</div>
+                <p style="font-weight: 600; color: #FFF;">Identificação Digital</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">O robô cruza siglas bancárias com o banco de dados de tarifas abusivas.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">II</div>
+                <p style="font-weight: 600; color: #FFF;">Extração de Valores</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de cada centavo debitado indevidamente no extrato.</p>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="step-number">III</div>
+                <p style="font-weight: 600; color: #FFF;">Certificação de Ativos</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Geração de laudo técnico com o valor total para pedido de restituição.</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # --- 7. ASSINATURA FINAL ---
     st.markdown('<div class="footer-signature"><p class="footer-name">Edson Medeiros</p><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 3px;">CONSULTORIA & COMPLIANCE</p></div>', unsafe_allow_html=True)
