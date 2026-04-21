@@ -64,22 +64,21 @@ if tela_login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-    # --- 4. SIDEBAR E PARÂMETROS ---
+    # --- 4. SIDEBAR E PARÂMETROS (RÚBRICAS ATUALIZADAS) ---
     st.sidebar.markdown("### PARÂMETROS DE BUSCA")
     DICIONARIO_ALVOS = {
-        "Cesta / Pacote": "CESTA|PACOTE",
-        "Tarifas Bancárias": "TARIFA BANCARIA",
-        "Mora": "MORA",
-        "Baixas e Débitos (BX)": r"\bBX\b",
-        "Crédito Pessoal": "PARCELA CREDITO PESSOAL",
-        "Gastos Cartão de Crédito": "GASTOS CARTAO DE CREDITO",
-        "Seguro": "SEGURO",
-        "Adiantamento": "ADIANT",
-        "Aplicações": "APLIC",
-        "Encargos": "ENCARGOS",
-        "Anuidade": "ANUIDADE",
-        "Operações Vencidas": "OPERACOES VENCIDAS",
-        "Dívidas em Atraso": "DIV. EM ATRASO"
+        "CESTA/PACOTE": "CESTA|PACOTE",
+        "MORA": "MORA",
+        "BX": r"\bBX\b",
+        "PARCELA CREDITO PESSOAL": "PARCELA CREDITO PESSOAL",
+        "GASTOS CARTAO DE CREDITO": "GASTOS CARTAO DE CREDITO",
+        "SEGURO": "SEGURO",
+        "ADIANT": "ADIANT",
+        "APLIC": "APLIC",
+        "ENCARGOS": "ENCARGOS",
+        "ANUIDADE": "ANUIDADE",
+        "OPERACOES VENCIDAS": "OPERACOES VENCIDAS",
+        "DIV. EM ATRASO": "DIV. EM ATRASO"
     }
     selecionados = [n for n in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(n, value=True)]
     
@@ -101,100 +100,4 @@ if tela_login():
 
             # Passo 1: Extração Inteligente
             if upload.type == "application/pdf":
-                with pdfplumber.open(upload) as pdf:
-                    for p in pdf.pages:
-                        texto_p = p.extract_text()
-                        if texto_p:
-                            linhas_extraidas.extend(texto_p.split('\n'))
-                        else:
-                            # Caso o PDF seja apenas imagem (Scan)
-                            linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
-            else:
-                # Caso o upload seja uma imagem direta (JPG/PNG)
-                linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
-
-            # Passo 2: Auditoria Cronológica (Lógica Superior/Inferior)
-            for i, linha in enumerate(linhas_extraidas):
-                for t in termos:
-                    if re.search(t, linha, re.IGNORECASE):
-                        data_correta = "---"
-                        # Busca de data bidirecional
-                        match_linha = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
-                        if match_linha:
-                            data_correta = match_linha.group(1)
-                        else:
-                            # Tenta buscar Data Superior (Anexo 2)
-                            for j in range(i-1, max(0, i-25), -1):
-                                m_up = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[j])
-                                if m_up: 
-                                    data_correta = m_up.group(1)
-                                    break
-                            # Tenta buscar Data Inferior (Anexo 3)
-                            if data_correta == "---":
-                                for k in range(i+1, min(i+25, len(linhas_extraidas))):
-                                    m_dw = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[k])
-                                    if m_dw: 
-                                        data_correta = m_dw.group(1)
-                                        break
-
-                        if usar_data and data_correta != "---":
-                            try:
-                                dt_v = datetime.strptime(data_correta, "%d/%m/%Y").date()
-                                if dt_v < d_inf or dt_v > d_sup: continue
-                            except: pass
-
-                        v_m = re.findall(r'(\d[\d\.]*,\d{2})', linha)
-                        valor = v_m[-1] if v_m else "0,00"
-                        cat_nome = next(k for k, v in DICIONARIO_ALVOS.items() if v == t)
-                        dados.append({"DATA": data_correta, "CATEGORIA": cat_nome.upper(), "VALOR (R$)": valor, "DESCRIÇÃO": linha[:100]})
-                        break
-
-            # --- 6. EXIBIÇÃO DE RESULTADOS POR CATEGORIAS ÚNICAS ---
-            if dados:
-                df = pd.DataFrame(dados)
-                total_rec = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR (R$)"]])
-                cats_unicas = df["CATEGORIA"].unique()
-                
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">CATEGORIAS IDENTIFICADAS</p><h2 style="color: #BFAF83; font-family: Cinzel;">{len(cats_unicas)}</h2></div>', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">VALOR TOTAL RECUPERÁVEL</p><h2 style="color: #BFAF83; font-family: Cinzel;">R$ {total_rec:,.2f}</h2></div>', unsafe_allow_html=True)
-                with c3:
-                    st.markdown(f'<div class="impact-card"><p style="font-size: 0.7rem; color: #64748B;">STATUS</p><h2 style="color: #10B981; font-family: Cinzel;">AUDITADO</h2></div>', unsafe_allow_html=True)
-
-                st.markdown("<h4 style='color: #BFAF83; font-family: Cinzel; font-size: 1rem; margin-bottom: 15px;'>DÉBITOS IDENTIFICADOS</h4>", unsafe_allow_html=True)
-                badges_html = "".join([f'<div class="categoria-badge">{cat}</div>' for cat in cats_unicas])
-                st.markdown(f'<div class="resumo-direto">{badges_html}</div>', unsafe_allow_html=True)
-
-                st.dataframe(df, use_container_width=True)
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "laudo_auditoria.csv")
-            else:
-                st.info("Nenhum débito abusivo encontrado com as configurações atuais.")
-
-    # --- 7. PROCESSO DE CONSULTORIA (OS 3 PASSOS) ---
-    st.markdown("""
-    <div class="how-it-works">
-        <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
-        <div style="display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; text-align: center;">
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">I</div>
-                <p style="font-weight: 600; color: #FFF;">Identificação Digital</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">O robô identifica ativos indevidos em documentos digitais ou imagens.</p>
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">II</div>
-                <p style="font-weight: 600; color: #FFF;">Extração Técnica</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de valores ocultos nos extratos bancários.</p>
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <div class="step-number">III</div>
-                <p style="font-weight: 600; color: #FFF;">Certificação de Ativos</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">Emissão de laudo técnico especializado para recuperação judicial ou amigável.</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # --- 8. FOOTER ---
-    st.markdown('<div class="footer-signature"><p class="footer-name">Edson Medeiros</p><p style="font-size: 0.7rem; color: #64748B; letter-spacing: 3px;">CONSULTORIA & COMPLIANCE</p></div>', unsafe_allow_html=True)
+                with pdfplumber.open(upload) as
