@@ -3,8 +3,8 @@ import pdfplumber
 import pandas as pd
 import re
 from datetime import datetime
-from PIL import Image
 import io
+import PIL.Image as PILImage # CORREÇÃO AQUI
 import pytesseract
 from pdf2image import convert_from_bytes
 
@@ -66,7 +66,7 @@ if tela_login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-    # --- 4. SIDEBAR E PARÂMETROS (RÚBRICAS ATUALIZADAS) ---
+    # --- 4. SIDEBAR E PARÂMETROS ---
     st.sidebar.markdown("### PARÂMETROS DE BUSCA")
     
     DICIONARIO_ALVOS = {
@@ -94,7 +94,7 @@ if tela_login():
         d_inf = st.sidebar.date_input("Início", format="DD/MM/YYYY")
         d_sup = st.sidebar.date_input("Fim", format="DD/MM/YYYY")
 
-    # --- 5. LÓGICA DE PROCESSAMENTO HÍBRIDO REAL (DIGITAL + OCR TESSERACT) ---
+    # --- 5. LÓGICA DE PROCESSAMENTO HÍBRIDO (DIGITAL + OCR) ---
     st.markdown("<br>", unsafe_allow_html=True)
     upload = st.file_uploader("Upload de Extratos (PDF Digital ou Scans/Fotos/Imagens)", type=["pdf", "png", "jpg", "jpeg"])
 
@@ -104,7 +104,6 @@ if tela_login():
             termos = [DICIONARIO_ALVOS[f] for f in selecionados]
             linhas_extraidas = []
 
-            # Passo 1: Extração Inteligente & OCR REAL
             try:
                 if upload.type == "application/pdf":
                     file_bytes = upload.read()
@@ -114,26 +113,26 @@ if tela_login():
                             if texto_p and texto_p.strip():
                                 linhas_extraidas.extend(texto_p.split('\n'))
                             else:
-                                # PDF SCAN - Converte a página em imagem e aplica OCR (Tesseract)
                                 st.toast(f"Analisando Scan na Página {i+1}...")
                                 imagens_pdf = convert_from_bytes(file_bytes, first_page=i+1, last_page=i+1)
                                 if imagens_pdf:
                                     texto_ocr = pytesseract.image_to_string(imagens_pdf[0], lang='por')
                                     linhas_extraidas.extend(texto_ocr.split('\n'))
                 else:
-                    # Upload de Imagem Direta (JPG/PNG) - Aplica OCR (Tesseract)
-                    img = Image.open(upload)
+                    # CORREÇÃO APLICADA AQUI (Blindagem da biblioteca de imagem)
+                    img = PILImage.open(upload)
                     texto_ocr = pytesseract.image_to_string(img, lang='por')
                     linhas_extraidas.extend(texto_ocr.split('\n'))
             except Exception as e:
-                st.error(f"Erro na Visão Computacional. Certifique-se de que o Tesseract-OCR está instalado no sistema. Detalhes: {e}")
+                st.error("Erro na Visão Computacional. Certifique-se de que os pacotes do servidor (Tesseract/Poppler) estão instalados. Consulte o Suporte Técnico.")
+                st.exception(e)
 
-            # Passo 2: Auditoria Cronológica (Lógica Superior/Inferior)
+            # Passo 2: Auditoria Cronológica
             for i, linha in enumerate(linhas_extraidas):
                 for t in termos:
                     if re.search(t, linha, re.IGNORECASE):
                         data_correta = "---"
-                        match_linha = re.search(r'(\d{2}/\d{2}/\d{4}|\d{2}-\d{2}-\d{4})', linha) # Suporta também datas separadas por traço comuns em OCR
+                        match_linha = re.search(r'(\d{2}/\d{2}/\d{4}|\d{2}-\d{2}-\d{4})', linha)
                         if match_linha:
                             data_correta = match_linha.group(1).replace('-', '/')
                         else:
@@ -155,7 +154,6 @@ if tela_login():
                                 if dt_v < d_inf or dt_v > d_sup: continue
                             except: pass
 
-                        # Tenta pegar valor monetário, corrigindo leitura do OCR que às vezes troca vírgula por ponto no final
                         v_m = re.findall(r'(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})', linha)
                         if v_m:
                             valor = v_m[-1].replace('.', ',') if '.' in v_m[-1][-3:] else v_m[-1]
@@ -166,7 +164,7 @@ if tela_login():
                         dados.append({"DATA": data_correta, "CATEGORIA": cat_nome.upper(), "VALOR (R$)": valor, "DESCRIÇÃO": linha[:100]})
                         break
 
-            # --- 6. EXIBIÇÃO DE RESULTADOS POR CATEGORIAS ÚNICAS ---
+            # --- 6. EXIBIÇÃO DE RESULTADOS ---
             if dados:
                 df = pd.DataFrame(dados)
                 total_rec = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR (R$)"]])
@@ -189,7 +187,7 @@ if tela_login():
             else:
                 st.info("Nenhum débito abusivo encontrado com as configurações atuais.")
 
-    # --- 7. PROCESSO DE CONSULTORIA (OS 3 PASSOS) ---
+    # --- 7. PROCESSO DE CONSULTORIA ---
     st.markdown("""
     <div class="how-it-works">
         <h3 style="font-family: 'Cinzel', serif; color: #BFAF83; text-align: center; margin-bottom: 40px; letter-spacing: 2px;">PROCESSO DE CONSULTORIA</h3>
