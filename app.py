@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from PIL import Image
 import io
+import pytesseract
+from pdf2image import convert_from_bytes
 
 # --- 1. CONFIGURAÇÃO E ESTÉTICA PREMIUM (MANUTENÇÃO TOTAL) ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
@@ -55,7 +57,7 @@ def tela_login():
     return True
 
 if tela_login():
-    # --- 3. DASHBOARD PRINCIPAL (SOFISTICAÇÃO MANTIDA) ---
+    # --- 3. DASHBOARD PRINCIPAL ---
     col_head, col_cta = st.columns([2.5, 1])
     with col_head:
         st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
@@ -64,10 +66,9 @@ if tela_login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-    # --- 4. SIDEBAR E PARÂMETROS (RÚBRICAS ATUALIZADAS EXATAMENTE COMO SOLICITADO) ---
+    # --- 4. SIDEBAR E PARÂMETROS (RÚBRICAS ATUALIZADAS) ---
     st.sidebar.markdown("### PARÂMETROS DE BUSCA")
     
-    # Dicionário com nomes exatos para exibição e regex inteligente para busca
     DICIONARIO_ALVOS = {
         "CESTA/PACOTE": "CESTA|PACOTE",
         "MORA DE OPERAÇÃO": "MORA DE OPERAÇÃO|MORA DE OPERACAO",
@@ -93,48 +94,59 @@ if tela_login():
         d_inf = st.sidebar.date_input("Início", format="DD/MM/YYYY")
         d_sup = st.sidebar.date_input("Fim", format="DD/MM/YYYY")
 
-    # --- 5. LÓGICA DE PROCESSAMENTO HÍBRIDO (DIGITAL + IMAGEM) ---
+    # --- 5. LÓGICA DE PROCESSAMENTO HÍBRIDO REAL (DIGITAL + OCR TESSERACT) ---
     st.markdown("<br>", unsafe_allow_html=True)
     upload = st.file_uploader("Upload de Extratos (PDF Digital ou Scans/Fotos/Imagens)", type=["pdf", "png", "jpg", "jpeg"])
 
     if upload:
-        with st.spinner('Executando Auditoria Crítica e Reconhecimento de Imagem...'):
+        with st.spinner('Visão Computacional Ativada: Executando Auditoria Crítica e Reconhecimento (OCR)...'):
             dados = []
             termos = [DICIONARIO_ALVOS[f] for f in selecionados]
             linhas_extraidas = []
 
-            # Passo 1: Extração Inteligente
-            if upload.type == "application/pdf":
-                with pdfplumber.open(upload) as pdf:
-                    for p in pdf.pages:
-                        texto_p = p.extract_text()
-                        if texto_p:
-                            linhas_extraidas.extend(texto_p.split('\n'))
-                        else:
-                            linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
-            else:
-                linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
+            # Passo 1: Extração Inteligente & OCR REAL
+            try:
+                if upload.type == "application/pdf":
+                    file_bytes = upload.read()
+                    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+                        for i, p in enumerate(pdf.pages):
+                            texto_p = p.extract_text()
+                            if texto_p and texto_p.strip():
+                                linhas_extraidas.extend(texto_p.split('\n'))
+                            else:
+                                # PDF SCAN - Converte a página em imagem e aplica OCR (Tesseract)
+                                st.toast(f"Analisando Scan na Página {i+1}...")
+                                imagens_pdf = convert_from_bytes(file_bytes, first_page=i+1, last_page=i+1)
+                                if imagens_pdf:
+                                    texto_ocr = pytesseract.image_to_string(imagens_pdf[0], lang='por')
+                                    linhas_extraidas.extend(texto_ocr.split('\n'))
+                else:
+                    # Upload de Imagem Direta (JPG/PNG) - Aplica OCR (Tesseract)
+                    img = Image.open(upload)
+                    texto_ocr = pytesseract.image_to_string(img, lang='por')
+                    linhas_extraidas.extend(texto_ocr.split('\n'))
+            except Exception as e:
+                st.error(f"Erro na Visão Computacional. Certifique-se de que o Tesseract-OCR está instalado no sistema. Detalhes: {e}")
 
             # Passo 2: Auditoria Cronológica (Lógica Superior/Inferior)
             for i, linha in enumerate(linhas_extraidas):
                 for t in termos:
                     if re.search(t, linha, re.IGNORECASE):
                         data_correta = "---"
-                        # Busca de data bidirecional
-                        match_linha = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+                        match_linha = re.search(r'(\d{2}/\d{2}/\d{4}|\d{2}-\d{2}-\d{4})', linha) # Suporta também datas separadas por traço comuns em OCR
                         if match_linha:
-                            data_correta = match_linha.group(1)
+                            data_correta = match_linha.group(1).replace('-', '/')
                         else:
                             for j in range(i-1, max(0, i-25), -1):
-                                m_up = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[j])
+                                m_up = re.search(r'(\d{2}/\d{2}/\d{4}|\d{2}-\d{2}-\d{4})', linhas_extraidas[j])
                                 if m_up: 
-                                    data_correta = m_up.group(1)
+                                    data_correta = m_up.group(1).replace('-', '/')
                                     break
                             if data_correta == "---":
                                 for k in range(i+1, min(i+25, len(linhas_extraidas))):
-                                    m_dw = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[k])
+                                    m_dw = re.search(r'(\d{2}/\d{2}/\d{4}|\d{2}-\d{2}-\d{4})', linhas_extraidas[k])
                                     if m_dw: 
-                                        data_correta = m_dw.group(1)
+                                        data_correta = m_dw.group(1).replace('-', '/')
                                         break
 
                         if usar_data and data_correta != "---":
@@ -143,8 +155,13 @@ if tela_login():
                                 if dt_v < d_inf or dt_v > d_sup: continue
                             except: pass
 
-                        v_m = re.findall(r'(\d[\d\.]*,\d{2})', linha)
-                        valor = v_m[-1] if v_m else "0,00"
+                        # Tenta pegar valor monetário, corrigindo leitura do OCR que às vezes troca vírgula por ponto no final
+                        v_m = re.findall(r'(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})', linha)
+                        if v_m:
+                            valor = v_m[-1].replace('.', ',') if '.' in v_m[-1][-3:] else v_m[-1]
+                        else:
+                            valor = "0,00"
+
                         cat_nome = next(k for k, v in DICIONARIO_ALVOS.items() if v == t)
                         dados.append({"DATA": data_correta, "CATEGORIA": cat_nome.upper(), "VALOR (R$)": valor, "DESCRIÇÃO": linha[:100]})
                         break
@@ -180,12 +197,12 @@ if tela_login():
             <div style="flex: 1; min-width: 250px;">
                 <div class="step-number">I</div>
                 <p style="font-weight: 600; color: #FFF;">Identificação Digital</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">O robô identifica ativos indevidos em documentos digitais ou imagens.</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">O robô identifica ativos indevidos em documentos digitais ou imagens (OCR).</p>
             </div>
             <div style="flex: 1; min-width: 250px;">
                 <div class="step-number">II</div>
                 <p style="font-weight: 600; color: #FFF;">Extração Técnica</p>
-                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de valores ocultos nos extratos bancários.</p>
+                <p style="font-size: 0.8rem; color: #94A3B8;">Captura precisa de valores ocultos nos extratos bancários físicos e digitais.</p>
             </div>
             <div style="flex: 1; min-width: 250px;">
                 <div class="step-number">III</div>
