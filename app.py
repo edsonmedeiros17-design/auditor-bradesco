@@ -64,23 +64,27 @@ if tela_login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown('<a href="https://contate.me/5592995087379" class="btn-whatsapp" target="_blank">Falar com Consultor ⚖️</a>', unsafe_allow_html=True)
 
-    # --- 4. SIDEBAR E PARÂMETROS ---
+    # --- 4. SIDEBAR E PARÂMETROS (RÚBRICAS ATUALIZADAS EXATAMENTE COMO SOLICITADO) ---
     st.sidebar.markdown("### PARÂMETROS DE BUSCA")
+    
+    # Dicionário com nomes exatos para exibição e regex inteligente para busca
     DICIONARIO_ALVOS = {
-        "Cesta / Pacote": "CESTA|PACOTE",
-        "Tarifas Bancárias": "TARIFA BANCARIA",
-        "Mora": "MORA",
-        "Baixas e Débitos (BX)": r"\bBX\b",
-        "Crédito Pessoal": "PARCELA CREDITO PESSOAL",
-        "Gastos Cartão de Crédito": "GASTOS CARTAO DE CREDITO",
-        "Seguro": "SEGURO",
-        "Adiantamento": "ADIANT",
-        "Aplicações": "APLIC",
-        "Encargos": "ENCARGOS",
-        "Anuidade": "ANUIDADE",
-        "Operações Vencidas": "OPERACOES VENCIDAS",
-        "Dívidas em Atraso": "DIV. EM ATRASO"
+        "CESTA/PACOTE": "CESTA|PACOTE",
+        "MORA DE OPERAÇÃO": "MORA DE OPERAÇÃO|MORA DE OPERACAO",
+        "MORA CREDITO PESSOAL": "MORA CREDITO PESSOAL|MORA CRÉDITO PESSOAL",
+        "MORA OPERACAO DE CREDITO": "MORA OPERACAO DE CREDITO|MORA OPERAÇÃO DE CRÉDITO",
+        "BX": r"\bBX\b",
+        "PARCELA CREDITO PESSOAL": "PARCELA CREDITO PESSOAL|PARCELA CRÉDITO PESSOAL",
+        "GASTOS CARTAO DE CREDITO": "GASTOS CARTAO DE CREDITO|GASTOS CARTÃO DE CRÉDITO",
+        "SEGURO": "SEGURO",
+        "ADIANT": "ADIANT",
+        "APLIC": "APLIC",
+        "ENCARGOS": "ENCARGOS",
+        "ANUIDADE": "ANUIDADE",
+        "OPERACOES VENCIDAS": "OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
+        "DIV. EM ATRASO": "DIV. EM ATRASO|DÍV. EM ATRASO"
     }
+    
     selecionados = [n for n in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(n, value=True)]
     
     st.sidebar.markdown("<br>### PERÍODO DE AUDITORIA", unsafe_allow_html=True)
@@ -107,10 +111,8 @@ if tela_login():
                         if texto_p:
                             linhas_extraidas.extend(texto_p.split('\n'))
                         else:
-                            # Caso o PDF seja apenas imagem (Scan)
                             linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
             else:
-                # Caso o upload seja uma imagem direta (JPG/PNG)
                 linhas_extraidas.append("PROCESSO_DE_IMAGEM_DETECTADO")
 
             # Passo 2: Auditoria Cronológica (Lógica Superior/Inferior)
@@ -123,13 +125,11 @@ if tela_login():
                         if match_linha:
                             data_correta = match_linha.group(1)
                         else:
-                            # Tenta buscar Data Superior (Anexo 2)
                             for j in range(i-1, max(0, i-25), -1):
                                 m_up = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[j])
                                 if m_up: 
                                     data_correta = m_up.group(1)
                                     break
-                            # Tenta buscar Data Inferior (Anexo 3)
                             if data_correta == "---":
                                 for k in range(i+1, min(i+25, len(linhas_extraidas))):
                                     m_dw = re.search(r'(\d{2}/\d{2}/\d{4})', linhas_extraidas[k])
