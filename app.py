@@ -57,10 +57,10 @@ DICIONARIO_ALVOS = {
     "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE"
 }
 
-# --- 3. MOTOR DE AUDITORIA INTELIGENTE (MODO 1 E 2) ---
+# --- 3. MOTOR DE AUDITORIA INTELIGENTE (MODO 1, 2 E ANTI-FRAGMENTAÇÃO) ---
 def realizar_auditoria(arquivo):
     resultados = []
-    transacoes_pendentes = [] # Buffer para capturar a data na linha de baixo (MODO 1)
+    transacoes_pendentes = [] 
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
@@ -72,40 +72,48 @@ def realizar_auditoria(arquivo):
             if not tabela: continue
             
             for linha in tabela:
-                if len(linha) < 4: continue
+                if len(linha) < 3: continue
                 
                 col_data = str(linha[0]).strip() if linha[0] else ""
-                col_hist = str(linha[1]).strip().upper() if linha[1] else ""
-                # Mapeamento para Bradesco: Débito é penúltima, Crédito antepenúltima
-                col_debito = str(linha[-2]).strip() if len(linha) >= 5 else ""
-                col_credito = str(linha[-3]).strip() if len(linha) >= 6 else ""
+                
+                # MODO 1: Se encontrar a Data âncora, atribui às transações que vieram sem data
+                if col_data and re.match(r"\d{2}/\d{2}", col_data) and transacoes_pendentes:
+                    for p in transacoes_pendentes:
+                        p["DATA"] = col_data
+                        resultados.append(p)
+                    transacoes_pendentes = []
+                
+                # Os valores sempre ficam no final (evita erro de deslocamento de coluna)
+                col_credito = str(linha[-3]).strip() if len(linha) >= 3 else ""
+                col_debito = str(linha[-2]).strip() if len(linha) >= 2 else ""
 
-                # FILTRO DE SEGURANÇA: Só entra se houver valor no DÉBITO e NADA no CRÉDITO (Azul)
-                if col_debito and "," in col_debito and not (col_credito and "," in col_credito):
+                # Validadores financeiros para evitar lixo do PDF
+                eh_valor_debito = bool(re.search(r'\d+,\d{2}', col_debito))
+                eh_valor_credito = bool(re.search(r'\d+,\d{2}', col_credito))
+
+                # ANTI-FRAGMENTAÇÃO: Junta todas as células do meio num único texto limpo
+                elementos_hist = [str(c).strip() for c in linha[1:-2] if c]
+                texto_linha_completo = " ".join(elementos_hist).upper()
+
+                # FILTRO DE SEGURANÇA: Tem débito e NÃO tem crédito
+                if eh_valor_debito and not eh_valor_credito:
                     for cat, regex in DICIONARIO_ALVOS.items():
-                        if re.search(regex, col_hist):
+                        if re.search(regex, texto_linha_completo):
                             item = {
                                 "CATEGORIA": cat, 
                                 "VALOR DÉBITO (R$)": col_debito, 
-                                "HISTÓRICO": col_hist[:60]
+                                "HISTÓRICO": texto_linha_completo[:65]
                             }
                             
-                            # MODO 2: Data na mesma linha
+                            # MODO 2: Se tiver data na própria linha, já regista.
                             if col_data and re.match(r"\d{2}/\d{2}", col_data):
                                 item["DATA"] = col_data
                                 resultados.append(item)
                             else:
-                                # MODO 1: Armazena para esperar a data na linha inferior
+                                # Vai para o MODO 1 e espera a próxima data ancorada
                                 transacoes_pendentes.append(item)
-                            break
-                
-                # GATILHO MODO 1: Linha de data isolada ancora o que estava pendente acima
-                elif col_data and re.match(r"\d{2}/\d{2}", col_data) and transacoes_pendentes:
-                    for p in transacoes_pendentes:
-                        p["DATA"] = col_data
-                        resultados.append(p)
-                    transacoes_pendentes = [] 
-                    
+                            break 
+                            
     return resultados
 
 # --- 4. INTERFACE ---
@@ -118,7 +126,7 @@ selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, val
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner('Auditando e vinculando datas...'):
+    with st.spinner('A analisar e reconstruir rubricas fragmentadas...'):
         dados = realizar_auditoria(upload)
         if dados:
             df = pd.DataFrame(dados)
