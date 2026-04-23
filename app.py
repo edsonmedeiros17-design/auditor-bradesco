@@ -1,121 +1,62 @@
 import streamlit as st
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Edson Medeiros | Excelência em Auditoria", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Edson Medeiros | Auditoria", page_icon="⚖️", layout="centered")
 
-# --- ESTILO CSS AVANÇADO ---
+# --- ESTILO CSS MINIMALISTA E LUXUOSO ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@200;400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@200;400&display=swap');
     
-    :root { --navy: #0F172A; --gold: #BFAF83; --white: #FFFFFF; }
+    :root { --navy: #0F172A; --gold: #BFAF83; }
 
     .stApp {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        color: var(--white);
+        background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+        color: #FFFFFF;
         font-family: 'Inter', sans-serif;
     }
 
-    .main-container {
+    .main-wrapper {
         text-align: center;
-        padding: 80px 40px;
-        border: 1px solid rgba(191, 175, 131, 0.15);
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(20px);
-        border-radius: 4px;
-        margin-top: 100px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin-top: 15vh;
+        padding: 40px;
     }
 
-    .brand-name {
+    .name-title {
         font-family: 'Cinzel', serif;
-        font-size: 0.8rem;
-        letter-spacing: 6px;
-        color: var(--gold);
-        text-transform: uppercase;
-        margin-bottom: 20px;
-    }
-
-    .headline {
-        font-family: 'Playfair Display', serif;
-        font-size: 3rem;
+        font-size: 3.5rem;
+        letter-spacing: 12px;
+        color: #FFFFFF;
+        margin-bottom: 5px;
         font-weight: 700;
-        line-height: 1.2;
-        margin-bottom: 30px;
-        background: linear-gradient(to right, #FFFFFF, #BFAF83, #FFFFFF);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
     }
 
-    .divider {
-        width: 60px;
-        height: 1px;
-        background: var(--gold);
-        margin: 30px auto;
-        opacity: 0.6;
+    .subtitle {
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        letter-spacing: 5px;
+        color: var(--gold);
+        margin-bottom: 60px;
+        opacity: 0.8;
     }
 
-    .status-msg {
-        font-family: 'Inter', sans-serif;
-        font-weight: 200;
-        font-size: 1.1rem;
-        line-height: 1.8;
-        color: #94A3B8;
-        max-width: 600px;
+    .maintenance-box {
+        border-top: 1px solid rgba(191, 175, 131, 0.3);
+        border-bottom: 1px solid rgba(191, 175, 131, 0.3);
+        padding: 30px 0;
+        max-width: 500px;
         margin: 0 auto;
-        font-style: italic;
     }
 
-    .highlight { color: var(--gold); font-weight: 400; }
-
-    /* Loader Minimalista */
-    .pulse {
-        width: 8px;
-        height: 8px;
-        background-color: var(--gold);
-        border-radius: 50%;
-        display: inline-block;
-        margin: 40px 5px;
-        animation: pulse 1.5s infinite ease-in-out;
+    .maintenance-text {
+        font-weight: 200;
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        color: #CBD5E1;
+        text-transform: uppercase;
     }
-    .pulse:nth-child(2) { animation-delay: 0.2s; }
-    .pulse:nth-child(3) { animation-delay: 0.4s; }
 
-    @keyframes pulse {
-        0%, 80%, 100% { opacity: 0; transform: scale(0.8); }
-        40% { opacity: 1; transform: scale(1.2); }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- CONTEÚDO DA PÁGINA ---
-st.markdown(f"""
-    <div class="main-container">
-        <div class="brand-name">Consultoria de Ativos</div>
-        <div class="headline">Aprimorando a Precisão da sua Auditoria</div>
-        
-        <div class="divider"></div>
-        
-        <div class="status-msg">
-            No momento, nossa plataforma passa por uma <span class="highlight">calibragem técnica rigorosa</span>. 
-            Estamos refinando os algoritmos de extração para assegurar que cada centavo de desconto indevido seja identificado com clareza absoluta.
-            <br><br>
-            A excelência requer tempo. Retornaremos em breve sob o comando de <span class="highlight">Edson Medeiros</span>.
-        </div>
-        
-        <div>
-            <div class="pulse"></div>
-            <div class="pulse"></div>
-            <div class="pulse"></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# Ocultar elementos padrão
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+    /* Animação Sutil */
+    .fade-in {
+        animation: fadeIn 2.5s ease-in
