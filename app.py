@@ -1,62 +1,95 @@
 import streamlit as st
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Edson Medeiros | Auditoria", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Edson Medeiros | Manutenção", page_icon="⚖️", layout="centered")
 
-# --- ESTILO CSS MINIMALISTA E LUXUOSO ---
+# --- ESTILO CSS PARA O MODO MANUTENÇÃO ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@200;400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:wght@700&family=Inter:wght@300;400&display=swap');
     
     :root { --navy: #0F172A; --gold: #BFAF83; }
 
     .stApp {
-        background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
-        color: #FFFFFF;
+        background: radial-gradient(circle, #1E293B 0%, #0F172A 100%);
+        color: #F8F9FA;
         font-family: 'Inter', sans-serif;
     }
 
-    .main-wrapper {
+    .container {
         text-align: center;
-        margin-top: 15vh;
-        padding: 40px;
+        padding: 50px;
+        border: 1px solid rgba(191, 175, 131, 0.2);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(10px);
+        margin-top: 100px;
     }
 
-    .name-title {
-        font-family: 'Cinzel', serif;
+    .title {
+        font-family: 'Playfair Display', serif;
         font-size: 3.5rem;
-        letter-spacing: 12px;
-        color: #FFFFFF;
-        margin-bottom: 5px;
-        font-weight: 700;
-        text-transform: uppercase;
+        background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 10px;
     }
 
     .subtitle {
-        font-family: 'Cinzel', serif;
-        font-size: 1rem;
-        letter-spacing: 5px;
         color: var(--gold);
-        margin-bottom: 60px;
-        opacity: 0.8;
+        letter-spacing: 3px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        margin-bottom: 40px;
     }
 
-    .maintenance-box {
-        border-top: 1px solid rgba(191, 175, 131, 0.3);
-        border-bottom: 1px solid rgba(191, 175, 131, 0.3);
-        padding: 30px 0;
+    .message {
+        font-size: 1.2rem;
+        line-height: 1.6;
+        color: #CBD5E1;
         max-width: 500px;
         margin: 0 auto;
     }
 
-    .maintenance-text {
-        font-weight: 200;
-        font-size: 1.2rem;
-        letter-spacing: 2px;
-        color: #CBD5E1;
-        text-transform: uppercase;
+    .loader {
+        margin: 30px auto;
+        border: 2px solid rgba(191, 175, 131, 0.1);
+        border-top: 2px solid var(--gold);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
     }
 
-    /* Animação Sutil */
-    .fade-in {
-        animation: fadeIn 2.5s ease-in
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- CONTEÚDO DA PÁGINA ---
+st.markdown(f"""
+    <div class="container">
+        <div class="title">Edson Medeiros</div>
+        <div class="subtitle">Consultoria de Ativos</div>
+        
+        <div class="loader"></div>
+        
+        <div class="message">
+            Estamos realizando uma <b>atualização técnica</b> em nosso motor de auditoria para garantir a máxima precisão nos seus laudos.
+            <br><br>
+            O sistema retornará em instantes com novas funcionalidades de processamento.
+        </div>
+        
+        <p style="margin-top: 50px; font-family: 'Cinzel', serif; color: #BFAF83; font-size: 0.8rem;">
+            Aguarde, estamos otimizando sua experiência.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Oculta o menu e o footer padrão do Streamlit para um visual mais limpo
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
