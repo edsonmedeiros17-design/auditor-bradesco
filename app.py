@@ -2,177 +2,104 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import re
-import io
 import PIL.Image as PILImage
 import PIL.ImageOps as PILOps
-import PIL.ImageEnhance as PILEnhance
 import pytesseract
-from pdf2image import convert_from_bytes
-import shutil
 
-# --- 1. CONFIGURAÇÃO E ESTÉTICA PREMIUM (FIDELIDADE TOTAL) ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
+# --- 1. CONFIGURAÇÃO E ESTÉTICA ---
+st.set_page_config(page_title="Edson Medeiros | Consultoria", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
-
-:root { --navy-deep: #0F172A; --gold-matte: #BFAF83; --off-white: #F8F9FA; }
-
-.stApp { background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%); color: var(--off-white); font-family: 'Inter', sans-serif; }
-
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
+:root { --navy: #0F172A; --gold: #BFAF83; }
+.stApp { background: radial-gradient(circle, #1E293B 0%, #0F172A 100%); color: #F8F9FA; font-family: 'Inter', sans-serif; }
 .consultoria-title { 
-    font-family: 'Playfair Display', serif !important; 
-    font-size: 4.5rem !important; 
-    font-weight: 700 !important; 
-    background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%); 
-    -webkit-background-clip: text; 
-    -webkit-text-fill-color: transparent; 
-    text-shadow: 0px 2px 0px #8A7650, 0px 4px 10px rgba(0,0,0,0.5); 
-    line-height: 1.1; 
-    margin-bottom: 5px; 
+    font-family: 'Playfair Display', serif; font-size: 4rem; 
+    background: linear-gradient(180deg, #FFFFFF, #BFAF83); 
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+    text-shadow: 0px 4px 10px rgba(0,0,0,0.5); text-align: center;
 }
-
-.login-card {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(191, 175, 131, 0.3);
-    border-radius: 15px;
-    padding: 40px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    text-align: center;
-}
-
-.btn-whatsapp { 
-    background-color: #25D366 !important; 
-    color: white !important; 
-    padding: 14px 28px !important; 
-    border-radius: 50px !important; 
-    text-decoration: none !important; 
-    font-weight: bold !important; 
-    display: inline-block !important; 
-    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4) !important; 
-}
-
-.impact-card { 
-    background: rgba(255, 255, 255, 0.05); 
-    border: 1px solid rgba(191, 175, 131, 0.2); 
-    border-radius: 12px; 
-    padding: 20px; 
-    text-align: center; 
-}
-
-.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold-matte); font-size: 2.2rem; margin: 0; }
-
-div[data-baseweb="input"] { background-color: rgba(255,255,255,0.05) !important; border-radius: 8px !important; }
+.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.2rem; text-align: right; }
 </style>
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. MOTOR DE PRECISÃO CIRÚRGICA ---
-def extrair_dados_linha_precisa(linha_texto):
-    # 1. Busca Data (DD/MM ou DD/MM/AAAA)
+# --- 2. MOTOR DE PRECISÃO POR COLUNA (DÉBITO vs SALDO) ---
+def extrair_valor_debito_real(linha_texto):
+    """
+    Lógica: Ignora números sem vírgula (Docto) e o último número com vírgula (Saldo).
+    O alvo é o valor de Débito, que fica entre a descrição e o saldo.
+    """
+    # 1. Busca Data
     match_data = re.search(r'(\d{2}/\d{2}(?:/\d{2,4})?)', linha_texto)
     data = match_data.group(1) if match_data else "---"
     
-    # 2. Busca Valor (O último número com vírgula da linha - Padrão Bancário)
-    matches_valor = re.findall(r'(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})', linha_texto)
-    valor = matches_valor[-1] if matches_valor else "0,00"
+    # 2. Busca todos os valores monetários (com vírgula)
+    # Exemplo na linha: "MORA CRED PESS 5070009 116,11 131,82"
+    # matches_valor resultaria em ['116,11', '131,82']
+    padrao_valor = r'\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}'
+    matches_valor = re.findall(padrao_valor, linha_texto)
     
-    return data, valor
-
-# --- 3. TELA DE ACESSO RESTRITO (MANTIDA) ---
-def tela_login():
-    if "autenticado" not in st.session_state:
-        st.session_state["autenticado"] = False
-
-    if not st.session_state["autenticado"]:
-        _, col_central, _ = st.columns([1, 1.2, 1])
-        with col_central:
-            st.markdown("<br><br><br>", unsafe_allow_html=True)
-            st.markdown("""
-                <div class="login-card">
-                    <h2 style='font-family: Cinzel; color: #BFAF83; letter-spacing: 4px;'>SISTEMA DE AUDITORIA</h2>
-                    <p style='font-size: 0.8rem; color: #64748B; margin-bottom: 30px;'>CONSULTORIA DE ATIVOS | ACESSO EXCLUSIVO</p>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            email = st.text_input("E-mail de Acesso", value="edson.senabr@gmail.com")
-            senha = st.text_input("Senha", type="password")
-            
-            if st.button("AUTENTICAR NO SERVIDOR", use_container_width=True):
-                if email == "edson.senabr@gmail.com" and senha == "medeirosefernandes2026":
-                    st.session_state["autenticado"] = True
-                    st.rerun()
-                else:
-                    st.error("Credenciais inválidas.")
-        return False
-    return True
-
-# --- 4. EXECUÇÃO DO SITE E NOVOS PARÂMETROS ---
-if tela_login():
-    col_head, col_cta = st.columns([2.5, 1])
-    with col_head:
-        st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-        st.markdown("<p style='color: #BFAF83; letter-spacing: 3px; font-size: 0.9rem;'>AUDITORIA TÉCNICA DE ALTA PRECISÃO</p>", unsafe_allow_html=True)
-
-    # --- DICIONÁRIO COMPLETO BASEADO NA IMAGEM ANEXA ---
-    st.sidebar.markdown("### PARÂMETROS DE BUSCA")
-    DICIONARIO_ALVOS = {
-        "ENC LIM CREDITO": r"ENC LIM CREDITO|ENCARGO LIMITE",
-        "IOF UTIL LIMITE": r"IOF UTIL LIMITE|IOF LIMITE",
-        "MORA CRED PESS": r"MORA CRED PESS|MORA CREDITO PESSOAL",
-        "CART CRED ANUID": r"CART CRED ANUID|ANUIDADE CARTAO",
-        "PARC CRED PESS": r"PARC CRED PESS|PARCELA CREDITO",
-        "TARIFA BANCARIA": r"TARIFA BANCARIA|TAR BANC",
-        "CESTA B EXPRESSO": r"CESTA B EXPRESSO|CESTA BANCARIA",
-        "ENCARGO 13,41%": r"ENCARGO 13,41%|ENCARGO PERCENTUAL",
-        "DEP DINHEIRO CB": r"DEP DINHEIRO CB",
-        "SALDO ANTERIOR": r"SALDO ANTERIOR",
-    }
+    valor_debito = "0,00"
     
-    selecionados = [n for n in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(n, value=True)]
-    upload = st.file_uploader("Upload de Extratos", type=["pdf", "png", "jpg", "jpeg"])
+    if len(matches_valor) >= 2:
+        # Se temos 2 ou mais valores, o primeiro é o Débito e o último é o Saldo.
+        # Pegamos o index 0 para garantir que é o DÉBITO.
+        valor_debito = matches_valor[0]
+    elif len(matches_valor) == 1:
+        # Se houver apenas um valor com vírgula, assumimos que é o valor da operação.
+        valor_debito = matches_valor[0]
+        
+    return data, valor_debito
 
-    if upload:
-        with st.spinner('Executando Varredura Linear de Precisão...'):
-            dados_finais = []
-            linhas_brutas = []
+# --- 3. INTERFACE ---
+st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 
-            # Extração (PDF/Imagem)
-            if upload.type == "application/pdf":
-                with pdfplumber.open(upload) as pdf:
-                    for p in pdf.pages:
-                        txt = p.extract_text()
-                        if txt: linhas_brutas.extend(txt.split('\n'))
-            else:
-                img = PILImage.open(upload)
-                txt_ocr = pytesseract.image_to_string(PILOps.grayscale(img), lang='por')
-                linhas_brutas.extend(txt_ocr.split('\n'))
+st.sidebar.markdown("### PARÂMETROS DE BUSCA")
+ALVOS = {
+    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
+    "ENCARGOS LIMITE": r"ENCARGOS LIMITE|ENC LIM CREDITO",
+    "TARIFAS": r"TARIFA BANCARIA|CESTA B\.EXPRESSO",
+    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE",
+    "ANUIDADE": r"CARTAO CREDITO ANUIDADE|CART CRED ANUID"
+}
 
-            # Processamento com a Trava de Linha
-            for linha in linhas_brutas:
-                for cat in selecionados:
-                    if re.search(DICIONARIO_ALVOS[cat], linha, re.IGNORECASE):
-                        data, valor = extrair_dados_linha_precisa(linha)
-                        if valor != "0,00":
-                            dados_finais.append({
-                                "DATA": data,
-                                "CATEGORIA": cat,
-                                "VALOR (R$)": valor,
-                                "DESCRIÇÃO NO EXTRATO": linha.strip()[:65]
-                            })
-                        break
+selecionados = [k for k, v in ALVOS.items() if st.sidebar.checkbox(k, value=True)]
+upload = st.file_uploader("Arraste o Extrato PDF ou Imagem", type=["pdf", "png", "jpg", "jpeg"])
 
-            if dados_finais:
-                df = pd.DataFrame(dados_finais)
-                total_float = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR (R$)"]])
-                
-                c1, c2 = st.columns(2)
-                with c1: st.markdown(f'<div class="impact-card"><h6>DÉBITOS</h6><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
-                with c2: st.markdown(f'<div class="impact-card"><h6>TOTAL</h6><h2 style="color:#BFAF83;">R$ {total_float:,.2f}</h2></div>', unsafe_allow_html=True)
+if upload:
+    with st.spinner('Auditando Colunas de Débito...'):
+        resultados = []
+        linhas = []
+        
+        if upload.type == "application/pdf":
+            with pdfplumber.open(upload) as pdf:
+                for p in pdf.pages:
+                    linhas.extend(p.extract_text().split('\n'))
+        else:
+            img = PILImage.open(upload)
+            linhas.extend(pytesseract.image_to_string(PILOps.grayscale(img), lang='por').split('\n'))
 
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.dataframe(df, use_container_width=True)
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_precisao.csv")
+        for linha in linhas:
+            for nome, regex in ALVOS.items():
+                if nome in selecionados and re.search(regex, linha, re.IGNORECASE):
+                    data, valor = extrair_valor_debito_real(linha)
+                    if valor != "0,00":
+                        resultados.append({
+                            "DATA": data,
+                            "CATEGORIA": nome,
+                            "VALOR DÉBITO (R$)": valor,
+                            "LINHA ORIGINAL": linha.strip()[:50] + "..."
+                        })
+                    break
 
-    st.markdown('<div style="text-align: right; margin-top: 50px;"><p class="footer-name">Edson Medeiros</p></div>', unsafe_allow_html=True)
+        if resultados:
+            df = pd.DataFrame(resultados)
+            st.dataframe(df, use_container_width=True)
+            total = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
+            st.metric("Total de Débitos Identificados", f"R$ {total:,.2f}")
+        else:
+            st.info("Nenhum débito encontrado com os critérios de precisão.")
+
+st.markdown('<p class="footer-name">Edson Medeiros</p>', unsafe_allow_html=True)
