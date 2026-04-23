@@ -1,91 +1,117 @@
 import streamlit as st
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Edson Medeiros | Manutenção", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Edson Medeiros | Excelência em Auditoria", page_icon="⚖️", layout="centered")
 
-# --- ESTILO CSS PARA O MODO MANUTENÇÃO ---
+# --- ESTILO CSS AVANÇADO ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:wght@700&family=Inter:wght@300;400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@200;400&display=swap');
     
-    :root { --navy: #0F172A; --gold: #BFAF83; }
+    :root { --navy: #0F172A; --gold: #BFAF83; --white: #FFFFFF; }
 
     .stApp {
-        background: radial-gradient(circle, #1E293B 0%, #0F172A 100%);
-        color: #F8F9FA;
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: var(--white);
         font-family: 'Inter', sans-serif;
     }
 
-    .container {
+    .main-container {
         text-align: center;
-        padding: 50px;
-        border: 1px solid rgba(191, 175, 131, 0.2);
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(10px);
+        padding: 80px 40px;
+        border: 1px solid rgba(191, 175, 131, 0.15);
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(20px);
+        border-radius: 4px;
         margin-top: 100px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
-    .title {
+    .brand-name {
+        font-family: 'Cinzel', serif;
+        font-size: 0.8rem;
+        letter-spacing: 6px;
+        color: var(--gold);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+    .headline {
         font-family: 'Playfair Display', serif;
-        font-size: 3.5rem;
-        background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%);
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 30px;
+        background: linear-gradient(to right, #FFFFFF, #BFAF83, #FFFFFF);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
     }
 
-    .subtitle {
-        color: var(--gold);
-        letter-spacing: 3px;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        margin-bottom: 40px;
-    }
-
-    .message {
-        font-size: 1.2rem;
-        line-height: 1.6;
-        color: #CBD5E1;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    .loader {
+    .divider {
+        width: 60px;
+        height: 1px;
+        background: var(--gold);
         margin: 30px auto;
-        border: 2px solid rgba(191, 175, 131, 0.1);
-        border-top: 2px solid var(--gold);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 2s linear infinite;
+        opacity: 0.6;
     }
 
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .status-msg {
+        font-family: 'Inter', sans-serif;
+        font-weight: 200;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #94A3B8;
+        max-width: 600px;
+        margin: 0 auto;
+        font-style: italic;
+    }
+
+    .highlight { color: var(--gold); font-weight: 400; }
+
+    /* Loader Minimalista */
+    .pulse {
+        width: 8px;
+        height: 8px;
+        background-color: var(--gold);
+        border-radius: 50%;
+        display: inline-block;
+        margin: 40px 5px;
+        animation: pulse 1.5s infinite ease-in-out;
+    }
+    .pulse:nth-child(2) { animation-delay: 0.2s; }
+    .pulse:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+        0%, 80%, 100% { opacity: 0; transform: scale(0.8); }
+        40% { opacity: 1; transform: scale(1.2); }
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # --- CONTEÚDO DA PÁGINA ---
 st.markdown(f"""
-    <div class="container">
-        <div class="title">Edson Medeiros</div>
-        <div class="subtitle">Consultoria de Ativos</div>
+    <div class="main-container">
+        <div class="brand-name">Consultoria de Ativos</div>
+        <div class="headline">Aprimorando a Precisão da sua Auditoria</div>
         
-        <div class="loader"></div>
+        <div class="divider"></div>
         
-        <div class="message">
-            Estamos realizando uma <b>atualização técnica</b> em nosso motor de auditoria para garantir a máxima precisão nos seus laudos.
+        <div class="status-msg">
+            No momento, nossa plataforma passa por uma <span class="highlight">calibragem técnica rigorosa</span>. 
+            Estamos refinando os algoritmos de extração para assegurar que cada centavo de desconto indevido seja identificado com clareza absoluta.
             <br><br>
-            O sistema retornará em instantes com novas funcionalidades de processamento.
+            A excelência requer tempo. Retornaremos em breve sob o comando de <span class="highlight">Edson Medeiros</span>.
         </div>
         
-        <p style="margin-top: 50px; font-family: 'Cinzel', serif; color: #BFAF83; font-size: 0.8rem;">
-            Aguarde, estamos otimizando sua experiência.
-        </p>
+        <div>
+            <div class="pulse"></div>
+            <div class="pulse"></div>
+            <div class="pulse"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-# Oculta o menu e o footer padrão do Streamlit para um visual mais limpo
+# Ocultar elementos padrão
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
