@@ -2,104 +2,152 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import re
-import PIL.Image as PILImage
-import PIL.ImageOps as PILOps
+from PIL import Image
 import pytesseract
 
-# --- 1. CONFIGURAÇÃO E ESTÉTICA ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria", layout="wide", page_icon="⚖️")
+# --- 1. CONFIGURAÇÃO DE DESIGN E ESTÉTICA LUXUOSA ---
+st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
-:root { --navy: #0F172A; --gold: #BFAF83; }
-.stApp { background: radial-gradient(circle, #1E293B 0%, #0F172A 100%); color: #F8F9FA; font-family: 'Inter', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
+:root { --navy: #0F172A; --gold: #BFAF83; --off-white: #F8F9FA; }
+.stApp { background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%); color: var(--off-white); font-family: 'Inter', sans-serif; }
+
 .consultoria-title { 
-    font-family: 'Playfair Display', serif; font-size: 4rem; 
-    background: linear-gradient(180deg, #FFFFFF, #BFAF83); 
+    font-family: 'Playfair Display', serif !important; 
+    font-size: 4.5rem !important; 
+    background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%); 
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-    text-shadow: 0px 4px 10px rgba(0,0,0,0.5); text-align: center;
+    text-shadow: 0px 4px 10px rgba(0,0,0,0.5); text-align: center; line-height: 1.1;
 }
-.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.2rem; text-align: right; }
+
+.impact-card { 
+    background: rgba(255, 255, 255, 0.05); 
+    border: 1px solid rgba(191, 175, 131, 0.3); 
+    border-radius: 15px; padding: 25px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.step-card {
+    background: rgba(15, 23, 42, 0.6);
+    border-left: 3px solid var(--gold);
+    padding: 20px; border-radius: 8px; margin-bottom: 20px;
+}
+
+.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.5rem; text-align: right; }
 </style>
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. MOTOR DE PRECISÃO POR COLUNA (DÉBITO vs SALDO) ---
-def extrair_valor_debito_real(linha_texto):
-    """
-    Lógica: Ignora números sem vírgula (Docto) e o último número com vírgula (Saldo).
-    O alvo é o valor de Débito, que fica entre a descrição e o saldo.
-    """
-    # 1. Busca Data
-    match_data = re.search(r'(\d{2}/\d{2}(?:/\d{2,4})?)', linha_texto)
-    data = match_data.group(1) if match_data else "---"
-    
-    # 2. Busca todos os valores monetários (com vírgula)
-    # Exemplo na linha: "MORA CRED PESS 5070009 116,11 131,82"
-    # matches_valor resultaria em ['116,11', '131,82']
-    padrao_valor = r'\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}'
-    matches_valor = re.findall(padrao_valor, linha_texto)
-    
-    valor_debito = "0,00"
-    
-    if len(matches_valor) >= 2:
-        # Se temos 2 ou mais valores, o primeiro é o Débito e o último é o Saldo.
-        # Pegamos o index 0 para garantir que é o DÉBITO.
-        valor_debito = matches_valor[0]
-    elif len(matches_valor) == 1:
-        # Se houver apenas um valor com vírgula, assumimos que é o valor da operação.
-        valor_debito = matches_valor[0]
-        
-    return data, valor_debito
-
-# --- 3. INTERFACE ---
-st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-
-st.sidebar.markdown("### PARÂMETROS DE BUSCA")
-ALVOS = {
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "ENCARGOS LIMITE": r"ENCARGOS LIMITE|ENC LIM CREDITO",
-    "TARIFAS": r"TARIFA BANCARIA|CESTA B\.EXPRESSO",
-    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE",
-    "ANUIDADE": r"CARTAO CREDITO ANUIDADE|CART CRED ANUID"
+# --- 2. PARÂMETROS DE BUSCA (RESTABELECIDOS) ---
+DICIONARIO_ALVOS = {
+    "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANC",
+    "MORA CREDITO PESSOAL": r"MORA CRED PESS|MORA CRÉDITO",
+    "MORA OPERACAO": r"MORA OPER|MORA DE OPERAÇÃO",
+    "ENCARGOS LIMITE": r"ENC LIM CREDITO|ENCARGOS",
+    "PARCELA CREDITO": r"PARC CRED PESS|PARCELA CRÉDITO",
+    "GASTOS CARTAO": r"CART CRED ANUID|ANUIDADE|GASTOS CARTÃO",
+    "SEGURO": r"SEGURO|SEGURADORA",
+    "IOF": r"IOF UTIL LIMITE|IOF S/ UTIL",
+    "ADIANT. DEPOSITANTE": r"ADIANT|DEP DINHEIRO",
+    "OPERACOES VENCIDAS": r"OPERAÇÕES VENCIDAS|DIV\. EM ATRASO",
+    "BX": r"BX ",
 }
 
-selecionados = [k for k, v in ALVOS.items() if st.sidebar.checkbox(k, value=True)]
-upload = st.file_uploader("Arraste o Extrato PDF ou Imagem", type=["pdf", "png", "jpg", "jpeg"])
+# --- 3. MOTOR DE AUDITORIA COM FILTRO DE CRÉDITO (AZUL) ---
+def auditoria_precisa(arquivo):
+    resultados = []
+    with pdfplumber.open(arquivo) as pdf:
+        for page in pdf.pages:
+            # Extração baseada em estrutura de tabela para separar Débito de Crédito
+            tabela = page.extract_table({
+                "vertical_strategy": "text", 
+                "horizontal_strategy": "text",
+                "snap_tolerance": 4
+            })
+            
+            if not tabela: continue
+            
+            for linha in tabela:
+                # Filtragem de segurança: Uma linha válida precisa de dados e histórico
+                if len(linha) < 4: continue
+                
+                texto_linha = " ".join([str(c) for c in linha if c]).upper()
+                
+                for cat, regex in DICIONARIO_ALVOS.items():
+                    if re.search(regex, texto_linha):
+                        # MAPEAMENTO DE COLUNAS BRADESCO/GENÉRICO:
+                        # [0]Data | [1]Histórico | [2]Docto | [3]Crédito | [4]Débito | [5]Saldo
+                        
+                        # Pegamos o valor da penúltima coluna (Débito)
+                        try:
+                            val_credito = linha[-3] if len(linha) >= 6 else None
+                            val_debito = linha[-2] if len(linha) >= 6 else linha[-1]
+                            
+                            # REGRA DE OURO: Se o débito estiver vazio ou for o crédito (azul), ignora.
+                            if not val_debito or val_debito in ["", "0,00", None]:
+                                continue
+                            
+                            # Se houver valor no crédito, mas o robô se confundiu, verificamos se o débito existe
+                            if val_credito and "," in str(val_credito) and not (val_debito and "," in str(val_debito)):
+                                continue
+
+                            resultados.append({
+                                "DATA": linha[0],
+                                "CATEGORIA": cat,
+                                "VALOR DÉBITO (R$)": val_debito,
+                                "ORIGEM": linha[1][:40]
+                            })
+                        except:
+                            continue
+                        break
+    return resultados
+
+# --- 4. INTERFACE PRINCIPAL ---
+st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#BFAF83; letter-spacing:2px;'>SISTEMA DE AUDITORIA TÉCNICA V.2026</p>", unsafe_allow_html=True)
+
+# Sidebar com os parâmetros restaurados
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/584/584011.png", width=50)
+st.sidebar.markdown("### FILTROS DE AUDITORIA")
+selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, value=True)]
+
+# Área de Upload (3 Passos)
+st.markdown("<br>", unsafe_allow_html=True)
+upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF) PARA ANÁLISE", type=["pdf"])
 
 if upload:
-    with st.spinner('Auditando Colunas de Débito...'):
-        resultados = []
-        linhas = []
+    with st.spinner('AUDITANDO COLUNAS... IGNORANDO CRÉDITOS (AZUL)'):
+        dados_finais = auditoria_precisa(upload)
         
-        if upload.type == "application/pdf":
-            with pdfplumber.open(upload) as pdf:
-                for p in pdf.pages:
-                    linhas.extend(p.extract_text().split('\n'))
-        else:
-            img = PILImage.open(upload)
-            linhas.extend(pytesseract.image_to_string(PILOps.grayscale(img), lang='por').split('\n'))
-
-        for linha in linhas:
-            for nome, regex in ALVOS.items():
-                if nome in selecionados and re.search(regex, linha, re.IGNORECASE):
-                    data, valor = extrair_valor_debito_real(linha)
-                    if valor != "0,00":
-                        resultados.append({
-                            "DATA": data,
-                            "CATEGORIA": nome,
-                            "VALOR DÉBITO (R$)": valor,
-                            "LINHA ORIGINAL": linha.strip()[:50] + "..."
-                        })
-                    break
-
-        if resultados:
-            df = pd.DataFrame(resultados)
+        if dados_finais:
+            df = pd.DataFrame(dados_finais)
+            
+            # Cards de Impacto Organizadom
+            c1, c2 = st.columns(2)
+            total_float = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
+            
+            with c1:
+                st.markdown(f'<div class="impact-card"><h4>DÉBITOS IDENTIFICADOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+            with c2:
+                st.markdown(f'<div class="impact-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_float:,.2f}</h2></div>', unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df, use_container_width=True)
-            total = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
-            st.metric("Total de Débitos Identificados", f"R$ {total:,.2f}")
+            st.download_button("📥 BAIXAR LAUDO TÉCNICO (CSV)", df.to_csv(index=False).encode('utf-8-sig'), "laudo_auditoria.csv")
         else:
-            st.info("Nenhum débito encontrado com os critérios de precisão.")
+            st.warning("Nenhum débito indevido encontrado com os parâmetros atuais. Créditos foram filtrados.")
+
+# --- 5. RODAPÉ TÉCNICO (3 PASSOS) ---
+st.markdown("<br><hr style='border-color: rgba(191,175,131,0.2);'><br>", unsafe_allow_html=True)
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.markdown('<div class="step-card"><strong>I - Identificação Digital</strong><br><small>Varredura de rubricas e códigos bancários via OCR de alta sensibilidade.</small></div>', unsafe_allow_html=True)
+with col_b:
+    st.markdown('<div class="step-card"><strong>II - Extração Técnica</strong><br><small>Isolamento de colunas de débito, expurgando entradas de crédito ou saldos.</small></div>', unsafe_allow_html=True)
+with col_c:
+    st.markdown('<div class="step-card"><strong>III - Certificação</strong><br><small>Geração de relatório técnico para instrução de processos de recuperação.</small></div>', unsafe_allow_html=True)
 
 st.markdown('<p class="footer-name">Edson Medeiros</p>', unsafe_allow_html=True)
