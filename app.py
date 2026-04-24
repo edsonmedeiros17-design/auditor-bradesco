@@ -3,8 +3,8 @@ import pdfplumber
 import pandas as pd
 import re
 
-# --- 1. CONFIGURAÇÃO E IDENTIDADE VISUAL (PRESERVADA) ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
+# --- 1. CONFIGURAÇÃO E IDENTIDADE VISUAL ---
+st.set_page_config(page_title="ATEEM - CONSULTORIAS", layout="wide", page_icon="⚖️")
 
 st.markdown("""
 <style>
@@ -14,7 +14,6 @@ st.markdown("""
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
     
-    /* Estilo para as Rubricas Identificadas */
     .rubrica-badge {
         display: inline-block;
         padding: 5px 12px;
@@ -99,7 +98,8 @@ def realizar_auditoria(arquivo, rubricas_alvo):
     return resultados
 
 # --- 3. DASHBOARD ---
-st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
+# Título atualizado conforme solicitação
+st.markdown('<h1 class="main-title">ATEEM - CONSULTORIAS</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Gestão Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### 🔍 CONFIGURAÇÕES")
@@ -114,12 +114,10 @@ if upload:
             df = pd.DataFrame(dados)
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
-            # --- SEÇÃO DE MÉTRICAS ---
             c1, c2 = st.columns(2)
             with c1: st.markdown(f'<div class="metric-card"><h4>VALOR TOTAL</h4><h2 style="color:#BFAF83;">R$ {df["V_NUM"].sum():,.2f}</h2></div>', unsafe_allow_html=True)
             with c2: st.markdown(f'<div class="metric-card"><h4>DÉBITOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
 
-            # --- SEÇÃO DE RESUMO ATUALIZADA ---
             st.markdown('<div class="resumo-container">', unsafe_allow_html=True)
             st.markdown('<p style="color: #64748B; font-size: 0.8rem; margin-bottom: 10px; font-weight: 600;">DESCONTOS ENCONTRADOS:</p>', unsafe_allow_html=True)
             
@@ -128,7 +126,6 @@ if upload:
             st.markdown(badge_html, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # --- TABELA E EXPORTAÇÃO ---
             st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
             st.download_button("📥 BAIXAR LAUDO", df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig'), "laudo_ativos.csv")
