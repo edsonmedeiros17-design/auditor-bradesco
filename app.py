@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS ---
+# --- 2. RÚBRICAS OFICIAIS ---
 RUBRICAS_MESTRE = {
     "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA",
     "MORA DE OPERAÇÃO": r"MORA OPERACAO|MORA DE OPERAÇÃO",
@@ -24,7 +24,7 @@ RUBRICAS_MESTRE = {
     "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
     "BX": r"\bBX\b",
     "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
-    "GASTOS CARTAO": r"GASTOS CARTAO|CARTAO DE CREDITO|CARTAO CREDITO ANUIDADE",
+    "GASTOS CARTAO": r"GASTOS CARTAO|CARTAO DE CREDITO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
     "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
     "APLIC": r"APLICACAO|APLIC\b",
@@ -34,7 +34,7 @@ RUBRICAS_MESTRE = {
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
 }
 
-# --- 3. MOTOR DE AUDITORIA COM TRAVA DE % ---
+# --- 3. MOTOR DE AUDITORIA COM TRAVA DE PROXIMIDADE ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
@@ -45,26 +45,27 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             if not texto_extraido: continue
             
             linhas = texto_extraido.split('\n')
-            for linha in linhas:
+            
+            # Controle de proximidade para não "pular" linhas demais buscando valor
+            linha_da_ultima_rubrica = -1
+            
+            for i, linha in enumerate(linhas):
                 linha_up = linha.upper()
-                
-                # 1. Identifica Data
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
-                
-                # 2. Identifica Valor (Ignora se tiver % na mesma linha/proximidade)
-                # Esta regex busca o valor mas verifica se NÃO há um % logo após
+                # Ignora valores com % (taxas) e foca em valores financeiros
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha)
                 
-                # 3. Procura Rubrica
+                # Identifica Rubrica
                 rubrica_detectada = None
-                # Se a linha contiver %, ignoramos a detecção de rubrica para evitar o erro do ANEXO 2
                 if "%" not in linha:
                     for nome in rubricas_alvo:
                         if re.search(RUBRICAS_MESTRE[nome], linha_up):
-                            rubrica_detectada = nome
-                            break
+                            # EXCEÇÃO: Se for Transferência, ignora mesmo que tenha palavra-chave
+                            if "TRANSF" not in linha_up:
+                                rubrica_detectada = nome
+                                break
                 
-                # LÓGICA DE CAPTURA
+                # SE ACHOU RÚBRICA
                 if rubrica_detectada:
                     valor = match_valor.group(1) if match_valor else "PENDENTE"
                     cesto_acumulador.append({
@@ -72,12 +73,19 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         "VALOR": valor,
                         "HISTÓRICO": linha_up[:65]
                     })
+                    linha_da_ultima_rubrica = i
                 
+                # SE ACHOU VALOR: Só aceita se a rubrica estiver na mesma linha ou na anterior
                 elif match_valor and cesto_acumulador:
                     if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+                        # TRAVA: O valor deve estar no máximo 1 linha abaixo da rubrica
+                        if i - linha_da_ultima_rubrica <= 1:
+                            cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+                        else:
+                            # Se estiver longe demais, descarta a rubrica pendente (evita erro ANEXO 1)
+                            cesto_acumulador.pop()
 
-                # SELAGEM POR DATA (Data Inferior)
+                # SELAGEM POR DATA (Data Inferior conforme ANEXO 2)
                 if match_data:
                     data_encontrada = match_data.group(1)
                     if cesto_acumulador:
@@ -91,23 +99,19 @@ def realizar_auditoria(arquivo, rubricas_alvo):
 
 # --- 4. DASHBOARD ---
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Relatório de Auditoria Técnica - Edson Medeiros</p>', unsafe_allow_html=True)
 
-# Menu Lateral
-st.sidebar.markdown("### 🔍 FILTROS DE RÚBRICA")
+st.sidebar.markdown("### 🔍 FILTROS")
 selecionadas = [r for r in RUBRICAS_MESTRE.keys() if st.sidebar.checkbox(r, value=True)]
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("Limpando nomenclaturas e validando débitos..."):
+    with st.spinner("Refinando busca e validando proximidade de valores..."):
         dados = realizar_auditoria(upload, selecionadas)
-        
         if dados:
             df = pd.DataFrame(dados)
             df = df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']]
-            
-            # Cálculo de Total
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             total = df['V_NUM'].sum()
             
@@ -119,10 +123,8 @@ if upload:
             
             st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-            
-            csv = df.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 BAIXAR LAUDO TÉCNICO", csv, "laudo_edson_medeiros.csv", "text/csv")
+            st.download_button("📥 BAIXAR RELATÓRIO", df.to_csv(index=False).encode('utf-8-sig'), "laudo_edson.csv", "text/csv")
         else:
-            st.info("Nenhum débito encontrado com as rústicas selecionadas.")
+            st.info("Nenhum débito encontrado com as rústicas e critérios de proximidade.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
