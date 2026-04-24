@@ -4,7 +4,7 @@ import pandas as pd
 import re
 
 # --- 1. CONFIGURAÇÃO DE INTERFACE LUXUOSA ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="Edson Medeiros | Consultoria Financeiro", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
 <style>
