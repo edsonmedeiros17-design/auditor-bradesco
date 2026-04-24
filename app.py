@@ -3,138 +3,122 @@ import pdfplumber
 import pandas as pd
 import re
 
-# --- 1. CONFIGURAÇÃO DE INTERFACE LUXUOSA ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria Financeiro", layout="wide", page_icon="⚖️")
+# --- 1. INTERFACE PERSONALIZADA EDSON MEDEIROS ---
+st.set_page_config(page_title="Edson Medeiros | Auditoria Pro", layout="wide", page_icon="⚖️")
 
-ESTILO_CSS = """
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
-:root { --navy: #0F172A; --gold: #BFAF83; --off-white: #F8F9FA; }
-.stApp { background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%); color: var(--off-white); font-family: 'Inter', sans-serif; }
-.consultoria-title { font-family: 'Playfair Display', serif !important; font-size: 3.5rem !important; background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; line-height: 1.1; margin-bottom: 0px; }
-.impact-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(191, 175, 131, 0.3); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.2rem; text-align: right; }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
+    .stApp { background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif; }
+    .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
+    .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
+    .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
 </style>
-"""
-st.markdown(ESTILO_CSS, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- 2. PARÂMETROS DE BUSCA EXATOS (RESTABELECIDOS) ---
+# --- 2. PARÂMETROS DE BUSCA (AS 14 RUBRICAS SOLICITADAS) ---
 DICIONARIO_ALVOS = {
-    "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA|CESTA B\.EXPRESSO",
+    "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA",
     "MORA DE OPERAÇÃO": r"MORA OPERACAO|MORA DE OPERAÇÃO",
-    "MORA CREDITO PESSOAL": r"MORA CRED PESS|MORA CREDITO PESSOAL",
+    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
     "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
     "BX": r"BX ",
-    "PARCELA CREDITO PESSOAL": r"PARC CRED PESS|PARCELA CREDITO PESSOAL",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO|CARTAO DE CREDITO|ANUIDADE",
+    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO|CARTAO DE CREDITO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG ",
-    "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
-    "APLICACAO": r"APLICACAO|APLIC ",
-    "ENCARGOS": r"ENCARGOS|ENC LIMITE|ENC LIM CREDITO|ENCARGO",
+    "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
+    "APLIC": r"APLICACAO|APLIC ",
+    "ENCARGOS": r"ENCARGOS|ENC LIMITE|ENCARGO",
     "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
     "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO",
-    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE|IOF"
+    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
 }
 
-# --- 3. MOTOR DE EXTRAÇÃO POR COLUNA (PRECISÃO BRADESCO) ---
-def realizar_auditoria(arquivo):
-    resultados = []
-    buffer_sem_data = []
-    ultima_data_valida = None
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (ANEXO 2 e 3) ---
+def auditoria_inteligente(arquivo):
+    final_data = []
+    cesto_espera = [] # Guarda rubricas que estão esperando a data aparecer abaixo
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            # Extração de tabela com estratégia de linhas horizontais para não misturar rubricas
-            tabela = page.extract_table({
-                "vertical_strategy": "lines", 
-                "horizontal_strategy": "text",
-                "snap_tolerance": 3,
-            })
+            # Extração focada em texto para lidar com scans (ANEXO 3)
+            linhas = page.extract_text().split('\n')
             
-            if not tabela: continue
-            
-            for linha in tabela:
-                # Filtragem de segurança: remove células nulas
-                linha_limpa = [str(c).strip() if c else "" for c in linha]
-                if len(linha_limpa) < 5: continue # Garante que a linha tem colunas suficientes
+            for linha in linhas:
+                linha_up = linha.upper()
+                
+                # Identifica se a linha contém uma data (Ex: 08/02/2017)
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
+                
+                # Identifica se a linha possui valor monetário (Débito)
+                # Procura padrões como 116,11 ou 19,31
+                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})", linha)
+                
+                # BUSCA DE RUBRICAS
+                rubrica_detectada = None
+                for nome, regex in DICIONARIO_ALVOS.items():
+                    if re.search(regex, linha_up):
+                        rubrica_detectada = nome
+                        break
+                
+                # LÓGICA DE VINCULAÇÃO (LENDO PARA BAIXO)
+                if rubrica_detectada and match_valor:
+                    # Encontrou a rubrica e o valor, mas não tem data na linha? 
+                    # Vai para o cesto aguardar a "Data Inferior" (ANEXO 2)
+                    item = {
+                        "CATEGORIA": rubrica_detectada,
+                        "VALOR": match_valor.group(1),
+                        "HISTÓRICO": linha_up[:60]
+                    }
+                    
+                    if match_data:
+                        item["DATA"] = match_data.group(1)
+                        final_data.append(item)
+                    else:
+                        cesto_espera.append(item)
+                
+                # SE ENCONTRAR UMA DATA SOZINHA OU EM LINHA DE FECHAMENTO
+                elif match_data and cesto_espera:
+                    data_ancora = match_data.group(1)
+                    # Descarrega o cesto aplicando a data encontrada abaixo (ANEXO 2)
+                    for pendente in cesto_espera:
+                        pendente["DATA"] = data_ancora
+                        final_data.append(pendente)
+                    cesto_espera = []
 
-                # MAPEAMENTO DE COLUNAS (PADRÃO BRADESCO CELULAR)
-                col_data = linha_limpa[0]
-                col_historico = linha_limpa[1].upper()
-                col_credito = linha_limpa[-3] # Crédito costuma ser a antepenúltima
-                col_debito = linha_limpa[-2]   # Débito costuma ser a penúltima
+    return final_data
 
-                # 1. ATUALIZA DATA ÂNCORA
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", col_data)
-                if match_data:
-                    ultima_data_valida = match_data.group(1)
+# --- 4. DASHBOARD ---
+st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Auditoria de Débitos Indevidos - Edson Medeiros</p>', unsafe_allow_html=True)
 
-                # 2. IDENTIFICA SE É UM DÉBITO REAL
-                # Ignora se houver valor no crédito e nada no débito
-                valor_texto = col_debito.replace('.', '').replace(',', '.')
-                try:
-                    valor_num = float(valor_texto) if valor_texto else 0
-                except:
-                    valor_num = 0
-
-                # Só processa se o valor de débito for maior que zero
-                if valor_num > 0:
-                    # 3. BUSCA RUBRICA NO HISTÓRICO
-                    for cat, regex in DICIONARIO_ALVOS.items():
-                        if re.search(regex, col_historico):
-                            item = {
-                                "DATA": ultima_data_valida,
-                                "CATEGORIA": cat,
-                                "VALOR DÉBITO (R$)": col_debito,
-                                "HISTÓRICO": col_historico[:80]
-                            }
-                            
-                            if ultima_data_valida:
-                                resultados.append(item)
-                            else:
-                                buffer_sem_data.append(item)
-                            break
-
-                # 4. VINCULAÇÃO RETROATIVA (Caso a data apareça na linha seguinte)
-                if ultima_data_valida and buffer_sem_data:
-                    for b in buffer_sem_data:
-                        b["DATA"] = ultima_data_valida
-                        resultados.append(b)
-                    buffer_sem_data = []
-
-    return resultados
-
-# --- 4. INTERFACE STREAMLIT ---
-st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#BFAF83; letter-spacing:2px; margin-bottom:30px;'>SISTEMA DE AUDITORIA TÉCNICA ESPECIALIZADA</p>", unsafe_allow_html=True)
-
-st.sidebar.markdown("### RUBRICAS DE AUDITORIA")
-selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, value=True)]
-
-upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+upload = st.file_uploader("📂 Faça o upload do extrato (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner('Analisando colunas e vinculando datas...'):
-        dados = realizar_auditoria(upload)
-        if dados:
-            df = pd.DataFrame(dados)
-            df = df[df['CATEGORIA'].isin(selecionados)]
+    with st.spinner("Aplicando lógica de Data Inferior e Processando Rubricas..."):
+        resultados = auditoria_inteligente(upload)
+        
+        if resultados:
+            df = pd.DataFrame(resultados)
             
-            if not df.empty:
-                total = sum([float(str(v).replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
-                
-                c1, c2 = st.columns(2)
-                c1.markdown(f'<div class="impact-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total:,.2f}</h2></div>', unsafe_allow_html=True)
-                c2.markdown(f'<div class="impact-card"><h4>DÉBITOS IDENTIFICADOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR DÉBITO (R$)', 'HISTÓRICO']], use_container_width=True)
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO (CSV)", df.to_csv(index=False).encode('utf-8-sig'), "laudo_auditoria.csv")
-            else:
-                st.info("Nenhuma rubrica selecionada foi encontrada no documento.")
+            # Formatação de Valores
+            df['NUM'] = df['VALOR'].str.replace('.','').str.replace(',','.').astype(float)
+            total_recuperavel = df['NUM'].sum()
+            
+            # Métricas
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_recuperavel:,.2f}</h2></div>', unsafe_allow_html=True)
+            with col2:
+                st.markdown(f'<div class="metric-card"><h4>DÉBITOS IDENTIFICADOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
+            
+            # Exportação
+            csv = df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 Baixar Laudo de Auditoria", csv, "auditoria_edson_medeiros.csv", "text/csv")
         else:
-            st.warning("Atenção: Não foram encontrados débitos correspondentes às rubricas neste arquivo.")
+            st.warning("Nenhum débito foi identificado com os parâmetros atuais. Verifique se o PDF possui camada de texto.")
 
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown('<p class="footer-name">Edson Medeiros</p>', unsafe_allow_html=True)
+st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic;'>Edson Medeiros</p>", unsafe_allow_html=True)
