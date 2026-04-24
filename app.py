@@ -4,7 +4,7 @@ import pandas as pd
 import re
 
 # --- 1. CONFIGURAÇÃO DE INTERFACE LUXUOSA ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="Edson Medeiros | Consultoria de Extratos Bancários", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
 <style>
@@ -54,8 +54,7 @@ DICIONARIO_ALVOS = {
     "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
     "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO",
-    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE"
-}
+   
 
 # --- 3. MOTOR DE AUDITORIA INTELIGENTE ---
 def realizar_auditoria(arquivo):
