@@ -46,7 +46,7 @@ DICIONARIO_ALVOS = {
     "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
     "BX": r"BX ",
     "PARCELA CREDITO PESSOAL": r"PARC CRED PESS|PARCELA CREDITO PESSOAL",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO|CARTAO DE CREDITO",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO|CARTAO DE CREDITO|ANUIDADE",
     "SEGURO": r"SEGURO|SEGURADORA|SEG ",
     "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
     "APLICACAO": r"APLICACAO|APLIC ",
@@ -57,7 +57,7 @@ DICIONARIO_ALVOS = {
     "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE"
 }
 
-# --- 3. MOTOR DE AUDITORIA INTELIGENTE (MODO 1, 2 E ANTI-FRAGMENTAÇÃO) ---
+# --- 3. MOTOR DE AUDITORIA INTELIGENTE ---
 def realizar_auditoria(arquivo):
     resultados = []
     transacoes_pendentes = [] 
@@ -76,44 +76,53 @@ def realizar_auditoria(arquivo):
                 
                 col_data = str(linha[0]).strip() if linha[0] else ""
                 
-                # MODO 1: Se encontrar a Data âncora, atribui às transações que vieram sem data
-                if col_data and re.match(r"\d{2}/\d{2}", col_data) and transacoes_pendentes:
-                    for p in transacoes_pendentes:
-                        p["DATA"] = col_data
-                        resultados.append(p)
-                    transacoes_pendentes = []
-                
-                # Os valores sempre ficam no final (evita erro de deslocamento de coluna)
-                col_credito = str(linha[-3]).strip() if len(linha) >= 3 else ""
-                col_debito = str(linha[-2]).strip() if len(linha) >= 2 else ""
+                # Identifica se a linha possui uma data válida
+                match_data = re.search(r"\d{2}/\d{2}(?:/\d{2,4})?", col_data)
+                data_encontrada = match_data.group(0) if match_data else None
 
-                # Validadores financeiros para evitar lixo do PDF
-                eh_valor_debito = bool(re.search(r'\d+,\d{2}', col_debito))
-                eh_valor_credito = bool(re.search(r'\d+,\d{2}', col_credito))
+                # Posições padrão do Bradesco para Débito e Crédito
+                col_debito = str(linha[-2]).strip() if len(linha) >= 4 else ""
+                col_credito = str(linha[-3]).strip() if len(linha) >= 5 else ""
 
-                # ANTI-FRAGMENTAÇÃO: Junta todas as células do meio num único texto limpo
-                elementos_hist = [str(c).strip() for c in linha[1:-2] if c]
-                texto_linha_completo = " ".join(elementos_hist).upper()
+                tem_debito = bool(re.search(r'\d+,\d{2}', col_debito))
+                tem_credito = bool(re.search(r'\d+,\d{2}', col_credito))
 
-                # FILTRO DE SEGURANÇA: Tem débito e NÃO tem crédito
-                if eh_valor_debito and not eh_valor_credito:
+                # ANTI-FRAGMENTAÇÃO: Junta todas as células da linha em um texto único
+                texto_linha_completo = " ".join([str(c).strip() for c in linha if c]).upper()
+
+                # 1. FILTRO DE VALORES: Tem débito e NÃO é crédito azul
+                if tem_debito and not tem_credito:
                     for cat, regex in DICIONARIO_ALVOS.items():
+                        # A busca agora é feita na LINHA COMPLETA unificada
                         if re.search(regex, texto_linha_completo):
                             item = {
                                 "CATEGORIA": cat, 
                                 "VALOR DÉBITO (R$)": col_debito, 
-                                "HISTÓRICO": texto_linha_completo[:65]
+                                "HISTÓRICO": texto_linha_completo[:80] # Puxa todo o contexto pro usuário ver
                             }
                             
-                            # MODO 2: Se tiver data na própria linha, já regista.
-                            if col_data and re.match(r"\d{2}/\d{2}", col_data):
-                                item["DATA"] = col_data
+                            # Se a linha já tem data, registra na hora
+                            if data_encontrada:
+                                item["DATA"] = data_encontrada
                                 resultados.append(item)
+                                # Ancora qualquer transação anterior que estava sem data (Modo 1)
+                                for p in transacoes_pendentes:
+                                    p["DATA"] = data_encontrada
+                                    resultados.append(p)
+                                transacoes_pendentes = []
                             else:
-                                # Vai para o MODO 1 e espera a próxima data ancorada
+                                # Sem data na linha: vai para a fila de espera (Modo 1)
                                 transacoes_pendentes.append(item)
-                            break 
-                            
+                            break
+                
+                # 2. GATILHO DE DATA ÂNCORA (Modo 1 isolado)
+                # Se passou uma linha sem débito, mas com data (como "13/01/2017"), usa para carimbar as pendentes
+                elif data_encontrada and transacoes_pendentes:
+                    for p in transacoes_pendentes:
+                        p["DATA"] = data_encontrada
+                        resultados.append(p)
+                    transacoes_pendentes = []
+                    
     return resultados
 
 # --- 4. INTERFACE ---
@@ -126,7 +135,7 @@ selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, val
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner('A analisar e reconstruir rubricas fragmentadas...'):
+    with st.spinner('A analisar blocos de texto e sincronizar datas...'):
         dados = realizar_auditoria(upload)
         if dados:
             df = pd.DataFrame(dados)
