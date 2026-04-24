@@ -38,26 +38,22 @@ ESTILO_CSS = """
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. PARÂMETROS DE BUSCA COMPLETOS ---
+# --- 2. DICIONÁRIO DE ALVOS (EXPANDIDO E BLINDADO) ---
+# Adicionadas variações e abreviações para não escapar NADA.
 DICIONARIO_ALVOS = {
-    "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA|CESTA B\.EXPRESSO",
-    "MORA DE OPERAÇÃO": r"MORA OPERACAO|MORA DE OPERAÇÃO",
-    "MORA CREDITO PESSOAL": r"MORA CRED PESS|MORA CREDITO PESSOAL",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
-    "BX": r"BX ",
-    "PARCELA CREDITO PESSOAL": r"PARC CRED PESS|PARCELA CREDITO PESSOAL",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO|CARTAO DE CREDITO|ANUIDADE",
-    "SEGURO": r"SEGURO|SEGURADORA|SEG ",
-    "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
-    "APLICACAO": r"APLICACAO|APLIC ",
-    "ENCARGOS": r"ENCARGOS|ENC LIMITE|ENC LIM CREDITO",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO",
-    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE"
+    "CESTA E TARIFAS": r"CESTA|PACOTE|TARIFA BANCARIA|TAR BANC|TAR\. BANC|CESTA B\.EXPRESSO|MENSALIDADE",
+    "MORA E MULTAS": r"MORA|MULTA|JUROS DE MORA|JUROS POR ATRASO|ENCARGOS DE ATRASO|MORA OPERACAO|MORA CRED PESS|MORA OPER CRED",
+    "CARTÃO E ANUIDADE": r"GASTOS CARTAO|CARTAO DE CREDITO|ANUIDADE|CARTAO CREDITO ANUIDADE",
+    "SEGUROS": r"SEGURO|SEGURADORA|SEG |PREMIO SEGURO|PROTECAO",
+    "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE|TAR ADIANT",
+    "ENCARGOS E LIMITES": r"ENCARGOS|ENC LIMITE|ENC LIM CREDITO|ENC CONTA|ENCARGOS EXCED",
+    "OPERAÇÕES E DÍVIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS|OP VENCIDAS|DIV\. EM ATRASO|DIVIDA EM ATRASO|COB DIVIDA",
+    "BAIXAS": r"\bBX\b|BAIXA COBRANCA|BX COBR",
+    "PARCELA CRÉDITO": r"PARC CRED PESS|PARCELA CREDITO PESSOAL|PARC CREDITO",
+    "TRIBUTOS (IOF)": r"\bIOF\b|IOF S/ UTILIZACAO|IOF UTIL LIMITE|IMP RETIDO"
 }
 
-# --- 3. MOTOR DE AUDITORIA INTELIGENTE ---
+# --- 3. MOTOR DE AUDITORIA INTELIGENTE (TEXTO CEGO) ---
 def realizar_auditoria(arquivo):
     resultados = []
     transacoes_pendentes = [] 
@@ -67,56 +63,61 @@ def realizar_auditoria(arquivo):
             tabela = page.extract_table({
                 "vertical_strategy": "text", 
                 "horizontal_strategy": "text", 
-                "snap_tolerance": 4
+                "snap_tolerance": 5
             })
             if not tabela: continue
             
             for linha in tabela:
-                if len(linha) < 3: continue
+                # 1. LIMPEZA TOTAL DA LINHA
+                # Junta tudo, remove espaços duplos e converte para maiúsculo
+                texto_cru = " ".join([str(c).strip() for c in linha if c and str(c).strip()])
+                texto_linha_completo = re.sub(r'\s+', ' ', texto_cru).upper()
+                if not texto_linha_completo: continue
                 
-                col_data = str(linha[0]).strip() if linha[0] else ""
+                # 2. CAÇADOR DE DATAS INDEPENDENTE
+                match_data = re.search(r"(\d{2}/\d{2}(?:/\d{2,4})?)", texto_linha_completo)
+                data_encontrada = match_data.group(1) if match_data else None
+
+                # 3. CAÇADOR DE VALORES MONETÁRIOS (\b garante que pegue números exatos como 9,58 ou 1.000,00)
+                valores_monetarios = re.findall(r"\b\d{1,3}(?:\.\d{3})*,\d{2}\b", texto_linha_completo)
+
+                # 4. VARREDURA DE RÚBRICAS EM TODA A EXTENSÃO DO TEXTO
+                rubrica_encontrada = None
+                for cat, regex in DICIONARIO_ALVOS.items():
+                    if re.search(regex, texto_linha_completo):
+                        rubrica_encontrada = cat
+                        break
                 
-                # Identifica se a linha possui uma data válida
-                match_data = re.search(r"\d{2}/\d{2}(?:/\d{2,4})?", col_data)
-                data_encontrada = match_data.group(0) if match_data else None
-
-                # Posições padrão do Bradesco para Débito e Crédito
-                col_debito = str(linha[-2]).strip() if len(linha) >= 4 else ""
-                col_credito = str(linha[-3]).strip() if len(linha) >= 5 else ""
-
-                tem_debito = bool(re.search(r'\d+,\d{2}', col_debito))
-                tem_credito = bool(re.search(r'\d+,\d{2}', col_credito))
-
-                # ANTI-FRAGMENTAÇÃO: Junta todas as células da linha em um texto único
-                texto_linha_completo = " ".join([str(c).strip() for c in linha if c]).upper()
-
-                # 1. FILTRO DE VALORES: Tem débito e NÃO é crédito azul
-                if tem_debito and not tem_credito:
-                    for cat, regex in DICIONARIO_ALVOS.items():
-                        # A busca agora é feita na LINHA COMPLETA unificada
-                        if re.search(regex, texto_linha_completo):
+                # 5. REGRA DE EXTRAÇÃO DEFINITIVA
+                # Se achou a rubrica e NÃO é um estorno/devolução
+                if rubrica_encontrada and not re.search(r"ESTORNO|RESSARCIMENTO|DEV |DEVOLUCAO", texto_linha_completo):
+                    if valores_monetarios:
+                        # Pega sempre o PRIMEIRO valor da linha (evita pegar o saldo final da conta)
+                        # Ignora valores zerados ("0,00") que as vezes aparecem como erro do PDF
+                        valores_validos = [v for v in valores_monetarios if v != "0,00"]
+                        
+                        if valores_validos:
+                            valor_transacao = valores_validos[0]
+                            
                             item = {
-                                "CATEGORIA": cat, 
-                                "VALOR DÉBITO (R$)": col_debito, 
-                                "HISTÓRICO": texto_linha_completo[:80] # Puxa todo o contexto pro usuário ver
+                                "CATEGORIA": rubrica_encontrada,
+                                "VALOR DÉBITO (R$)": valor_transacao,
+                                "HISTÓRICO": texto_linha_completo[:85] # Exibe até 85 caracteres para clareza total
                             }
                             
-                            # Se a linha já tem data, registra na hora
                             if data_encontrada:
                                 item["DATA"] = data_encontrada
                                 resultados.append(item)
-                                # Ancora qualquer transação anterior que estava sem data (Modo 1)
+                                # Carimba itens retidos na memória sem data
                                 for p in transacoes_pendentes:
                                     p["DATA"] = data_encontrada
                                     resultados.append(p)
                                 transacoes_pendentes = []
                             else:
-                                # Sem data na linha: vai para a fila de espera (Modo 1)
+                                # Fila de espera para a próxima data âncora
                                 transacoes_pendentes.append(item)
-                            break
-                
-                # 2. GATILHO DE DATA ÂNCORA (Modo 1 isolado)
-                # Se passou uma linha sem débito, mas com data (como "13/01/2017"), usa para carimbar as pendentes
+
+                # 6. GATILHO DE DATA ÂNCORA (Se a linha tiver só data, salva as pendentes)
                 elif data_encontrada and transacoes_pendentes:
                     for p in transacoes_pendentes:
                         p["DATA"] = data_encontrada
@@ -135,7 +136,7 @@ selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, val
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner('A analisar blocos de texto e sincronizar datas...'):
+    with st.spinner('Aplicando Varredura Blindada em Texto Corrido...'):
         dados = realizar_auditoria(upload)
         if dados:
             df = pd.DataFrame(dados)
@@ -150,18 +151,18 @@ if upload:
             
             st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df, use_container_width=True)
-            st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_edson.csv")
+            st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_edson_completa.csv")
         else:
             st.info("Nenhum débito indevido encontrado com os filtros atuais.")
 
-# --- 5. RODAPÉ DE CREDIBILIDADE (3 PASSOS) ---
+# --- 5. RODAPÉ DE CREDIBILIDADE ---
 st.markdown("<br><hr style='border-color: rgba(191,175,131,0.2);'><br>", unsafe_allow_html=True)
 col_a, col_b, col_c = st.columns(3)
 
 with col_a:
-    st.markdown('<div class="step-card"><strong>I - Identificação Digital</strong><br><small>Varredura por inteligência artificial em extratos nativos ou escaneados.</small></div>', unsafe_allow_html=True)
+    st.markdown('<div class="step-card"><strong>I - Identificação Digital</strong><br><small>Varredura Ominidirecional por Expressões Regulares.</small></div>', unsafe_allow_html=True)
 with col_b:
-    st.markdown('<div class="step-card"><strong>II - Extração Técnica</strong><br><small>Isolamento de colunas de débito e correlação de datas por âncora inferior.</small></div>', unsafe_allow_html=True)
+    st.markdown('<div class="step-card"><strong>II - Extração Técnica</strong><br><small>Isolamento automático de valores e datas em texto corrido.</small></div>', unsafe_allow_html=True)
 with col_c:
     st.markdown('<div class="step-card"><strong>III - Certificação de Ativos</strong><br><small>Geração de relatório técnico para instrução de processos judiciais.</small></div>', unsafe_allow_html=True)
 
