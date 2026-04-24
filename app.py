@@ -4,41 +4,21 @@ import pandas as pd
 import re
 
 # --- 1. CONFIGURAÇÃO DE INTERFACE LUXUOSA ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Extratos Bancários", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
 ESTILO_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;600&family=Great+Vibes&display=swap');
 :root { --navy: #0F172A; --gold: #BFAF83; --off-white: #F8F9FA; }
 .stApp { background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%); color: var(--off-white); font-family: 'Inter', sans-serif; }
-
-.consultoria-title { 
-    font-family: 'Playfair Display', serif !important; 
-    font-size: 4.5rem !important; 
-    background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%); 
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-    text-shadow: 0px 4px 10px rgba(0,0,0,0.5); text-align: center; line-height: 1.1;
-}
-
-.impact-card { 
-    background: rgba(255, 255, 255, 0.05); 
-    border: 1px solid rgba(191, 175, 131, 0.3); 
-    border-radius: 15px; padding: 25px; text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.step-card {
-    background: rgba(15, 23, 42, 0.6);
-    border-left: 3px solid var(--gold);
-    padding: 20px; border-radius: 8px; margin-bottom: 20px;
-}
-
-.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.5rem; text-align: right; }
+.consultoria-title { font-family: 'Playfair Display', serif !important; font-size: 3.5rem !important; background: linear-gradient(180deg, #FFFFFF 0%, #BFAF83 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; line-height: 1.1; margin-bottom: 0px; }
+.impact-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(191, 175, 131, 0.3); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.footer-name { font-family: 'Great Vibes', cursive; color: var(--gold); font-size: 2.2rem; text-align: right; }
 </style>
 """
 st.markdown(ESTILO_CSS, unsafe_allow_html=True)
 
-# --- 2. PARÂMETROS DE BUSCA (RESTAURADOS E COMPLETOS) ---
+# --- 2. PARÂMETROS DE BUSCA EXATOS (RESTABELECIDOS) ---
 DICIONARIO_ALVOS = {
     "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA|CESTA B\.EXPRESSO",
     "MORA DE OPERAÇÃO": r"MORA OPERACAO|MORA DE OPERAÇÃO",
@@ -50,119 +30,111 @@ DICIONARIO_ALVOS = {
     "SEGURO": r"SEGURO|SEGURADORA|SEG ",
     "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
     "APLICACAO": r"APLICACAO|APLIC ",
-    "ENCARGOS": r"ENCARGOS|ENC LIMITE|ENC LIM CREDITO",
+    "ENCARGOS": r"ENCARGOS|ENC LIMITE|ENC LIM CREDITO|ENCARGO",
     "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
     "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO",
-   
+    "IOF": r"IOF S/ UTILIZACAO|IOF UTIL LIMITE|IOF"
+}
 
-# --- 3. MOTOR DE AUDITORIA INTELIGENTE ---
+# --- 3. MOTOR DE EXTRAÇÃO POR COLUNA (PRECISÃO BRADESCO) ---
 def realizar_auditoria(arquivo):
     resultados = []
-    transacoes_pendentes = [] 
+    buffer_sem_data = []
+    ultima_data_valida = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
+            # Extração de tabela com estratégia de linhas horizontais para não misturar rubricas
             tabela = page.extract_table({
-                "vertical_strategy": "text", 
-                "horizontal_strategy": "text", 
-                "snap_tolerance": 5
+                "vertical_strategy": "lines", 
+                "horizontal_strategy": "text",
+                "snap_tolerance": 3,
             })
+            
             if not tabela: continue
             
             for linha in tabela:
-                # UNE TODA A LINHA EM UMA STRING SÓ E LIMPA ESPAÇOS EXTRAS
-                texto_cru = " ".join([str(c).strip() for c in linha if c and str(c).strip()])
-                texto_linha_completo = re.sub(r'\s+', ' ', texto_cru).upper()
-                if not texto_linha_completo: continue
-                
-                # Procura a data em qualquer lugar da linha
-                match_data = re.search(r"(\d{2}/\d{2}(?:/\d{2,4})?)", texto_linha_completo)
-                data_encontrada = match_data.group(1) if match_data else None
+                # Filtragem de segurança: remove células nulas
+                linha_limpa = [str(c).strip() if c else "" for c in linha]
+                if len(linha_limpa) < 5: continue # Garante que a linha tem colunas suficientes
 
-                # Procura valores monetários (Ex: 9,58)
-                valores_monetarios = re.findall(r"\b\d{1,3}(?:\.\d{3})*,\d{2}\b", texto_linha_completo)
+                # MAPEAMENTO DE COLUNAS (PADRÃO BRADESCO CELULAR)
+                col_data = linha_limpa[0]
+                col_historico = linha_limpa[1].upper()
+                col_credito = linha_limpa[-3] # Crédito costuma ser a antepenúltima
+                col_debito = linha_limpa[-2]   # Débito costuma ser a penúltima
 
-                # Busca cada rubrica individualmente
-                rubrica_encontrada = None
-                for cat, regex in DICIONARIO_ALVOS.items():
-                    if re.search(regex, texto_linha_completo):
-                        rubrica_encontrada = cat
-                        break
-                
-                # Se achou rubrica e tem valor, processa:
-                if rubrica_encontrada and not re.search(r"ESTORNO|RESSARCIMENTO", texto_linha_completo):
-                    # Filtra valores para não pegar o 0,00 que às vezes o leitor gera por erro
-                    valores_validos = [v for v in valores_monetarios if v != "0,00"]
-                    
-                    if valores_validos:
-                        valor_transacao = valores_validos[0] # Pega o valor do débito
-                        
-                        item = {
-                            "CATEGORIA": rubrica_encontrada,
-                            "VALOR DÉBITO (R$)": valor_transacao,
-                            "HISTÓRICO": texto_linha_completo[:85]
-                        }
-                        
-                        if data_encontrada:
-                            item["DATA"] = data_encontrada
-                            resultados.append(item)
-                            # Sincroniza itens que estavam aguardando data
-                            for p in transacoes_pendentes:
-                                p["DATA"] = data_encontrada
-                                resultados.append(p)
-                            transacoes_pendentes = []
-                        else:
-                            transacoes_pendentes.append(item)
+                # 1. ATUALIZA DATA ÂNCORA
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", col_data)
+                if match_data:
+                    ultima_data_valida = match_data.group(1)
 
-                # Gatilho de Data Âncora
-                elif data_encontrada and transacoes_pendentes:
-                    for p in transacoes_pendentes:
-                        p["DATA"] = data_encontrada
-                        resultados.append(p)
-                    transacoes_pendentes = []
-                    
+                # 2. IDENTIFICA SE É UM DÉBITO REAL
+                # Ignora se houver valor no crédito e nada no débito
+                valor_texto = col_debito.replace('.', '').replace(',', '.')
+                try:
+                    valor_num = float(valor_texto) if valor_texto else 0
+                except:
+                    valor_num = 0
+
+                # Só processa se o valor de débito for maior que zero
+                if valor_num > 0:
+                    # 3. BUSCA RUBRICA NO HISTÓRICO
+                    for cat, regex in DICIONARIO_ALVOS.items():
+                        if re.search(regex, col_historico):
+                            item = {
+                                "DATA": ultima_data_valida,
+                                "CATEGORIA": cat,
+                                "VALOR DÉBITO (R$)": col_debito,
+                                "HISTÓRICO": col_historico[:80]
+                            }
+                            
+                            if ultima_data_valida:
+                                resultados.append(item)
+                            else:
+                                buffer_sem_data.append(item)
+                            break
+
+                # 4. VINCULAÇÃO RETROATIVA (Caso a data apareça na linha seguinte)
+                if ultima_data_valida and buffer_sem_data:
+                    for b in buffer_sem_data:
+                        b["DATA"] = ultima_data_valida
+                        resultados.append(b)
+                    buffer_sem_data = []
+
     return resultados
 
-# --- 4. INTERFACE ---
+# --- 4. INTERFACE STREAMLIT ---
 st.markdown('<h1 class="consultoria-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#BFAF83; letter-spacing:2px;'>SISTEMA DE AUDITORIA TÉCNICA ESPECIALIZADA</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#BFAF83; letter-spacing:2px; margin-bottom:30px;'>SISTEMA DE AUDITORIA TÉCNICA ESPECIALIZADA</p>", unsafe_allow_html=True)
 
-st.sidebar.markdown("### PARÂMETROS DE AUDITORIA")
-# Permite ao Edson escolher quais rubricas quer buscar
-selecionados = []
-for k in DICIONARIO_ALVOS.keys():
-    if st.sidebar.checkbox(k, value=True):
-        selecionados.append(k)
+st.sidebar.markdown("### RUBRICAS DE AUDITORIA")
+selecionados = [k for k in DICIONARIO_ALVOS.keys() if st.sidebar.checkbox(k, value=True)]
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner('Realizando varredura detalhada em todas as rubricas...'):
+    with st.spinner('Analisando colunas e vinculando datas...'):
         dados = realizar_auditoria(upload)
         if dados:
             df = pd.DataFrame(dados)
-            # Filtra apenas o que o usuário selecionou no sidebar
             df = df[df['CATEGORIA'].isin(selecionados)]
             
             if not df.empty:
-                if "DATA" in df.columns:
-                    df = df[['DATA', 'CATEGORIA', 'VALOR DÉBITO (R$)', 'HISTÓRICO']]
-                
-                total = sum([float(v.replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
+                total = sum([float(str(v).replace('.','').replace(',','.')) for v in df["VALOR DÉBITO (R$)"]])
                 
                 c1, c2 = st.columns(2)
                 c1.markdown(f'<div class="impact-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total:,.2f}</h2></div>', unsafe_allow_html=True)
-                c2.markdown(f'<div class="impact-card"><h4>OCORRÊNCIAS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                c2.markdown(f'<div class="impact-card"><h4>DÉBITOS IDENTIFICADOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
                 
                 st.markdown("<br>", unsafe_allow_html=True)
-                st.dataframe(df, use_container_width=True)
-                st.download_button("📥 BAIXAR LAUDO TÉCNICO", df.to_csv(index=False).encode('utf-8-sig'), "auditoria_edson_completa.csv")
+                st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR DÉBITO (R$)', 'HISTÓRICO']], use_container_width=True)
+                st.download_button("📥 BAIXAR LAUDO TÉCNICO (CSV)", df.to_csv(index=False).encode('utf-8-sig'), "laudo_auditoria.csv")
             else:
-                st.info("Nenhuma das rubricas selecionadas foi encontrada.")
+                st.info("Nenhuma rubrica selecionada foi encontrada no documento.")
         else:
-            st.info("Nenhum débito indevido encontrado.")
+            st.warning("Atenção: Não foram encontrados débitos correspondentes às rubricas neste arquivo.")
 
-# --- 5. RODAPÉ ---
-st.markdown("<br><hr style='border-color: rgba(191,175,131,0.2);'><br>", unsafe_allow_html=True)
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown('<p class="footer-name">Edson Medeiros</p>', unsafe_allow_html=True)
