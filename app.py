@@ -2,6 +2,9 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import re
+from pdf2image import convert_from_bytes
+import pytesseract
+import PIL.Image
 
 # --- 1. CONFIGURAÇÃO E IDENTIDADE VISUAL ---
 st.set_page_config(page_title="ATEEM - CONSULTORIAS", layout="wide", page_icon="⚖️")
@@ -13,123 +16,100 @@ st.markdown("""
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
-    
-    .rubrica-badge {
-        display: inline-block;
-        padding: 5px 12px;
-        margin: 5px;
-        border-radius: 20px;
-        background: rgba(191, 175, 131, 0.15);
-        border: 1px solid #BFAF83;
-        color: #BFAF83;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    .resumo-container {
-        background: rgba(255,255,255,0.02);
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 20px;
-        border-left: 4px solid #BFAF83;
-    }
+    .rubrica-badge { display: inline-block; padding: 5px 12px; margin: 5px; border-radius: 20px; background: rgba(191, 175, 131, 0.15); border: 1px solid #BFAF83; color: #BFAF83; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. MOTOR DE BUSCA (CONGELADO - PROTEÇÃO ATEEM) ---
+# --- 2. NOVOS PARÂMETROS (INCLUINDO NOMENCLATURAS ESCANEADAS) ---
 RUBRICAS_MESTRE = {
-    "CESTA/PACOTE": r"CESTA|PACOTE|TARIFA BANCARIA",
-    "MORA DE OPERAÇÃO": r"MORA OPERACAO|MORA DE OPERAÇÃO",
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
-    "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
-    "GASTOS CARTAO": r"GASTOS CARTAO|CARTAO DE CREDITO",
-    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT. DEPOSITANTE": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
-    "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
+    "PAGTO COBRANCA": r"PAGTO COBRANCA|BRADESCO VIDA E PREVIDENCIA|PACTO COBRANCA",
+    "ENCARGOS LIMITE": r"ENC LIMITE|ENC LIM CREDITO|ENCARGO\d",
+    "ANUIDADE CARTÃO": r"CART CRED ANUID|ANUIDADE",
+    "CREDITO PESSOAL": r"PARC CRED PESS|PARCELA CREDITO PESSOAL",
+    "CESTA BANCÁRIA": r"CESTA|TARIFA BANCARIA",
+    "MORA/JUROS": r"MORA|JUROS|IOF UTIL LIMITE"
 }
 
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
-
-def realizar_auditoria(arquivo, rubricas_alvo):
-    resultados = []
-    cesto_acumulador = []
-    with pdfplumber.open(arquivo) as pdf:
+# --- 3. MOTOR DE INTELIGÊNCIA HÍBRIDA (DIGITAL + OCR) ---
+def extrair_texto_pdf(arquivo_bytes):
+    texto_total = ""
+    with pdfplumber.open(arquivo_bytes) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
-            if not texto: continue
-            linhas = texto.split('\n')
-            for linha in linhas:
-                linha_up = linha.upper()
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
-                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha)
-                
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
-                    continue 
+            extraido = page.extract_text()
+            if extraido: # É digital
+                texto_total += extraido + "\n"
+            else: # É escaneado/imagem (Ativa OCR)
+                # Nota: Em ambiente local, requer instalação do Tesseract OCR
+                imagens = convert_from_bytes(arquivo_bytes.read())
+                for img in imagens:
+                    texto_total += pytesseract.image_to_string(img, lang='por')
+    return texto_total
 
-                rubrica_detectada = None
-                if "%" not in linha:
-                    for nome in rubricas_alvo:
-                        if re.search(RUBRICAS_MESTRE[nome], linha_up):
-                            rubrica_detectada = nome
-                            break
-                
-                if rubrica_detectada:
-                    valor = match_valor.group(1) if match_valor else "PENDENTE"
-                    cesto_acumulador.append({"CATEGORIA": rubrica_detectada, "VALOR": valor, "HISTÓRICO": linha_up[:65]})
-                elif match_valor and cesto_acumulador:
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+def realizar_auditoria_avancada(texto, rubricas_alvo):
+    resultados = []
+    linhas = texto.split('\n')
+    data_atual = "Não Identificada"
+    
+    # Termos de reset preservados (ATEEM lock)
+    TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-                if match_data:
-                    data_encontrada = match_data.group(1)
-                    if cesto_acumulador:
-                        for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE":
-                                item["DATA"] = data_encontrada
-                                resultados.append(item)
-                        cesto_acumulador = []
+    for linha in linhas:
+        linha_up = linha.upper()
+        
+        # 1. Identifica Data (Padrão de extrato impresso costuma ser DD/MM)
+        match_data = re.search(r"(\d{2}/\d{2}(?:/\d{2,4})?)", linha)
+        if match_data: data_atual = match_data.group(1)
+
+        # 2. Reset de segurança (conforme sua regra)
+        if re.search(TERMOS_EXCLUSAO, linha_up): continue
+
+        # 3. Identifica Valor com sinal de menos (Ex: 16,75-) conforme ANEXO 2
+        # A regex busca o valor seguido opcionalmente por um "-"
+        match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})[- ]?", linha)
+
+        if match_valor:
+            valor_texto = match_valor.group(1)
+            # Verifica se a rubrica está na linha
+            for nome in rubricas_alvo:
+                if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                    resultados.append({
+                        "DATA": data_atual,
+                        "CATEGORIA": nome,
+                        "VALOR": valor_texto,
+                        "HISTÓRICO": linha_up[:50]
+                    })
+                    break
     return resultados
 
-# --- 3. DASHBOARD ---
-# Título atualizado conforme solicitação
+# --- 4. INTERFACE ---
 st.markdown('<h1 class="main-title">ATEEM - CONSULTORIAS</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Gestão Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Inovação em Auditoria de Extratos Escaneados</p>', unsafe_allow_html=True)
 
-st.sidebar.markdown("### 🔍 CONFIGURAÇÕES")
-selecionadas = [r for r in RUBRICAS_MESTRE.keys() if st.sidebar.checkbox(r, value=True)]
-
-upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+upload = st.file_uploader("📂 SOLTE O EXTRATO AQUI (DIGITAL OU ESCANEADO)", type=["pdf", "png", "jpg"])
 
 if upload:
-    with st.spinner("Auditando movimentações..."):
-        dados = realizar_auditoria(upload, selecionadas)
+    with st.spinner("O Robô está 'lendo' o documento impresso..."):
+        # Processamento
+        texto_completo = extrair_texto_pdf(upload)
+        dados = realizar_auditoria_avancada(texto_completo, list(RUBRICAS_MESTRE.keys()))
+        
         if dados:
             df = pd.DataFrame(dados)
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
+            # Métricas
             c1, c2 = st.columns(2)
-            with c1: st.markdown(f'<div class="metric-card"><h4>VALOR TOTAL</h4><h2 style="color:#BFAF83;">R$ {df["V_NUM"].sum():,.2f}</h2></div>', unsafe_allow_html=True)
-            with c2: st.markdown(f'<div class="metric-card"><h4>DÉBITOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL IDENTIFICADO</h4><h2 style="color:#BFAF83;">R$ {df["V_NUM"].sum():,.2f}</h2></div>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="metric-card"><h4>DESCONTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
 
-            st.markdown('<div class="resumo-container">', unsafe_allow_html=True)
-            st.markdown('<p style="color: #64748B; font-size: 0.8rem; margin-bottom: 10px; font-weight: 600;">DESCONTOS ENCONTRADOS:</p>', unsafe_allow_html=True)
-            
-            rubricas_unicas = df['CATEGORIA'].unique()
-            badge_html = "".join([f'<span class="rubrica-badge">{r}</span>' for r in rubricas_unicas])
-            st.markdown(badge_html, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Badges de Descontos Encontrados
+            st.markdown('<p style="color: #64748B; font-weight: 600; margin-top:20px;">DESCONTOS ENCONTRADOS:</p>', unsafe_allow_html=True)
+            for r in df['CATEGORIA'].unique():
+                st.markdown(f'<span class="rubrica-badge">{r}</span>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-            st.download_button("📥 BAIXAR LAUDO", df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig'), "laudo_ativos.csv")
         else:
-            st.info("Nenhuma rubrica identificada com os filtros atuais.")
+            st.warning("Nenhum débito indevido identificado. Verifique a qualidade do escaneamento.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
