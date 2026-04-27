@@ -127,3 +127,5 @@ if upload:
         st.info("Varredura concluída. Nenhuma rubrica da lista foi identificada.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
+
+# atualização de segurança ATEEM
