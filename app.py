@@ -13,6 +13,14 @@ st.markdown("""
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
+    .relatorio-titulo { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #BFAF83; text-align: center; margin-top: 40px; margin-bottom: 20px; }
+    .relatorio-subtitulo { text-align: center; color: #64748B; font-size: 0.95rem; margin-bottom: 20px; }
+    .tabela-relatorio { width: 100%; border-collapse: collapse; }
+    .tabela-relatorio th { background-color: rgba(191, 175, 131, 0.2); color: #BFAF83; padding: 12px; text-align: left; border-bottom: 2px solid #BFAF83; font-weight: 600; }
+    .tabela-relatorio td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .tabela-relatorio tr:hover { background-color: rgba(191, 175, 131, 0.05); }
+    .total-row { background-color: rgba(191, 175, 131, 0.15); font-weight: 600; }
+    .total-row td { border-top: 2px solid #BFAF83; border-bottom: 2px solid #BFAF83; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -93,7 +101,34 @@ def realizar_auditoria(arquivo, rubricas_alvo):
 
     return resultados
 
-# --- 4. DASHBOARD ---
+# --- 4. FUNÇÃO PARA GERAR RELATÓRIO CONSOLIDADO ---
+def gerar_relatorio_consolidado(df):
+    """
+    Gera um relatório consolidado com datas nas linhas e categorias nas colunas.
+    """
+    # Converter valores para numérico
+    df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+    
+    # Criar pivot table com datas nas linhas e categorias nas colunas
+    relatorio = df.pivot_table(
+        index='DATA',
+        columns='CATEGORIA',
+        values='V_NUM',
+        aggfunc='sum',
+        fill_value=0
+    )
+    
+    # Adicionar coluna de total por data
+    relatorio['TOTAL POR DATA'] = relatorio.sum(axis=1)
+    
+    # Adicionar linha de total por categoria
+    totais = relatorio.sum()
+    totais.name = 'TOTAL POR CATEGORIA'
+    relatorio = pd.concat([relatorio, totais.to_frame().T])
+    
+    return relatorio
+
+# --- 5. DASHBOARD ---
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
@@ -115,8 +150,68 @@ if upload:
             with c2: st.markdown(f'<div class="metric-card"><h4>OCORRÊNCIAS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-            st.download_button("📥 BAIXAR LAUDO", df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig'), "laudo_edson.csv")
+            
+            # --- EXIBIR RELATÓRIO CONSOLIDADO ---
+            st.markdown('<h2 class="relatorio-titulo">📊 Relatório Consolidado</h2>', unsafe_allow_html=True)
+            st.markdown('<p class="relatorio-subtitulo">Análise detalhada por categoria e data</p>', unsafe_allow_html=True)
+            
+            # Gerar relatório consolidado
+            relatorio = gerar_relatorio_consolidado(df)
+            
+            # Formatar valores para exibição em reais
+            relatorio_formatado = relatorio.copy()
+            for col in relatorio_formatado.columns:
+                if col != 'TOTAL POR DATA':
+                    relatorio_formatado[col] = relatorio_formatado[col].apply(lambda x: f"R$ {x:,.2f}" if x > 0 else "-")
+                else:
+                    relatorio_formatado[col] = relatorio_formatado[col].apply(lambda x: f"R$ {x:,.2f}")
+            
+            # Exibir tabela formatada
+            st.dataframe(relatorio_formatado, use_container_width=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # --- EXIBIR DETALHAMENTO POR CATEGORIA ---
+            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Detalhamento por Categoria</h3>', unsafe_allow_html=True)
+            
+            # Criar abas para cada categoria
+            categorias = df['CATEGORIA'].unique()
+            tabs = st.tabs([f"📌 {cat}" for cat in categorias])
+            
+            for tab, categoria in zip(tabs, categorias):
+                with tab:
+                    df_categoria = df[df['CATEGORIA'] == categoria][['DATA', 'VALOR', 'HISTÓRICO']].sort_values('DATA')
+                    st.dataframe(df_categoria, use_container_width=True)
+                    
+                    # Total da categoria
+                    total_categoria = df_categoria['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float).sum()
+                    st.markdown(f"<p style='text-align:right; color:#BFAF83; font-weight:bold;'>Total: R$ {total_categoria:,.2f}</p>", unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # --- OPÇÃO DE DOWNLOAD ---
+            st.markdown('<h3 style="color:#BFAF83; text-align:center;">📥 Exportar Dados</h3>', unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Download do relatório consolidado
+                relatorio_csv = relatorio.to_csv()
+                st.download_button(
+                    label="📊 Baixar Relatório Consolidado (CSV)",
+                    data=relatorio_csv.encode('utf-8-sig'),
+                    file_name="relatorio_consolidado.csv",
+                    mime="text/csv"
+                )
+            
+            with col2:
+                # Download dos dados detalhados
+                st.download_button(
+                    label="📋 Baixar Dados Detalhados (CSV)",
+                    data=df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig'),
+                    file_name="laudo_edson_detalhado.csv",
+                    mime="text/csv"
+                )
         else:
             st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
