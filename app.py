@@ -14,8 +14,8 @@ st.markdown("""
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
-    .relatorio-titulo { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #BFAF83; text-align: center; margin-top: 40px; margin-bottom: 20px; }
-    .relatorio-subtitulo { text-align: center; color: #64748B; font-size: 0.95rem; margin-bottom: 20px; }
+    .relatorio-titulo { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #BFAF83; text-align: center; margin-top: 40px; margin-bottom: 10px; }
+    .relatorio-subtitulo { text-align: center; color: #64748B; font-size: 0.95rem; margin-bottom: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -39,7 +39,7 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR COM RESET DE MEMÓRIA ---
+# --- 3. MOTOR DE AUDITORIA ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
@@ -53,16 +53,16 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             for linha in linhas:
                 linha_up = linha.upper()
                 
-                # 1. Identifica Data e Valor
+                # Identifica Data e Valor
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha)
                 
-                # 2. Reset por Termos de Exclusão
+                # Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
                     cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
                     continue 
 
-                # 3. Busca Rubrica
+                # Busca Rubrica
                 rubrica_detectada = None
                 if "%" not in linha:
                     for nome in rubricas_alvo:
@@ -70,9 +70,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # 4. Lógica de Captura
+                # Lógica de Captura
                 if rubrica_detectada:
-                    valor = match_valor.group(1) if match_valor else "PENDENTE"
+                    valor = match_valor.group(1) if match_valor else "0,00" # Evita "PENDENTE" para não quebrar cálculos
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
                         "VALOR": valor,
@@ -80,73 +80,61 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     })
                 
                 elif match_valor and cesto_acumulador:
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
+                    if cesto_acumulador[-1]["VALOR"] == "0,00":
                         cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
 
-                # 5. Selagem por Data (Correção de Ano para 4 dígitos se necessário)
+                # Selagem por Data
                 if match_data:
                     data_str = match_data.group(1)
                     if cesto_acumulador:
                         for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE":
-                                item["DATA"] = data_str
-                                resultados.append(item)
+                            item["DATA"] = data_str
+                            resultados.append(item)
                         cesto_acumulador = []
 
     return resultados
 
-# --- 4. TRATAMENTO E ORDENAÇÃO DE DADOS ---
+# --- 4. PROCESSAMENTO DE DADOS ---
 def processar_dataframe(dados):
     if not dados:
         return None
     
     df = pd.DataFrame(dados)
     
-    # 1. Limpeza e Conversão de Valores
+    # Conversão de Valores (Garante que seja numérico)
     df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
     
-    # 2. Conversão de Datas para Ordenação Real
-    # Tenta lidar com anos de 2 ou 4 dígitos
-    def formatar_data(d):
-        partes = d.split('/')
-        if len(partes[2]) == 2:
-            partes[2] = "20" + partes[2] # Assume século 21
-        return "/".join(partes)
-
-    df['DATA_OBJ'] = pd.to_datetime(df['DATA'].apply(formatar_data), format='%d/%m/%Y')
+    # Padronização de Datas para Ordenação
+    def normalizar_data(d):
+        p = d.split('/')
+        if len(p[2]) == 2: p[2] = "20" + p[2]
+        return "/".join(p)
     
-    # 3. Ordenação Cronológica Crescente
-    df = df.sort_values(by='DATA_OBJ', ascending=True).drop(columns=['DATA_OBJ'])
+    df['DATA_OBJ'] = pd.to_datetime(df['DATA'].apply(normalizar_data), format='%d/%m/%Y', errors='coerce')
+    df = df.sort_values(by='DATA_OBJ', ascending=True)
     
     return df
 
 def gerar_relatorio_consolidado(df):
-    # Re-adicionar objeto de data temporariamente para garantir ordem no pivot
-    def formatar_data(d):
-        partes = d.split('/')
-        if len(partes[2]) == 2: partes[2] = "20" + partes[2]
-        return "/".join(partes)
-    
-    df_temp = df.copy()
-    df_temp['DATA_SORT'] = pd.to_datetime(df_temp['DATA'].apply(formatar_data), format='%d/%m/%Y')
-    
-    # Pivot Table
-    relatorio = df_temp.pivot_table(
-        index=['DATA_SORT', 'DATA'],
+    # Pivot Table usando a data original (string) mas mantendo a ordem do DATA_OBJ
+    relatorio = df.pivot_table(
+        index=['DATA_OBJ', 'DATA'],
         columns='CATEGORIA',
         values='V_NUM',
         aggfunc='sum',
         fill_value=0
     )
     
-    # Remover o índice de ordenação, mantendo apenas a string da DATA
+    # Limpa o índice multinível para ficar apenas com a DATA formatada
     relatorio = relatorio.reset_index(level=0, drop=True)
     
-    # Adicionar Totais
+    # Adiciona Totais
     relatorio['TOTAL POR DATA'] = relatorio.sum(axis=1)
-    totais = relatorio.sum()
-    totais.name = 'TOTAL POR CATEGORIA'
-    relatorio = pd.concat([relatorio, totais.to_frame().T])
+    
+    # Linha de Totais Finais
+    totais_finais = relatorio.sum()
+    totais_finais.name = 'TOTAL POR CATEGORIA'
+    relatorio = pd.concat([relatorio, totais_finais.to_frame().T])
     
     return relatorio
 
@@ -160,53 +148,58 @@ selecionadas = [r for r in RUBRICAS_MESTRE.keys() if st.sidebar.checkbox(r, valu
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("Analisando extrato cronologicamente..."):
+    with st.spinner("Analisando dados..."):
         dados_brutos = realizar_auditoria(upload, selecionadas)
         df = processar_dataframe(dados_brutos)
         
         if df is not None and not df.empty:
-            total = df['V_NUM'].sum()
+            total_geral = df['V_NUM'].sum()
             
-            # Métricas
+            # Métricas no Topo
             c1, c2 = st.columns(2)
-            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total:,.2f}</h2></div>', unsafe_allow_html=True)
+            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
             with c2: st.markdown(f'<div class="metric-card"><h4>OCORRÊNCIAS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Relatório Consolidado
+            # Relatório Consolidado (Tabela Dinâmica)
             st.markdown('<h2 class="relatorio-titulo">📊 Relatório Consolidado</h2>', unsafe_allow_html=True)
-            st.markdown('<p class="relatorio-subtitulo">Visualização por categorias em ordem cronológica</p>', unsafe_allow_html=True)
+            st.markdown('<p class="relatorio-subtitulo">Categorias em colunas organizadas cronologicamente</p>', unsafe_allow_html=True)
             
             relatorio = gerar_relatorio_consolidado(df)
             
-            # Formatação para exibição
-            relatorio_formatado = relatorio.copy()
-            for col in relatorio_formatado.columns:
-                relatorio_formatado[col] = relatorio_formatado[col].apply(lambda x: f"R$ {x:,.2f}" if x > 0 else "-")
+            # Exibição Formatada
+            relatorio_display = relatorio.copy()
+            for col in relatorio_display.columns:
+                relatorio_display[col] = relatorio_display[col].apply(lambda x: f"R$ {x:,.2f}" if x != 0 else "-")
             
-            st.dataframe(relatorio_formatado, use_container_width=True)
+            st.dataframe(relatorio_display, use_container_width=True)
             
             # Detalhamento por Abas
             st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Detalhamento por Categoria</h3>', unsafe_allow_html=True)
-            categorias = df['CATEGORIA'].unique()
-            tabs = st.tabs([f"📌 {cat}" for cat in categorias])
+            cats_encontradas = df['CATEGORIA'].unique()
+            tabs = st.tabs([f"📌 {c}" for c in cats_encontradas])
             
-            for tab, categoria in zip(tabs, categorias):
+            for tab, categoria in zip(tabs, cats_encontradas):
                 with tab:
-                    df_categoria = df[df['CATEGORIA'] == categoria][['DATA', 'VALOR', 'HISTÓRICO']]
-                    st.dataframe(df_categoria, use_container_width=True)
-                    total_cat = df_categoria['V_NUM'].sum()
-                    st.markdown(f"<p style='text-align:right; color:#BFAF83; font-weight:bold;'>Total {categoria}: R$ {total_cat:,.2f}</p>", unsafe_allow_html=True)
+                    df_cat = df[df['CATEGORIA'] == categoria][['DATA', 'VALOR', 'HISTÓRICO']]
+                    st.dataframe(df_cat, use_container_width=True)
+                    # Soma segura do valor numérico já processado
+                    soma_cat = df[df['CATEGORIA'] == categoria]['V_NUM'].sum()
+                    st.markdown(f"<p style='text-align:right; color:#BFAF83; font-weight:bold;'>Subtotal {categoria}: R$ {soma_cat:,.2f}</p>", unsafe_allow_html=True)
             
-            # Exportação
-            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Exportar Laudo</h3>', unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button("📊 Baixar Consolidado (CSV)", relatorio.to_csv().encode('utf-8-sig'), "relatorio_consolidado.csv", "text/csv")
-            with col2:
-                st.download_button("📋 Baixar Detalhado (CSV)", df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig'), "laudo_detalhado.csv", "text/csv")
+            # Botões de Download
+            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Laudos Técnicos</h3>', unsafe_allow_html=True)
+            col_down1, col_down2 = st.columns(2)
+            
+            with col_down1:
+                csv_consolidado = relatorio.to_csv().encode('utf-8-sig')
+                st.download_button("📊 Baixar Tabela Consolidada (CSV)", csv_consolidado, "relatorio_consolidado.csv", "text/csv")
+            
+            with col_down2:
+                csv_detalhado = df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📋 Baixar Lista Detalhada (CSV)", csv_detalhado, "laudo_detalhado.csv", "text/csv")
         else:
-            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+            st.info("Nenhum débito encontrado com os critérios selecionados.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
