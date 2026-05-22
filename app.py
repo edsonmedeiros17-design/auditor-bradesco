@@ -318,18 +318,29 @@ else:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        # Extração de dados (Data Inferior)
+        # Extração de dados (Data Inferior com Lógica Rigorosa)
         linhas = texto_completo.split('\n')
         dados_extratos = []
         cesto_acumulador = []
         data_atual = None
         
         for i, linha in enumerate(linhas):
-            # Detecta data no formato DD/MM/YYYY
-            match_data = re.search(r'(\d{2}/\d{2}/\d{4})', linha)
+            linha_limpa = linha.strip()
+            
+            # Detecta data no formato DD/MM/YYYY ou DD/MM/YY
+            match_data = re.search(r'(\d{2}/\d{2}/\d{2,4})', linha_limpa)
+            
+            # Se encontrou uma data, sela o cesto com essa data
             if match_data:
                 data_str = match_data.group(1)
-                # Se há dados no cesto, selá com a data encontrada
+                # Converte ano de 2 dígitos para 4 dígitos
+                partes_data = data_str.split('/')
+                if len(partes_data[2]) == 2:
+                    ano = int(partes_data[2])
+                    ano = 2000 + ano if ano < 50 else 1900 + ano
+                    data_str = f"{partes_data[0]}/{partes_data[1]}/{ano}"
+                
+                # Selá o cesto com a data encontrada
                 if cesto_acumulador:
                     for item in cesto_acumulador:
                         dados_extratos.append({
@@ -341,20 +352,40 @@ else:
                     cesto_acumulador = []
                 data_atual = data_str
             
-            # Detecta rubricas selecionadas
+            # Detecta rubricas selecionadas na linha
             for rubrica in rubricas_selecionadas:
-                if rubrica.upper() in linha.upper():
-                    # Extrai valor (formato: R$ XXX,XX)
-                    match_valor = re.search(r'R\$\s*([\d.,]+)', linha)
-                    valor = match_valor.group(1) if match_valor else "0,00"
+                if rubrica.upper() in linha_limpa.upper():
+                    # Busca valor na mesma linha ou na próxima
+                    valor_encontrado = None
                     
-                    cesto_acumulador.append({
-                        'rubrica': rubrica,
-                        'valor': valor,
-                        'historico': linha.strip()[:100]
-                    })
+                    # Tenta encontrar números na mesma linha (formato: XXX,XX ou XXX.XXX,XX)
+                    match_valor = re.search(r'([\d.,]+)(?:\s|$)', linha_limpa)
+                    if match_valor:
+                        valor_candidato = match_valor.group(1)
+                        # Valida se é um número com ponto/vírgula
+                        if re.match(r'^[\d.,]+$', valor_candidato) and (',' in valor_candidato or '.' in valor_candidato):
+                            valor_encontrado = valor_candidato
+                    
+                    # Se não encontrou, tenta na próxima linha
+                    if not valor_encontrado and i + 1 < len(linhas):
+                        proxima_linha = linhas[i + 1].strip()
+                        match_valor_prox = re.search(r'^([\d.,]+)', proxima_linha)
+                        if match_valor_prox:
+                            valor_candidato = match_valor_prox.group(1)
+                            if re.match(r'^[\d.,]+$', valor_candidato) and (',' in valor_candidato or '.' in valor_candidato):
+                                valor_encontrado = valor_candidato
+                    
+                    valor = valor_encontrado if valor_encontrado else "0,00"
+                    
+                    # Só adiciona se o valor não é zero
+                    if valor != "0,00":
+                        cesto_acumulador.append({
+                            'rubrica': rubrica,
+                            'valor': valor,
+                            'historico': linha_limpa[:100]
+                        })
         
-        # Selá dados restantes
+        # Selá dados restantes com a última data
         if cesto_acumulador and data_atual:
             for item in cesto_acumulador:
                 dados_extratos.append({
