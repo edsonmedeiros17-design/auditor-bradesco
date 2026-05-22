@@ -53,16 +53,13 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             for linha in linhas:
                 linha_up = linha.upper()
                 
-                # Identifica Data e Valor
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha)
                 
-                # Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
+                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "0,00"]
                     continue 
 
-                # Busca Rubrica
                 rubrica_detectada = None
                 if "%" not in linha:
                     for nome in rubricas_alvo:
@@ -70,9 +67,8 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # Lógica de Captura
                 if rubrica_detectada:
-                    valor = match_valor.group(1) if match_valor else "0,00" # Evita "PENDENTE" para não quebrar cálculos
+                    valor = match_valor.group(1) if match_valor else "0,00"
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
                         "VALOR": valor,
@@ -83,7 +79,6 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     if cesto_acumulador[-1]["VALOR"] == "0,00":
                         cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
 
-                # Selagem por Data
                 if match_data:
                     data_str = match_data.group(1)
                     if cesto_acumulador:
@@ -98,13 +93,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
 def processar_dataframe(dados):
     if not dados:
         return None
-    
     df = pd.DataFrame(dados)
-    
-    # Conversão de Valores (Garante que seja numérico)
     df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
     
-    # Padronização de Datas para Ordenação
     def normalizar_data(d):
         p = d.split('/')
         if len(p[2]) == 2: p[2] = "20" + p[2]
@@ -112,11 +103,9 @@ def processar_dataframe(dados):
     
     df['DATA_OBJ'] = pd.to_datetime(df['DATA'].apply(normalizar_data), format='%d/%m/%Y', errors='coerce')
     df = df.sort_values(by='DATA_OBJ', ascending=True)
-    
     return df
 
 def gerar_relatorio_consolidado(df):
-    # Pivot Table usando a data original (string) mas mantendo a ordem do DATA_OBJ
     relatorio = df.pivot_table(
         index=['DATA_OBJ', 'DATA'],
         columns='CATEGORIA',
@@ -124,18 +113,11 @@ def gerar_relatorio_consolidado(df):
         aggfunc='sum',
         fill_value=0
     )
-    
-    # Limpa o índice multinível para ficar apenas com a DATA formatada
     relatorio = relatorio.reset_index(level=0, drop=True)
-    
-    # Adiciona Totais
     relatorio['TOTAL POR DATA'] = relatorio.sum(axis=1)
-    
-    # Linha de Totais Finais
     totais_finais = relatorio.sum()
     totais_finais.name = 'TOTAL POR CATEGORIA'
     relatorio = pd.concat([relatorio, totais_finais.to_frame().T])
-    
     return relatorio
 
 # --- 5. DASHBOARD ---
@@ -155,27 +137,23 @@ if upload:
         if df is not None and not df.empty:
             total_geral = df['V_NUM'].sum()
             
-            # Métricas no Topo
             c1, c2 = st.columns(2)
             with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
             with c2: st.markdown(f'<div class="metric-card"><h4>OCORRÊNCIAS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Relatório Consolidado (Tabela Dinâmica)
             st.markdown('<h2 class="relatorio-titulo">📊 Relatório Consolidado</h2>', unsafe_allow_html=True)
             st.markdown('<p class="relatorio-subtitulo">Categorias em colunas organizadas cronologicamente</p>', unsafe_allow_html=True)
             
             relatorio = gerar_relatorio_consolidado(df)
             
-            # Exibição Formatada
             relatorio_display = relatorio.copy()
             for col in relatorio_display.columns:
                 relatorio_display[col] = relatorio_display[col].apply(lambda x: f"R$ {x:,.2f}" if x != 0 else "-")
             
             st.dataframe(relatorio_display, use_container_width=True)
             
-            # Detalhamento por Abas
             st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Detalhamento por Categoria</h3>', unsafe_allow_html=True)
             cats_encontradas = df['CATEGORIA'].unique()
             tabs = st.tabs([f"📌 {c}" for c in cats_encontradas])
@@ -184,20 +162,20 @@ if upload:
                 with tab:
                     df_cat = df[df['CATEGORIA'] == categoria][['DATA', 'VALOR', 'HISTÓRICO']]
                     st.dataframe(df_cat, use_container_width=True)
-                    # Soma segura do valor numérico já processado
                     soma_cat = df[df['CATEGORIA'] == categoria]['V_NUM'].sum()
                     st.markdown(f"<p style='text-align:right; color:#BFAF83; font-weight:bold;'>Subtotal {categoria}: R$ {soma_cat:,.2f}</p>", unsafe_allow_html=True)
             
-            # Botões de Download
             st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Laudos Técnicos</h3>', unsafe_allow_html=True)
             col_down1, col_down2 = st.columns(2)
             
+            # --- AJUSTE PARA EXCEL (Ponto e Vírgula como separador) ---
             with col_down1:
-                csv_consolidado = relatorio.to_csv().encode('utf-8-sig')
+                # O Excel em PT-BR usa ';' como separador de colunas em arquivos CSV
+                csv_consolidado = relatorio.to_csv(sep=';').encode('utf-8-sig')
                 st.download_button("📊 Baixar Tabela Consolidada (CSV)", csv_consolidado, "relatorio_consolidado.csv", "text/csv")
             
             with col_down2:
-                csv_detalhado = df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False).encode('utf-8-sig')
+                csv_detalhado = df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].to_csv(index=False, sep=';').encode('utf-8-sig')
                 st.download_button("📋 Baixar Lista Detalhada (CSV)", csv_detalhado, "laudo_detalhado.csv", "text/csv")
         else:
             st.info("Nenhum débito encontrado com os critérios selecionados.")
