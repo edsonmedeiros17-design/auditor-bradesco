@@ -241,7 +241,7 @@ st.sidebar.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Lista de rubricas para busca
+# Lista de rubricas para busca (exatamente como solicitado)
 rubricas_disponiveis = [
     "CESTA",
     "PACOTE",
@@ -318,19 +318,19 @@ else:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        # Extração de dados com lógica de Data Inferior
+        # ===== LÓGICA DE DATA INFERIOR CORRIGIDA =====
         linhas = texto_completo.split('\n')
         dados_extratos = []
-        cesto_acumulador = []
-        data_atual = None
+        cesto_acumulador = []  # Acumula rubricas/valores até encontrar uma data
         
         for i, linha in enumerate(linhas):
             linha_limpa = linha.strip()
             
-            # Detecta data no formato DD/MM/YYYY ou DD/MM/YY no início da linha
+            # Detecta se é uma linha de data (começa com DD/MM/YYYY)
             match_data = re.match(r'^(\d{2}/\d{2}/\d{2,4})\s+', linha_limpa)
             
             if match_data:
+                # ENCONTROU UMA DATA - SELA O CESTO
                 data_str = match_data.group(1)
                 
                 # Converte ano de 2 dígitos para 4 dígitos
@@ -340,7 +340,29 @@ else:
                     ano = 2000 + ano if ano < 50 else 1900 + ano
                     data_str = f"{partes_data[0]}/{partes_data[1]}/{ano}"
                 
-                # Selá o cesto com a data encontrada
+                # Extrai o valor desta linha (está no final, formato: XXX,XX)
+                match_valor = re.search(r'(\d+[.,]\d{2})\s*$', linha_limpa)
+                
+                if match_valor:
+                    valor = match_valor.group(1)
+                    
+                    # Detecta rubrica na mesma linha
+                    rubrica_encontrada = None
+                    for rubrica in rubricas_selecionadas:
+                        if rubrica.upper() in linha_limpa.upper():
+                            rubrica_encontrada = rubrica
+                            break
+                    
+                    # Se encontrou rubrica, adiciona com a data
+                    if rubrica_encontrada:
+                        dados_extratos.append({
+                            'data': data_str,
+                            'rubrica': rubrica_encontrada,
+                            'valor': valor,
+                            'historico': linha_limpa[:100]
+                        })
+                
+                # Agora sela o cesto com essa data
                 if cesto_acumulador:
                     for item in cesto_acumulador:
                         dados_extratos.append({
@@ -350,45 +372,22 @@ else:
                             'historico': item['historico']
                         })
                     cesto_acumulador = []
-                
-                data_atual = data_str
-                
-                # Extrai valor da mesma linha (formato: XXX,XX no final)
-                match_valor = re.search(r'(\d+[.,]\d{2})\s*$', linha_limpa)
-                if match_valor:
-                    valor = match_valor.group(1)
-                    # Detecta rubrica na mesma linha
-                    for rubrica in rubricas_selecionadas:
-                        if rubrica.upper() in linha_limpa.upper():
-                            cesto_acumulador.append({
-                                'rubrica': rubrica,
-                                'valor': valor,
-                                'historico': linha_limpa[:100]
-                            })
             else:
-                # Se não é uma linha de data, verifica se é uma rubrica
+                # NÃO É UMA LINHA DE DATA - ACUMULA RUBRICAS
                 for rubrica in rubricas_selecionadas:
                     if rubrica.upper() in linha_limpa.upper():
-                        # Busca valor na próxima linha
+                        # Procura valor na próxima linha
                         if i + 1 < len(linhas):
                             proxima_linha = linhas[i + 1].strip()
-                            # Tenta extrair data e valor da próxima linha
-                            match_prox_data = re.match(r'^(\d{2}/\d{2}/\d{2,4})\s+.*?(\d+[.,]\d{2})\s*$', proxima_linha)
-                            if match_prox_data:
-                                data_prox = match_prox_data.group(1)
-                                valor_prox = match_prox_data.group(2)
-                                
-                                # Converte ano de 2 dígitos
-                                partes_data_prox = data_prox.split('/')
-                                if len(partes_data_prox[2]) == 2:
-                                    ano = int(partes_data_prox[2])
-                                    ano = 2000 + ano if ano < 50 else 1900 + ano
-                                    data_prox = f"{partes_data_prox[0]}/{partes_data_prox[1]}/{ano}"
-                                
-                                dados_extratos.append({
-                                    'data': data_prox,
+                            
+                            # Tenta extrair valor da próxima linha
+                            match_valor_prox = re.search(r'(\d+[.,]\d{2})', proxima_linha)
+                            
+                            if match_valor_prox:
+                                valor = match_valor_prox.group(1)
+                                cesto_acumulador.append({
                                     'rubrica': rubrica,
-                                    'valor': valor_prox,
+                                    'valor': valor,
                                     'historico': linha_limpa[:100]
                                 })
         
