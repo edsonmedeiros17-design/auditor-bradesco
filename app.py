@@ -318,7 +318,7 @@ else:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        # Extração de dados (Data Inferior com Lógica Rigorosa)
+        # Extração de dados com lógica de Data Inferior
         linhas = texto_completo.split('\n')
         dados_extratos = []
         cesto_acumulador = []
@@ -327,12 +327,12 @@ else:
         for i, linha in enumerate(linhas):
             linha_limpa = linha.strip()
             
-            # Detecta data no formato DD/MM/YYYY ou DD/MM/YY
-            match_data = re.search(r'(\d{2}/\d{2}/\d{2,4})', linha_limpa)
+            # Detecta data no formato DD/MM/YYYY ou DD/MM/YY no início da linha
+            match_data = re.match(r'^(\d{2}/\d{2}/\d{2,4})\s+', linha_limpa)
             
-            # Se encontrou uma data, sela o cesto com essa data
             if match_data:
                 data_str = match_data.group(1)
+                
                 # Converte ano de 2 dígitos para 4 dígitos
                 partes_data = data_str.split('/')
                 if len(partes_data[2]) == 2:
@@ -350,50 +350,50 @@ else:
                             'historico': item['historico']
                         })
                     cesto_acumulador = []
+                
                 data_atual = data_str
-            
-            # Detecta rubricas selecionadas na linha
-            for rubrica in rubricas_selecionadas:
-                if rubrica.upper() in linha_limpa.upper():
-                    # Busca valor na mesma linha ou na próxima
-                    valor_encontrado = None
-                    
-                    # Tenta encontrar números na mesma linha (formato: XXX,XX ou XXX.XXX,XX)
-                    match_valor = re.search(r'([\d.,]+)(?:\s|$)', linha_limpa)
-                    if match_valor:
-                        valor_candidato = match_valor.group(1)
-                        # Valida se é um número com ponto/vírgula
-                        if re.match(r'^[\d.,]+$', valor_candidato) and (',' in valor_candidato or '.' in valor_candidato):
-                            valor_encontrado = valor_candidato
-                    
-                    # Se não encontrou, tenta na próxima linha
-                    if not valor_encontrado and i + 1 < len(linhas):
-                        proxima_linha = linhas[i + 1].strip()
-                        match_valor_prox = re.search(r'^([\d.,]+)', proxima_linha)
-                        if match_valor_prox:
-                            valor_candidato = match_valor_prox.group(1)
-                            if re.match(r'^[\d.,]+$', valor_candidato) and (',' in valor_candidato or '.' in valor_candidato):
-                                valor_encontrado = valor_candidato
-                    
-                    valor = valor_encontrado if valor_encontrado else "0,00"
-                    
-                    # Só adiciona se o valor não é zero
-                    if valor != "0,00":
-                        cesto_acumulador.append({
-                            'rubrica': rubrica,
-                            'valor': valor,
-                            'historico': linha_limpa[:100]
-                        })
+                
+                # Extrai valor da mesma linha (formato: XXX,XX no final)
+                match_valor = re.search(r'(\d+[.,]\d{2})\s*$', linha_limpa)
+                if match_valor:
+                    valor = match_valor.group(1)
+                    # Detecta rubrica na mesma linha
+                    for rubrica in rubricas_selecionadas:
+                        if rubrica.upper() in linha_limpa.upper():
+                            cesto_acumulador.append({
+                                'rubrica': rubrica,
+                                'valor': valor,
+                                'historico': linha_limpa[:100]
+                            })
+            else:
+                # Se não é uma linha de data, verifica se é uma rubrica
+                for rubrica in rubricas_selecionadas:
+                    if rubrica.upper() in linha_limpa.upper():
+                        # Busca valor na próxima linha
+                        if i + 1 < len(linhas):
+                            proxima_linha = linhas[i + 1].strip()
+                            # Tenta extrair data e valor da próxima linha
+                            match_prox_data = re.match(r'^(\d{2}/\d{2}/\d{2,4})\s+.*?(\d+[.,]\d{2})\s*$', proxima_linha)
+                            if match_prox_data:
+                                data_prox = match_prox_data.group(1)
+                                valor_prox = match_prox_data.group(2)
+                                
+                                # Converte ano de 2 dígitos
+                                partes_data_prox = data_prox.split('/')
+                                if len(partes_data_prox[2]) == 2:
+                                    ano = int(partes_data_prox[2])
+                                    ano = 2000 + ano if ano < 50 else 1900 + ano
+                                    data_prox = f"{partes_data_prox[0]}/{partes_data_prox[1]}/{ano}"
+                                
+                                dados_extratos.append({
+                                    'data': data_prox,
+                                    'rubrica': rubrica,
+                                    'valor': valor_prox,
+                                    'historico': linha_limpa[:100]
+                                })
         
-        # Selá dados restantes com a última data
-        if cesto_acumulador and data_atual:
-            for item in cesto_acumulador:
-                dados_extratos.append({
-                    'data': data_atual,
-                    'rubrica': item['rubrica'],
-                    'valor': item['valor'],
-                    'historico': item['historico']
-                })
+        # Filtra dados vazios
+        dados_extratos = [d for d in dados_extratos if d['valor'] != '0,00']
         
         if dados_extratos:
             df = pd.DataFrame(dados_extratos)
