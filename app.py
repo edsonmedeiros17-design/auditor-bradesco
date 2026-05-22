@@ -4,9 +4,12 @@ import pandas as pd
 import re
 from datetime import datetime
 import io
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
+try:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+except ImportError:
+    st.error("Erro: A biblioteca 'openpyxl' não está instalada. Certifique-se de incluir 'openpyxl' no seu arquivo requirements.txt.")
 
 # --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
@@ -42,7 +45,7 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR DE AUDITORIA (DATA INFERIOR) ---
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 2) ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
@@ -54,34 +57,41 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             
             linhas = texto.split('\n')
             for linha in linhas:
-                linha_up = linha.upper()
+                linha_up = linha.upper().strip()
+                if not linha_up: continue
+
+                # 1. Identifica Data e Valor
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
                 
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha)
-                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha)
-                
+                # 2. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
                     cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
                     continue 
 
+                # 3. Busca Rubrica
                 rubrica_detectada = None
-                if "%" not in linha:
+                if "%" not in linha_up:
                     for nome in rubricas_alvo:
                         if re.search(RUBRICAS_MESTRE[nome], linha_up):
                             rubrica_detectada = nome
                             break
                 
+                # 4. Lógica de Captura (Acúmulo)
                 if rubrica_detectada:
-                    valor = match_valor.group(1) if match_valor else "PENDENTE"
+                    valor_na_linha = match_valor.group(1) if match_valor else "PENDENTE"
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor,
-                        "HISTÓRICO": linha_up[:65]
+                        "VALOR": valor_na_linha,
+                        "HISTÓRICO": linha_up[:80]
                     })
                 
                 elif match_valor and cesto_acumulador:
+                    # Associa o valor à última rubrica pendente no cesto
                     if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
                         cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
 
+                # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
                 if match_data:
                     data_encontrada = match_data.group(1)
                     if cesto_acumulador:
@@ -95,7 +105,6 @@ def realizar_auditoria(arquivo, rubricas_alvo):
 
 # --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS (MODELO ANEXO 1, 3, 5) ---
 def gerar_excel_calculos(df, rubrica_nome):
-    # 1. Preparar os dados (Agrupar por Mês/Ano)
     df = df.copy()
     def fix_date(d):
         p = d.split('/')
@@ -106,24 +115,23 @@ def gerar_excel_calculos(df, rubrica_nome):
     df['ANO'] = df['DT'].dt.year
     df['MES_NUM'] = df['DT'].dt.month
     
-    # Agrupar e somar valores do mesmo mês/ano
+    # Agrupar e somar valores do mesmo mês/ano (Exemplo 05/2021)
     agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
     
-    # 2. Criar Workbook do Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Tabela de Cálculos"
     
     # Estilos
-    font_header = Font(bold=True, color="000000", size=11)
-    font_title = Font(bold=True, color="000000", size=12)
+    font_header = Font(bold=True, size=11)
+    font_title = Font(bold=True, size=12)
     fill_blue = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
     fill_peach = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     align_center = Alignment(horizontal='center', vertical='center')
     
-    # 3. Cabeçalho da Tabela
-    ws.merge_cells('A1:D1')
+    # Cabeçalho
+    ws.merge_cells('A1:E1')
     ws['A1'] = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
     ws['A1'].font = font_title
     ws['A1'].fill = fill_blue
@@ -137,13 +145,15 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws['A2'].alignment = align_center
     
     anos = sorted(agrupado['ANO'].unique())
+    if not anos: anos = [datetime.now().year] # Fallback
+    
     for idx, ano in enumerate(anos):
         col = idx + 2
         ws.cell(row=2, column=col, value=ano).font = font_header
         ws.cell(row=2, column=col).alignment = align_center
         ws.cell(row=2, column=col).fill = fill_blue
     
-    # 4. Preencher Meses e Valores
+    # Preencher Valores
     for m_idx, mes in enumerate(meses_nomes):
         row = m_idx + 3
         ws.cell(row=row, column=1, value=mes).font = font_header
@@ -151,7 +161,6 @@ def gerar_excel_calculos(df, rubrica_nome):
         
         for a_idx, ano in enumerate(anos):
             col = a_idx + 2
-            # Buscar valor para este mês/ano
             val = agrupado[(agrupado['ANO'] == ano) & (agrupado['MES_NUM'] == m_idx + 1)]['V_NUM'].sum()
             if val > 0:
                 cell = ws.cell(row=row, column=col, value=val)
@@ -159,7 +168,7 @@ def gerar_excel_calculos(df, rubrica_nome):
             ws.cell(row=row, column=col).fill = fill_peach
             ws.cell(row=row, column=col).border = border
 
-    # 5. Fórmulas: VALOR ANUAL (Soma da Coluna)
+    # Fórmulas: VALOR ANUAL (Soma da Coluna)
     row_anual = 15
     ws.cell(row=row_anual, column=1, value="VALOR ANUAL:").font = font_header
     ws.cell(row=row_anual, column=1).fill = fill_blue
@@ -174,7 +183,7 @@ def gerar_excel_calculos(df, rubrica_nome):
         cell.fill = fill_peach
         cell.border = border
 
-    # 6. Fórmula: VALOR TOTAL (Soma dos Totais Anuais)
+    # Fórmula: VALOR TOTAL (Soma dos Totais Anuais)
     row_total = 16
     ws.cell(row=row_total, column=1, value="VALOR TOTAL:").font = font_header
     ws.cell(row=row_total, column=1).fill = fill_blue
@@ -187,7 +196,7 @@ def gerar_excel_calculos(df, rubrica_nome):
     cell_total.font = font_header
     cell_total.alignment = Alignment(horizontal='right')
     
-    # 7. Fórmula: VALOR EM DOBRO (Total * 2)
+    # Fórmula: VALOR EM DOBRO (Total * 2)
     row_dobro = 17
     ws.merge_cells(start_row=row_dobro, start_column=1, end_row=row_dobro+1, end_column=1)
     ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
@@ -199,15 +208,13 @@ def gerar_excel_calculos(df, rubrica_nome):
     cell_dobro = ws.cell(row=row_dobro, column=2, value=formula_dobro)
     cell_dobro.number_format = '"R$ " #,##0.00'
     cell_dobro.font = font_header
-    cell_dobro.alignment = Alignment(horizontal='right', vertical='bottom')
+    cell_dobro.alignment = Alignment(horizontal='right', vertical='center')
     cell_dobro.fill = fill_peach
 
-    # Ajustar largura das colunas
     ws.column_dimensions['A'].width = 25
     for i in range(2, len(anos) + 2):
         ws.column_dimensions[get_column_letter(i)].width = 15
 
-    # Salvar em memória
     output = io.BytesIO()
     wb.save(output)
     return output.getvalue()
@@ -217,51 +224,55 @@ st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_ht
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
-col_btn1, col_btn2 = st.sidebar.columns(2)
-if col_btn1.button("Marcar Todas"):
-    for r in RUBRICAS_MESTRE.keys(): st.session_state[f"cb_{r}"] = True
-if col_btn2.button("Desmarcar Todas"):
-    for r in RUBRICAS_MESTRE.keys(): st.session_state[f"cb_{r}"] = False
+if 'sel_all' not in st.session_state: st.session_state.sel_all = True
 
-selecionadas = [r for r in RUBRICAS_MESTRE.keys() if st.sidebar.checkbox(r, value=st.session_state.get(f"cb_{r}", True), key=f"cb_{r}")]
+col_b1, col_b2 = st.sidebar.columns(2)
+if col_b1.button("Marcar Todas"): st.session_state.sel_all = True
+if col_b2.button("Desmarcar Todas"): st.session_state.sel_all = False
+
+selecionadas = []
+for r in RUBRICAS_MESTRE.keys():
+    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+        selecionadas.append(r)
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("Analisando extratos e gerando cálculos..."):
+    with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
         dados = realizar_auditoria(upload, selecionadas)
         if dados:
             df = pd.DataFrame(dados)
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
-            # Métricas
+            # Ordenação Cronológica Real
+            def fix_date(d):
+                p = d.split('/')
+                if len(p[2]) == 2: p[2] = "20" + p[2]
+                return "/".join(p)
+            df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+            df = df.sort_values('DT_O', ascending=True)
+            
             total_geral = df['V_NUM'].sum()
             c1, c2 = st.columns(2)
             with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
             with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
+            st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
             
-            # --- SEÇÃO DE GERAÇÃO DE PLANILHAS ---
-            st.markdown('<h2 style="color:#BFAF83; text-align:center;">📊 Gerar Planilhas de Cálculos</h2>', unsafe_allow_html=True)
-            st.info("O robô agrupará os débitos por mês/ano e aplicará as fórmulas de Soma, Total e Dobro conforme seu modelo.")
-            
-            cats_encontradas = df['CATEGORIA'].unique()
-            for cat in cats_encontradas:
+            cats = df['CATEGORIA'].unique()
+            for cat in cats:
                 df_cat = df[df['CATEGORIA'] == cat]
-                excel_data = gerar_excel_calculos(df_cat, cat)
-                
+                excel_file = gerar_excel_calculos(df_cat, cat)
                 st.download_button(
-                    label=f"📥 Baixar Tabela de Cálculos: {cat}",
-                    data=excel_data,
+                    label=f"📊 Baixar Tabela: {cat}",
+                    data=excel_file,
                     file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             
-            # --- RELATÓRIO VISUAL ---
-            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Resumo dos Lançamentos</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
             st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-            
         else:
             st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
