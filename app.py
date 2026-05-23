@@ -11,487 +11,269 @@ try:
 except ImportError:
     st.error("Erro: A biblioteca 'openpyxl' não está instalada. Certifique-se de incluir 'openpyxl' no seu arquivo requirements.txt.")
 
-# --- CONFIGURAÇÃO PREMIUM EDSON MEDEIROS ---
-st.set_page_config(
-    page_title="Edson Medeiros | Consultorias e Compliance",
-    layout="wide",
-    page_icon="🏛️",
-    initial_sidebar_state="expanded"
-)
+# --- 1. CONFIGURAÇÃO E ESTILO ---
+st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
-# --- PALETA DE CORES PREMIUM (Quiet Luxury) ---
-COLORS = {
-    "navy_deep": "#101418",
-    "dourado_matte": "#C5A566",
-    "off_white": "#F5F3F0",
-    "cinza_quente": "#8B8680",
-    "cinza_claro": "#D4CFCA",
-    "card_bg": "#1A1E24",
-    "border": "#2C3139",
-}
-
-# --- CSS PREMIUM UNIFICADO ---
-st.markdown(f"""
+st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
-    
-    /* Reset e Tema Escuro Premium */
-    .stApp {{
-        background-color: {COLORS['navy_deep']};
-        color: {COLORS['off_white']};
-    }}
-    
-    /* Tipografia Premium */
-    h1, h2, h3, h4, h5, h6 {{
-        font-family: 'Playfair Display', serif !important;
-        color: {COLORS['off_white']} !important;
-        letter-spacing: -0.02em;
-    }}
-    
-    body, .stMarkdown, .stText {{
-        font-family: 'Inter', sans-serif !important;
-        color: {COLORS['off_white']} !important;
-    }}
-    
-    /* Header Premium */
-    .header-premium {{
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, {COLORS['navy_deep']} 0%, {COLORS['card_bg']} 100%);
-        border-bottom: 1px solid {COLORS['border']};
-        margin-bottom: 2rem;
-    }}
-    
-    .logo-box {{
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, {COLORS['dourado_matte']} 0%, {COLORS['cinza_quente']} 100%);
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: {COLORS['navy_deep']};
-        font-size: 1.2rem;
-        font-family: 'Playfair Display', serif;
-    }}
-    
-    .header-text h1 {{
-        margin: 0 !important;
-        font-size: 1.5rem !important;
-        color: {COLORS['off_white']} !important;
-    }}
-    
-    .header-text p {{
-        margin: 0 !important;
-        font-size: 0.75rem !important;
-        letter-spacing: 0.15em;
-        color: {COLORS['cinza_claro']} !important;
-    }}
-    
-    /* Botões Premium */
-    .btn-premium {{
-        background-color: transparent !important;
-        color: {COLORS['dourado_matte']} !important;
-        border: 1.5px solid {COLORS['dourado_matte']} !important;
-        padding: 0.75rem 1.5rem !important;
-        border-radius: 2px !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.05em !important;
-        text-transform: uppercase !important;
-        font-size: 0.85rem !important;
-        transition: all 0.3s ease-out !important;
-        cursor: pointer !important;
-    }}
-    
-    .btn-premium:hover {{
-        background-color: {COLORS['dourado_matte']} !important;
-        color: {COLORS['navy_deep']} !important;
-        box-shadow: 0 4px 12px rgba(197, 165, 102, 0.2) !important;
-    }}
-    
-    /* Cards Premium */
-    .card-premium {{
-        background-color: {COLORS['card_bg']};
-        border: 1px solid {COLORS['border']};
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        transition: all 0.3s ease;
-    }}
-    
-    .card-premium:hover {{
-        border-color: {COLORS['dourado_matte']};
-        box-shadow: 0 4px 12px rgba(197, 165, 102, 0.1);
-    }}
-    
-    /* Divider Premium */
-    .divider-premium {{
-        height: 1px;
-        background: linear-gradient(90deg, transparent, {COLORS['dourado_matte']}, transparent);
-        margin: 2rem 0;
-        opacity: 0.3;
-    }}
-    
-    /* Sidebar Premium */
-    .stSidebar {{
-        background-color: {COLORS['navy_deep']};
-        border-right: 1px solid {COLORS['border']};
-    }}
-    
-    .stSidebar [data-testid="stSidebarNav"] {{
-        background-color: transparent;
-    }}
-    
-    /* Inputs e Selects */
-    .stMultiSelect, .stSelectbox, .stTextInput, .stNumberInput {{
-        background-color: {COLORS['card_bg']} !important;
-        color: {COLORS['off_white']} !important;
-        border-color: {COLORS['border']} !important;
-    }}
-    
-    /* Tabs Premium */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 0;
-        border-bottom: 1px solid {COLORS['border']};
-    }}
-    
-    .stTabs [data-baseweb="tab"] {{
-        color: {COLORS['cinza_claro']} !important;
-        border-bottom: 2px solid transparent !important;
-    }}
-    
-    .stTabs [aria-selected="true"] {{
-        color: {COLORS['dourado_matte']} !important;
-        border-bottom-color: {COLORS['dourado_matte']} !important;
-    }}
-    
-    /* Métricas Premium */
-    .metric-card {{
-        background-color: {COLORS['card_bg']};
-        border: 1px solid {COLORS['border']};
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-align: center;
-    }}
-    
-    .metric-label {{
-        color: {COLORS['cinza_claro']};
-        font-size: 0.85rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-    }}
-    
-    .metric-value {{
-        color: {COLORS['dourado_matte']};
-        font-size: 2rem;
-        font-weight: 700;
-        font-family: 'Playfair Display', serif;
-    }}
-    
-    /* Footer Premium */
-    .footer-premium {{
-        border-top: 1px solid {COLORS['border']};
-        padding: 2rem;
-        margin-top: 3rem;
-        text-align: center;
-        color: {COLORS['cinza_claro']};
-        font-size: 0.85rem;
-    }}
-    
-    .footer-signature {{
-        color: {COLORS['dourado_matte']};
-        font-style: italic;
-        font-family: 'Playfair Display', serif;
-        margin-top: 1rem;
-    }}
-    
-    /* Animações Suaves */
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(10px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    
-    .fade-in {{
-        animation: fadeIn 0.5s ease-out;
-    }}
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
+    .stApp { background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif; }
+    .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
+    .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
+    .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER PREMIUM ---
-st.markdown(f"""
-<div class="header-premium">
-    <div class="logo-box">EM</div>
-    <div class="header-text">
-        <h1>Edson Medeiros</h1>
-        <p>CONSULTORIAS & COMPLIANCE</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# --- 2. RÚBRICAS ATUALIZADAS ---
+RUBRICAS_MESTRE = {
+    "CESTA": r"CESTA",
+    "PACOTE": r"PACOTE",
+    "MORA DE OPERAÇÃO": r"MORA DE OPERAÇÃO|MORA OPERACAO",
+    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
+    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
+    "BX": r"\bBX\b",
+    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO DE CREDITO|CARTAO DE CREDITO|GASTOS CARTAO",
+    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
+    "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
+    "APLIC": r"APLICACAO|APLIC\b",
+    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
+    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
+    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
+    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
+}
 
-st.markdown('<div class="divider-premium"></div>', unsafe_allow_html=True)
+TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- SIDEBAR CONFIGURAÇÃO ---
-st.sidebar.markdown(f"""
-<div style="text-align: center; padding: 1rem 0; border-bottom: 1px solid {COLORS['border']}; margin-bottom: 1.5rem;">
-    <h3 style="color: {COLORS['dourado_matte']}; margin: 0;">Configuração de Análise</h3>
-</div>
-""", unsafe_allow_html=True)
-
-# Lista de rubricas para busca (exatamente como solicitado)
-rubricas_disponiveis = [
-    "CESTA",
-    "PACOTE",
-    "MORA DE OPERAÇÃO",
-    "MORA CREDITO PESSOAL",
-    "MORA OPERACAO DE CREDITO",
-    "BX",
-    "PARCELA CREDITO PESSOAL",
-    "GASTOS CARTAO DE CREDITO",
-    "SEGURO",
-    "ADIANT",
-    "APLIC",
-    "ENCARGOS",
-    "ANUIDADE",
-    "OPERACOES VENCIDAS",
-    "DIV. EM ATRASO"
-]
-
-# Botões de seleção em massa
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    if st.button("✓ Marcar Todas", key="marcar_todas", use_container_width=True):
-        st.session_state.rubricas_selecionadas = rubricas_disponiveis.copy()
-
-with col2:
-    if st.button("✗ Desmarcar Todas", key="desmarcar_todas", use_container_width=True):
-        st.session_state.rubricas_selecionadas = []
-
-# Seleção de rubricas
-if "rubricas_selecionadas" not in st.session_state:
-    st.session_state.rubricas_selecionadas = []
-
-rubricas_selecionadas = st.sidebar.multiselect(
-    "Selecione as Rubricas para Análise:",
-    rubricas_disponiveis,
-    default=st.session_state.rubricas_selecionadas,
-    key="rubrica_selector"
-)
-st.session_state.rubricas_selecionadas = rubricas_selecionadas
-
-# Upload de PDF
-st.sidebar.markdown(f"<div class='divider-premium'></div>", unsafe_allow_html=True)
-arquivo_pdf = st.sidebar.file_uploader(
-    "📄 Carregue o Extrato Bancário (PDF)",
-    type="pdf",
-    help="Selecione um arquivo PDF com os extratos bancários para análise"
-)
-
-# --- MAIN CONTENT ---
-if arquivo_pdf is None:
-    st.markdown(f"""
-    <div class="card-premium" style="text-align: center; padding: 3rem;">
-        <h2 style="color: {COLORS['dourado_matte']}; margin-bottom: 1rem;">Bem-vindo à Análise de Extratos</h2>
-        <p style="color: {COLORS['cinza_claro']}; font-size: 1.1rem; line-height: 1.8;">
-            Sistema especializado em auditoria técnica e identificação de débitos indevidos.
-        </p>
-        <p style="color: {COLORS['cinza_claro']}; margin-top: 1.5rem;">
-            📋 Carregue um arquivo PDF na barra lateral para começar a análise.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"""
-    <div class="card-premium">
-        <h3 style="color: {COLORS['dourado_matte']}; margin-top: 0;">📊 Análise em Progresso</h3>
-        <p style="color: {COLORS['cinza_claro']};">Processando arquivo: <strong>{arquivo_pdf.name}</strong></p>
-    </div>
-    """, unsafe_allow_html=True)
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 2) ---
+def realizar_auditoria(arquivo, rubricas_alvo):
+    resultados = []
+    cesto_acumulador = []
     
-    # Processamento do PDF
-    try:
-        with pdfplumber.open(arquivo_pdf) as pdf:
-            texto_completo = ""
-            for page in pdf.pages:
-                texto_completo += page.extract_text() or ""
-        
-        # ===== LÓGICA DE DATA INFERIOR CORRIGIDA =====
-        linhas = texto_completo.split('\n')
-        dados_extratos = []
-        cesto_acumulador = []  # Acumula rubricas/valores até encontrar uma data
-        
-        for i, linha in enumerate(linhas):
-            linha_limpa = linha.strip()
+    with pdfplumber.open(arquivo) as pdf:
+        for page in pdf.pages:
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
+            if not texto: continue
             
-            # Detecta se é uma linha de data (começa com DD/MM/YYYY)
-            match_data = re.match(r'^(\d{2}/\d{2}/\d{2,4})\s+', linha_limpa)
-            
-            if match_data:
-                # ENCONTROU UMA DATA - SELA O CESTO
-                data_str = match_data.group(1)
+            linhas = texto.split('\n')
+            for linha in linhas:
+                linha_up = linha.upper().strip()
+                if not linha_up: continue
+
+                # 1. Identifica Data e Valor
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
                 
-                # Converte ano de 2 dígitos para 4 dígitos
-                partes_data = data_str.split('/')
-                if len(partes_data[2]) == 2:
-                    ano = int(partes_data[2])
-                    ano = 2000 + ano if ano < 50 else 1900 + ano
-                    data_str = f"{partes_data[0]}/{partes_data[1]}/{ano}"
-                
-                # Extrai o valor desta linha (está no final, formato: XXX,XX)
-                match_valor = re.search(r'(\d+[.,]\d{2})\s*$', linha_limpa)
-                
-                if match_valor:
-                    valor = match_valor.group(1)
-                    
-                    # Detecta rubrica na mesma linha
-                    rubrica_encontrada = None
-                    for rubrica in rubricas_selecionadas:
-                        if rubrica.upper() in linha_limpa.upper():
-                            rubrica_encontrada = rubrica
+                # 2. Reset por Termos de Exclusão
+                if re.search(TERMOS_EXCLUSAO, linha_up):
+                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
+                    continue 
+
+                # 3. Busca Rubrica
+                rubrica_detectada = None
+                if "%" not in linha_up:
+                    for nome in rubricas_alvo:
+                        if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                            rubrica_detectada = nome
                             break
-                    
-                    # Se encontrou rubrica, adiciona com a data
-                    if rubrica_encontrada:
-                        dados_extratos.append({
-                            'data': data_str,
-                            'rubrica': rubrica_encontrada,
-                            'valor': valor,
-                            'historico': linha_limpa[:100]
-                        })
                 
-                # Agora sela o cesto com essa data
-                if cesto_acumulador:
-                    for item in cesto_acumulador:
-                        dados_extratos.append({
-                            'data': data_str,
-                            'rubrica': item['rubrica'],
-                            'valor': item['valor'],
-                            'historico': item['historico']
-                        })
-                    cesto_acumulador = []
-            else:
-                # NÃO É UMA LINHA DE DATA - ACUMULA RUBRICAS
-                for rubrica in rubricas_selecionadas:
-                    if rubrica.upper() in linha_limpa.upper():
-                        # Procura valor na próxima linha
-                        if i + 1 < len(linhas):
-                            proxima_linha = linhas[i + 1].strip()
-                            
-                            # Tenta extrair valor da próxima linha
-                            match_valor_prox = re.search(r'(\d+[.,]\d{2})', proxima_linha)
-                            
-                            if match_valor_prox:
-                                valor = match_valor_prox.group(1)
-                                cesto_acumulador.append({
-                                    'rubrica': rubrica,
-                                    'valor': valor,
-                                    'historico': linha_limpa[:100]
-                                })
+                # 4. Lógica de Captura (Acúmulo)
+                if rubrica_detectada:
+                    valor_na_linha = match_valor.group(1) if match_valor else "PENDENTE"
+                    cesto_acumulador.append({
+                        "CATEGORIA": rubrica_detectada,
+                        "VALOR": valor_na_linha,
+                        "HISTÓRICO": linha_up[:80]
+                    })
+                
+                elif match_valor and cesto_acumulador:
+                    # Associa o valor à última rubrica pendente no cesto
+                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
+                        cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+
+                # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
+                if match_data:
+                    data_encontrada = match_data.group(1)
+                    if cesto_acumulador:
+                        for item in cesto_acumulador:
+                            if item["VALOR"] != "PENDENTE":
+                                item["DATA"] = data_encontrada
+                                resultados.append(item)
+                        cesto_acumulador = []
+
+    return resultados
+
+# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS (MODELO ANEXO 1, 3, 5) ---
+def gerar_excel_calculos(df, rubrica_nome):
+    df = df.copy()
+    def fix_date(d):
+        p = d.split('/')
+        if len(p[2]) == 2: p[2] = "20" + p[2]
+        return "/".join(p)
+    
+    df['DT'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y')
+    df['ANO'] = df['DT'].dt.year
+    df['MES_NUM'] = df['DT'].dt.month
+    
+    # Agrupar e somar valores do mesmo mês/ano (Exemplo 05/2021)
+    agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tabela de Cálculos"
+    
+    # Estilos
+    font_header = Font(bold=True, size=11)
+    font_title = Font(bold=True, size=12)
+    fill_blue = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
+    fill_peach = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    align_center = Alignment(horizontal='center', vertical='center')
+    
+    # Cabeçalho
+    ws.merge_cells('A1:E1')
+    ws['A1'] = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
+    ws['A1'].font = font_title
+    ws['A1'].fill = fill_blue
+    ws['A1'].alignment = align_center
+    
+    meses_nomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", 
+                   "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"]
+    
+    ws['A2'] = "MESES"
+    ws['A2'].font = font_header
+    ws['A2'].alignment = align_center
+    
+    anos = sorted(agrupado['ANO'].unique())
+    if not anos: anos = [datetime.now().year] # Fallback
+    
+    for idx, ano in enumerate(anos):
+        col = idx + 2
+        ws.cell(row=2, column=col, value=ano).font = font_header
+        ws.cell(row=2, column=col).alignment = align_center
+        ws.cell(row=2, column=col).fill = fill_blue
+    
+    # Preencher Valores
+    for m_idx, mes in enumerate(meses_nomes):
+        row = m_idx + 3
+        ws.cell(row=row, column=1, value=mes).font = font_header
+        ws.cell(row=row, column=1).fill = fill_blue
         
-        # Filtra dados vazios
-        dados_extratos = [d for d in dados_extratos if d['valor'] != '0,00']
-        
-        if dados_extratos:
-            df = pd.DataFrame(dados_extratos)
+        for a_idx, ano in enumerate(anos):
+            col = a_idx + 2
+            val = agrupado[(agrupado['ANO'] == ano) & (agrupado['MES_NUM'] == m_idx + 1)]['V_NUM'].sum()
+            if val > 0:
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.number_format = '"R$ " #,##0.00'
+            ws.cell(row=row, column=col).fill = fill_peach
+            ws.cell(row=row, column=col).border = border
+
+    # Fórmulas: VALOR ANUAL (Soma da Coluna)
+    row_anual = 15
+    ws.cell(row=row_anual, column=1, value="VALOR ANUAL:").font = font_header
+    ws.cell(row=row_anual, column=1).fill = fill_blue
+    
+    for idx, ano in enumerate(anos):
+        col = idx + 2
+        col_letter = get_column_letter(col)
+        formula = f"=SUM({col_letter}3:{col_letter}14)"
+        cell = ws.cell(row=row_anual, column=col, value=formula)
+        cell.number_format = '"R$ " #,##0.00'
+        cell.font = font_header
+        cell.fill = fill_peach
+        cell.border = border
+
+    # Fórmula: VALOR TOTAL (Soma dos Totais Anuais)
+    row_total = 16
+    ws.cell(row=row_total, column=1, value="VALOR TOTAL:").font = font_header
+    ws.cell(row=row_total, column=1).fill = fill_blue
+    
+    last_col_letter = get_column_letter(len(anos) + 1)
+    formula_total = f"=SUM(B{row_anual}:{last_col_letter}{row_anual})"
+    ws.merge_cells(start_row=row_total, start_column=2, end_row=row_total, end_column=len(anos)+1)
+    cell_total = ws.cell(row=row_total, column=2, value=formula_total)
+    cell_total.number_format = '"R$ " #,##0.00'
+    cell_total.font = font_header
+    cell_total.alignment = Alignment(horizontal='right')
+    
+    # Fórmula: VALOR EM DOBRO (Total * 2)
+    row_dobro = 17
+    ws.merge_cells(start_row=row_dobro, start_column=1, end_row=row_dobro+1, end_column=1)
+    ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
+    ws.cell(row=row_dobro, column=1).alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+    ws.cell(row=row_dobro, column=1).fill = fill_blue
+    
+    ws.merge_cells(start_row=row_dobro, start_column=2, end_row=row_dobro+1, end_column=len(anos)+1)
+    formula_dobro = f"=B{row_total}*2"
+    cell_dobro = ws.cell(row=row_dobro, column=2, value=formula_dobro)
+    cell_dobro.number_format = '"R$ " #,##0.00'
+    cell_dobro.font = font_header
+    cell_dobro.alignment = Alignment(horizontal='right', vertical='center')
+    cell_dobro.fill = fill_peach
+
+    ws.column_dimensions['A'].width = 25
+    for i in range(2, len(anos) + 2):
+        ws.column_dimensions[get_column_letter(i)].width = 15
+
+    output = io.BytesIO()
+    wb.save(output)
+    return output.getvalue()
+
+# --- 5. DASHBOARD ---
+st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
+
+st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
+if 'sel_all' not in st.session_state: st.session_state.sel_all = True
+
+col_b1, col_b2 = st.sidebar.columns(2)
+if col_b1.button("Marcar Todas"): st.session_state.sel_all = True
+if col_b2.button("Desmarcar Todas"): st.session_state.sel_all = False
+
+selecionadas = []
+for r in RUBRICAS_MESTRE.keys():
+    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+        selecionadas.append(r)
+
+upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+
+if upload:
+    with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
+        dados = realizar_auditoria(upload, selecionadas)
+        if dados:
+            df = pd.DataFrame(dados)
+            df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
-            # Ordena por data
-            df['data'] = pd.to_datetime(df['data'], format='%d/%m/%Y')
-            df = df.sort_values('data')
-            df['data'] = df['data'].dt.strftime('%d/%m/%Y')
+            # Ordenação Cronológica Real
+            def fix_date(d):
+                p = d.split('/')
+                if len(p[2]) == 2: p[2] = "20" + p[2]
+                return "/".join(p)
+            df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+            df = df.sort_values('DT_O', ascending=True)
             
-            # Exibe métricas
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Total de Débitos</div>
-                    <div class="metric-value">{len(df)}</div>
-                </div>
-                """, unsafe_allow_html=True)
+            total_geral = df['V_NUM'].sum()
+            c1, c2 = st.columns(2)
+            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
-            with col2:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Período Analisado</div>
-                    <div class="metric-value">{df['data'].min()} a {df['data'].max()}</div>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
+            st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
             
-            with col3:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-label">Rubricas Identificadas</div>
-                    <div class="metric-value">{df['rubrica'].nunique()}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('<div class="divider-premium"></div>', unsafe_allow_html=True)
-            
-            # Relatório consolidado
-            st.markdown(f"<h3 style='color: {COLORS['dourado_matte']};'>📋 Relatório Consolidado</h3>", unsafe_allow_html=True)
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            
-            # Download de relatórios
-            st.markdown('<div class="divider-premium"></div>', unsafe_allow_html=True)
-            st.markdown(f"<h3 style='color: {COLORS['dourado_matte']};'>📥 Exportar Relatórios</h3>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            
-            # CSV
-            with col1:
-                csv = df.to_csv(index=False, sep=';', encoding='utf-8-sig')
+            cats = df['CATEGORIA'].unique()
+            for cat in cats:
+                df_cat = df[df['CATEGORIA'] == cat]
+                excel_file = gerar_excel_calculos(df_cat, cat)
                 st.download_button(
-                    label="📊 Baixar Relatório (CSV)",
-                    data=csv,
-                    file_name=f"relatorio_extratos_{datetime.now().strftime('%d%m%Y')}.csv",
-                    mime="text/csv"
-                )
-            
-            # Excel com fórmulas
-            with col2:
-                output = io.BytesIO()
-                wb = Workbook()
-                ws = wb.active
-                ws.title = "Extratos"
-                
-                # Cabeçalhos
-                headers = ['DATA', 'RUBRICA', 'VALOR', 'HISTÓRICO']
-                for col_num, header in enumerate(headers, 1):
-                    cell = ws.cell(row=1, column=col_num)
-                    cell.value = header
-                    cell.font = Font(bold=True, color="FFFFFF", name="Calibri", size=11)
-                    cell.fill = PatternFill(start_color="101418", end_color="101418", fill_type="solid")
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-                
-                # Dados
-                for row_num, row_data in enumerate(df.values, 2):
-                    for col_num, value in enumerate(row_data, 1):
-                        cell = ws.cell(row=row_num, column=col_num)
-                        cell.value = value
-                        cell.alignment = Alignment(horizontal="left", vertical="center")
-                
-                wb.save(output)
-                output.seek(0)
-                
-                st.download_button(
-                    label="📈 Baixar Tabela (Excel)",
-                    data=output.getvalue(),
-                    file_name=f"tabela_calculos_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                    label=f"📊 Baixar Tabela: {cat}",
+                    data=excel_file,
+                    file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+            
+            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
+            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
         else:
-            st.warning("⚠️ Nenhum débito foi identificado com as rubricas selecionadas.")
-    
-    except Exception as e:
-        st.error(f"❌ Erro ao processar o arquivo: {str(e)}")
+            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
-# --- FOOTER PREMIUM ---
-st.markdown(f"""
-<div class="footer-premium">
-    <p>© 2026 Edson Medeiros - Consultorias e Compliance. Todos os direitos reservados.</p>
-    <div class="footer-signature">Fundado por Edson Medeiros</div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
