@@ -26,46 +26,51 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS (LISTA EXATA) ---
+# --- 2. RÚBRICAS SOLICITADAS (BUSCA FLEXÍVEL) ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA DE OPERACAO|MORA OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
+    "MORA DE OPERAÇÃO": r"MORA.*OPERACAO|MORA.*OPERACAO",
+    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO.*PESSOAL",
+    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED|MORA.*OPERACAO.*DE.*CREDITO",
     "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO DE CREDITO|CARTAO DE CREDITO|GASTOS CARTAO",
+    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO.*PESSOAL",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
+    "ADIANT": r"ADIANT|ADIANTAMENTO.*DEPOSITANTE",
     "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
+    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
+    "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
+    "OPERACOES VENCIDAS": r"OPERACOES.*VENCIDAS",
+    "DIV. EM ATRASO": r"DIV.*EM.*ATRASO|DIVIDA.*EM.*ATRASO"
 }
 
-def remover_acentos(txt):
+def normalizar_texto(txt):
     if not txt: return ""
-    return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+    # Remove acentos
+    txt = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+    # Remove caracteres especiais e espaços múltiplos
+    txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
+    txt = re.sub(r'\s+', ' ', txt).strip()
+    return txt
 
-# --- 3. MOTOR DE AUDITORIA "DATA INFERIOR" ---
+# --- 3. MOTOR DE AUDITORIA "DATA INFERIOR" ULTRA-ROBUSTO ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
-    cesto_acumulado = [] # Acumula rubricas até encontrar a data inferior
+    cesto_acumulado = []
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            words = page.extract_words(x_tolerance=2, y_tolerance=2)
+            words = page.extract_words(x_tolerance=3, y_tolerance=3)
             if not words: continue
 
-            # Mapeamento dinâmico de colunas
+            # Mapeamento de colunas dinâmico
             col_debito_x = (420, 520)
             col_saldo_x = (520, 650)
             for w in words:
-                txt_w = remover_acentos(w['text'].upper())
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 5, w['x1'] + 5)
-                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 5, w['x1'] + 5)
+                txt_w = normalizar_texto(w['text'])
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 10, w['x1'] + 10)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 10, w['x1'] + 10)
 
             # Agrupar por linhas Y
             linhas_dict = {}
@@ -76,45 +81,53 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             
             y_ordenados = sorted(linhas_dict.keys())
             
-            for y in y_ordenados:
+            for i, y in enumerate(y_ordenados):
                 palavras_linha = sorted(linhas_dict[y], key=lambda x: x['x0'])
                 texto_linha = " ".join([p['text'] for p in palavras_linha])
-                linha_norm = remover_acentos(texto_linha.upper())
+                linha_norm = normalizar_texto(texto_linha)
                 
-                # A. Identificar Data (Gatilho de Selagem Inferior)
+                # A. Identificar Data (Selagem Inferior)
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
                 
-                # B. Buscar Rubrica e Valor de Débito
-                rubrica_encontrada = None
+                # B. Identificar Rubrica (Busca Flexível)
+                rubrica_detectada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
-                        rubrica_encontrada = nome
+                        rubrica_detectada = nome
                         break
                 
-                valor_debito = None
-                for p in palavras_linha:
-                    m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
-                    if m_val:
-                        centro_x = (p['x0'] + p['x1']) / 2
-                        if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
-                            valor_debito = m_val.group(1)
-                            break
+                # C. Se achou rubrica, buscar valor de DÉBITO no contexto
+                if rubrica_detectada:
+                    valor_debito = None
+                    # Tenta na mesma linha, na de cima e na de baixo
+                    indices_contexto = [i]
+                    if i > 0: indices_contexto.insert(0, i-1)
+                    if i < len(y_ordenados) - 1: indices_contexto.append(i+1)
+                    
+                    for idx in indices_contexto:
+                        for p in linhas_dict[y_ordenados[idx]]:
+                            m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
+                            if m_val:
+                                centro_x = (p['x0'] + p['x1']) / 2
+                                if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
+                                    valor_debito = m_val.group(1)
+                                    break
+                        if valor_debito: break
+                    
+                    if valor_debito:
+                        cesto_acumulado.append({
+                            "CATEGORIA": rubrica_detectada,
+                            "VALOR": valor_debito,
+                            "HISTÓRICO": texto_linha[:100]
+                        })
                 
-                # C. Lógica de Acúmulo
-                if rubrica_encontrada and valor_debito:
-                    cesto_acumulado.append({
-                        "CATEGORIA": rubrica_encontrada,
-                        "VALOR": valor_debito,
-                        "HISTÓRICO": texto_linha[:100]
-                    })
-                
-                # D. Lógica de Selagem (Se encontrar data, aplica a todos do cesto)
+                # D. Selagem por Data Inferior
                 if match_data and cesto_acumulado:
                     data_inferior = match_data.group(1)
                     for item in cesto_acumulado:
                         item["DATA"] = data_inferior
                         resultados.append(item)
-                    cesto_acumulado = [] # Limpa o cesto para o próximo bloco
+                    cesto_acumulado = []
 
     return resultados
 
@@ -231,7 +244,6 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
-# Lógica de seleção de rubricas no sidebar
 if 'selecionadas_dict' not in st.session_state:
     st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
 
@@ -259,7 +271,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner("Realizando auditoria pericial de DATA INFERIOR..."):
+        with st.spinner("Realizando auditoria pericial de ALTA SENSIBILIDADE..."):
             dados = realizar_auditoria(upload, selecionadas)
             if dados:
                 df = pd.DataFrame(dados)
