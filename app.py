@@ -26,7 +26,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS (NORMALIZADAS) ---
+# --- 2. RÚBRICAS ATUALIZADAS (PRECISÃO PERICIAL) ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA|TARIFA BANCARIA",
     "PACOTE": r"PACOTE",
@@ -45,99 +45,95 @@ RUBRICAS_MESTRE = {
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
 }
 
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
+TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO|INSS"
 
 def remover_acentos(txt):
     if not txt: return ""
     return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
 
-# --- 3. MOTOR DE AUDITORIA DE ALTA PRECISÃO ---
+# --- 3. MOTOR DE AUDITORIA PERICIAL (ALTA PRECISÃO) ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
-    cesto_pendente = []
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            # Extrair palavras com coordenadas para mapear colunas
-            words = page.extract_words(x_tolerance=3, y_tolerance=3)
+            words = page.extract_words(x_tolerance=2, y_tolerance=2)
             if not words: continue
 
-            # Identificar colunas de Débito e Crédito dinamicamente por página
-            col_debito_x = None
-            col_credito_x = None
+            # 1. MAPEAMENTO DINÂMICO DE COLUNAS
+            # No Bradesco: Crédito (C), Débito (D), Saldo (S)
+            # Precisamos garantir que o valor capturado esteja na coluna de DÉBITO
+            col_credito_x = (320, 420) # Defaults
+            col_debito_x = (420, 520)
+            col_saldo_x = (520, 600)
+            
             for w in words:
                 txt_w = remover_acentos(w['text'].upper())
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'], w['x1'])
-                if "CREDITO" in txt_w: col_credito_x = (w['x0'], w['x1'])
+                if "CREDITO" in txt_w: col_credito_x = (w['x0'] - 5, w['x1'] + 5)
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 5, w['x1'] + 5)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 5, w['x1'] + 5)
 
-            # Fallback Bradesco se não encontrar cabeçalho
-            if not col_debito_x: col_debito_x = (420, 520)
-            if not col_credito_x: col_credito_x = (320, 420)
-
-            # Agrupar palavras por linhas (Y aproximado)
-            linhas_dict = {}
+            # 2. AGRUPAMENTO POR BLOCOS DE TRANSAÇÃO
+            # Agrupar palavras por linha (Y)
+            linhas_y = {}
             for w in words:
                 y = round(w['top'], 0)
-                if y not in linhas_dict: linhas_dict[y] = []
-                linhas_dict[y].append(w)
-
-            y_ordenados = sorted(linhas_dict.keys())
+                if y not in linhas_y: linhas_y[y] = []
+                linhas_y[y].append(w)
             
-            for y in y_ordenados:
-                palavras = sorted(linhas_dict[y], key=lambda x: x['x0'])
-                texto_linha = " ".join([p['text'] for p in palavras])
-                linha_norm = remover_acentos(texto_linha.upper().strip())
-                
-                if not linha_norm: continue
+            y_sorted = sorted(linhas_y.keys())
+            
+            # Processar cada linha buscando rubricas e valores de débito
+            for i, y in enumerate(y_sorted):
+                palavras_linha = sorted(linhas_y[y], key=lambda x: x['x0'])
+                texto_linha = " ".join([p['text'] for p in palavras_linha])
+                linha_norm = remover_acentos(texto_linha.upper())
 
-                # A. Identificar Data (Gatilho de Selagem)
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
-                
-                # B. Identificar Valores e suas Colunas
-                valores_debito = []
-                for p in palavras:
-                    m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
-                    if m_val:
-                        # Verifica se o valor está na zona de débito (com margem de erro)
-                        centro_x = (p['x0'] + p['x1']) / 2
-                        if centro_x > col_debito_x[0] - 10:
-                            valores_debito.append(m_val.group(1))
-
-                # C. Reset por Termos de Exclusão
-                if re.search(TERMOS_EXCLUSAO, linha_norm):
-                    cesto_pendente = []
-                    continue
-
-                # D. Identificar Rubrica
-                rubrica_encontrada = None
+                # A. Identificar se a linha contém uma Rubrica Alvo
+                rubrica_detectada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
-                        rubrica_encontrada = nome
+                        rubrica_detectada = nome
                         break
+                
+                if rubrica_detectada:
+                    # B. Buscar Valor de DÉBITO rigorosamente
+                    # O valor de débito pode estar na mesma linha ou na linha de cima (Bradesco)
+                    valor_final = None
+                    data_final = None
+                    
+                    # Checar linha atual e linha imediatamente anterior (para casos como CESTA abaixo de TARIFA)
+                    linhas_para_checar = []
+                    if i > 0: linhas_para_checar.append(y_sorted[i-1])
+                    linhas_para_checar.append(y)
+                    
+                    for y_check in linhas_para_checar:
+                        palavras_check = linhas_dict_para_valor = linhas_y[y_check]
+                        for p in palavras_check:
+                            # Regex para valor monetário
+                            m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
+                            if m_val:
+                                centro_x = (p['x0'] + p['x1']) / 2
+                                # TRAVA DE SEGURANÇA: Deve estar na coluna de DÉBITO e NÃO na de SALDO ou CRÉDITO
+                                if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
+                                    valor_final = m_val.group(1)
+                        
+                        # Buscar Data no bloco
+                        for p in palavras_check:
+                            m_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", p['text'])
+                            if m_data: data_final = m_data.group(1)
 
-                # E. Lógica de Associação
-                if rubrica_encontrada:
-                    val = valores_debito[0] if valores_debito else "PENDENTE"
-                    cesto_pendente.append({
-                        "CATEGORIA": rubrica_encontrada,
-                        "VALOR": val,
-                        "HISTÓRICO": texto_linha[:80]
-                    })
-                elif valores_debito and cesto_pendente:
-                    # Se temos um valor de débito e rubricas esperando por valor
-                    for item in cesto_pendente:
-                        if item["VALOR"] == "PENDENTE":
-                            item["VALOR"] = valores_debito[0]
-                            break
-
-                # F. Selagem por Data
-                if match_data:
-                    data_str = match_data.group(1)
-                    for item in cesto_pendente:
-                        if item["VALOR"] != "PENDENTE":
-                            item["DATA"] = data_str
-                            resultados.append(item)
-                    cesto_pendente = [i for i in cesto_pendente if i["VALOR"] == "PENDENTE"]
+                    # C. Validação Final: Se encontrou rubrica e valor de débito, registra
+                    if valor_final and data_final:
+                        # Evitar duplicados no mesmo bloco
+                        novo_item = {
+                            "DATA": data_final,
+                            "CATEGORIA": rubrica_detectada,
+                            "VALOR": valor_final,
+                            "HISTÓRICO": texto_linha[:80]
+                        }
+                        if novo_item not in resultados:
+                            resultados.append(novo_item)
 
     return resultados
 
@@ -280,7 +276,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner("Realizando auditoria pericial..."):
+        with st.spinner("Realizando auditoria pericial de alta precisão..."):
             dados = realizar_auditoria(upload, selecionadas)
             if dados:
                 df = pd.DataFrame(dados)
