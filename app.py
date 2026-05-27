@@ -51,17 +51,14 @@ def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
     
-    # Variáveis para armazenar as coordenadas das colunas de Débito e Crédito
     debito_x_coords = None
     credito_x_coords = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            # 1. Pré-processamento: Extrair palavras com posições e identificar cabeçalhos
             words = page.extract_words(x_tolerance=2, y_tolerance=2)
             if not words: continue
 
-            # Tentar identificar as colunas de Débito e Crédito dinamicamente
             if not debito_x_coords or not credito_x_coords:
                 for w in words:
                     if re.search(r"DÉBITO|DEBITO", w['text'].upper()):
@@ -69,11 +66,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     elif re.search(r"CRÉDITO|CREDITO", w['text'].upper()):
                         credito_x_coords = (w['x0'], w['x1'])
                 
-                # Fallback se não encontrar os cabeçalhos (usar valores aproximados do Bradesco)
-                if not debito_x_coords: debito_x_coords = (450, 550) # Exemplo de range para Débito
-                if not credito_x_coords: credito_x_coords = (350, 450) # Exemplo de range para Crédito
+                if not debito_x_coords: debito_x_coords = (450, 550)
+                if not credito_x_coords: credito_x_coords = (350, 450)
 
-            # Agrupar palavras por linha (mesmo Y aproximado)
             linhas_com_posicao = {}
             for w in words:
                 y = round(w['top'], 1)
@@ -90,11 +85,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 
                 if not linha_up: continue
 
-                # 2. Identifica Data
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 
-                # 3. Identifica Valores e suas posições
-                valores_na_linha = [] # Armazena todos os valores encontrados na linha com suas posições
+                valores_na_linha = []
                 for w in palavras_da_linha:
                     m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", w['text'])
                     if m_val:
@@ -104,12 +97,10 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             "x1": w['x1']
                         })
 
-                # 4. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
                     cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
                     continue 
 
-                # 5. Busca Rubrica
                 rubrica_detectada = None
                 if "%" not in linha_up:
                     for nome in rubricas_alvo:
@@ -117,13 +108,11 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # 6. Lógica de Captura e Validação de Débito
                 valor_debito_encontrado = None
                 for v in valores_na_linha:
-                    # Verifica se o valor está na zona de Débito
                     if debito_x_coords[0] <= v['x0'] <= debito_x_coords[1]:
                         valor_debito_encontrado = v['valor']
-                        break # Pega o primeiro valor de débito encontrado na linha
+                        break
                 
                 if rubrica_detectada:
                     if valor_debito_encontrado:
@@ -133,8 +122,6 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             "HISTÓRICO": linha_up[:80]
                         })
                     else:
-                        # Se a rubrica foi detectada mas não há valor de débito na mesma linha,
-                        # adiciona como PENDENTE para ser associado posteriormente
                         cesto_acumulador.append({
                             "CATEGORIA": rubrica_detectada,
                             "VALOR": "PENDENTE",
@@ -142,19 +129,17 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         })
                 
                 elif valor_debito_encontrado and cesto_acumulador:
-                    # Associa o valor de débito à última rubrica PENDENTE no cesto
                     if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
                         cesto_acumulador[-1]["VALOR"] = valor_debito_encontrado
 
-                # 7. Selagem por Data
                 if match_data:
                     data_encontrada = match_data.group(1)
                     if cesto_acumulador:
                         for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE": # Apenas sela itens com valor já associado
+                            if item["VALOR"] != "PENDENTE":
                                 item["DATA"] = data_encontrada
                                 resultados.append(item)
-                        cesto_acumulador = [] # Limpa o cesto após selar com a nova data
+                        cesto_acumulador = []
 
     return resultados
 
@@ -271,54 +256,71 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
+# Lógica de seleção de rubricas no sidebar
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
-if 'sel_all' not in st.session_state: st.session_state.sel_all = True
+
+# Inicializa o estado das checkboxes se não existir
+if 'selecionadas_dict' not in st.session_state:
+    st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
+
+def mudar_selecao(valor):
+    for r in RUBRICAS_MESTRE.keys():
+        st.session_state.selecionadas_dict[r] = valor
 
 col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"): st.session_state.sel_all = True
-if col_b2.button("Desmarcar Todas"): st.session_state.sel_all = False
+if col_b1.button("Marcar Todas"):
+    mudar_selecao(True)
+if col_b2.button("Desmarcar Todas"):
+    mudar_selecao(False)
 
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
-    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+    if st.sidebar.checkbox(r, value=st.session_state.selecionadas_dict[r], key=f"check_{r}"):
+        st.session_state.selecionadas_dict[r] = True
         selecionadas.append(r)
+    else:
+        st.session_state.selecionadas_dict[r] = False
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
-        dados = realizar_auditoria(upload, selecionadas)
-        if dados:
-            df = pd.DataFrame(dados)
-            df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
-            
-            def fix_date(d):
-                p = d.split('/')
-                if len(p[2]) == 2: p[2] = "20" + p[2]
-                return "/".join(p)
-            df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
-            df = df.sort_values('DT_O', ascending=True)
-            
-            total_geral = df['V_NUM'].sum()
-            c1, c2 = st.columns(2)
-            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
-            with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
-            
-            st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
-            
-            cats = df['CATEGORIA'].unique()
-            for cat in cats:
-                df_cat = df[df['CATEGORIA'] == cat]
-                excel_file = gerar_excel_calculos(df_cat, cat)
-                st.download_button(
-                    label=f"📊 Baixar Tabela: {cat}",
-                    data=excel_file,
-                    file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            
-            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-        else:
-            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+    if not selecionadas:
+        st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral para iniciar a auditoria.")
+    else:
+        with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
+            dados = realizar_auditoria(upload, selecionadas)
+            if dados:
+                df = pd.DataFrame(dados)
+                df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+                
+                def fix_date(d):
+                    p = d.split('/')
+                    if len(p[2]) == 2: p[2] = "20" + p[2]
+                    return "/".join(p)
+                df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+                df = df.sort_values('DT_O', ascending=True)
+                
+                total_geral = df['V_NUM'].sum()
+                c1, c2 = st.columns(2)
+                with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
+                with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                
+                st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
+                
+                cats = df['CATEGORIA'].unique()
+                for cat in cats:
+                    df_cat = df[df['CATEGORIA'] == cat]
+                    excel_file = gerar_excel_calculos(df_cat, cat)
+                    st.download_button(
+                        label=f"📊 Baixar Tabela: {cat}",
+                        data=excel_file,
+                        key=f"dl_{cat}",
+                        file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                
+                st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
+            else:
+                st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
