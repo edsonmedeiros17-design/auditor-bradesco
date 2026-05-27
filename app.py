@@ -26,9 +26,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS (MÁXIMA PRECISÃO) ---
+# --- 2. RÚBRICAS SOLICITADAS (LISTA EXATA) ---
 RUBRICAS_MESTRE = {
-    "CESTA": r"CESTA|TARIFA BANCARIA",
+    "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
     "MORA DE OPERAÇÃO": r"MORA DE OPERACAO|MORA OPERACAO",
     "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
@@ -45,24 +45,21 @@ RUBRICAS_MESTRE = {
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
 }
 
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
-
 def remover_acentos(txt):
     if not txt: return ""
     return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
 
-# --- 3. MOTOR DE AUDITORIA INTEGRAL ---
+# --- 3. MOTOR DE AUDITORIA "DATA INFERIOR" ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
-    data_corrente = None
+    cesto_acumulado = [] # Acumula rubricas até encontrar a data inferior
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            # Extrair palavras com coordenadas
-            words = page.extract_words(x_tolerance=3, y_tolerance=3)
+            words = page.extract_words(x_tolerance=2, y_tolerance=2)
             if not words: continue
 
-            # Mapeamento dinâmico de colunas por página
+            # Mapeamento dinâmico de colunas
             col_debito_x = (420, 520)
             col_saldo_x = (520, 650)
             for w in words:
@@ -70,7 +67,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 5, w['x1'] + 5)
                 if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 5, w['x1'] + 5)
 
-            # Agrupar palavras por linha Y
+            # Agrupar por linhas Y
             linhas_dict = {}
             for w in words:
                 y = round(w['top'], 0)
@@ -79,65 +76,45 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             
             y_ordenados = sorted(linhas_dict.keys())
             
-            # Varredura Integral
-            for i, y in enumerate(y_ordenados):
+            for y in y_ordenados:
                 palavras_linha = sorted(linhas_dict[y], key=lambda x: x['x0'])
                 texto_linha = " ".join([p['text'] for p in palavras_linha])
                 linha_norm = remover_acentos(texto_linha.upper())
                 
-                # A. Identificar Data (Persistência)
-                m_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
-                if m_data:
-                    data_corrente = m_data.group(1)
-
-                # B. Identificar Rubrica
+                # A. Identificar Data (Gatilho de Selagem Inferior)
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
+                
+                # B. Buscar Rubrica e Valor de Débito
                 rubrica_encontrada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
                         rubrica_encontrada = nome
                         break
                 
-                if rubrica_encontrada:
-                    # C. Busca Exaustiva de Valor de Débito
-                    valor_debito = None
-                    
-                    # 1. Tentar na mesma linha
-                    for p in palavras_linha:
-                        m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
-                        if m_val:
-                            centro_x = (p['x0'] + p['x1']) / 2
-                            if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
-                                valor_debito = m_val.group(1)
-                                break
-                    
-                    # 2. Se não encontrar, tentar na linha imediatamente acima (comum no Bradesco)
-                    if not valor_debito and i > 0:
-                        for p in linhas_dict[y_ordenados[i-1]]:
-                            m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
-                            if m_val:
-                                centro_x = (p['x0'] + p['x1']) / 2
-                                if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
-                                    valor_debito = m_val.group(1)
-                                    break
-                    
-                    # 3. Se ainda não encontrar, tentar na linha imediatamente abaixo
-                    if not valor_debito and i < len(y_ordenados) - 1:
-                        for p in linhas_dict[y_ordenados[i+1]]:
-                            m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
-                            if m_val:
-                                centro_x = (p['x0'] + p['x1']) / 2
-                                if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
-                                    valor_debito = m_val.group(1)
-                                    break
-
-                    # D. Registro Final
-                    if valor_debito and data_corrente:
-                        resultados.append({
-                            "DATA": data_corrente,
-                            "CATEGORIA": rubrica_encontrada,
-                            "VALOR": valor_debito,
-                            "HISTÓRICO": texto_linha[:100]
-                        })
+                valor_debito = None
+                for p in palavras_linha:
+                    m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
+                    if m_val:
+                        centro_x = (p['x0'] + p['x1']) / 2
+                        if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
+                            valor_debito = m_val.group(1)
+                            break
+                
+                # C. Lógica de Acúmulo
+                if rubrica_encontrada and valor_debito:
+                    cesto_acumulado.append({
+                        "CATEGORIA": rubrica_encontrada,
+                        "VALOR": valor_debito,
+                        "HISTÓRICO": texto_linha[:100]
+                    })
+                
+                # D. Lógica de Selagem (Se encontrar data, aplica a todos do cesto)
+                if match_data and cesto_acumulado:
+                    data_inferior = match_data.group(1)
+                    for item in cesto_acumulado:
+                        item["DATA"] = data_inferior
+                        resultados.append(item)
+                    cesto_acumulado = [] # Limpa o cesto para o próximo bloco
 
     return resultados
 
@@ -254,12 +231,14 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
+# Lógica de seleção de rubricas no sidebar
 if 'selecionadas_dict' not in st.session_state:
     st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
 
 def mudar_selecao(valor):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state.selecionadas_dict[r] = valor
+    st.rerun()
 
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
 col_b1, col_b2 = st.sidebar.columns(2)
@@ -280,7 +259,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner("Realizando auditoria integral de alta precisão..."):
+        with st.spinner("Realizando auditoria pericial de DATA INFERIOR..."):
             dados = realizar_auditoria(upload, selecionadas)
             if dados:
                 df = pd.DataFrame(dados)
