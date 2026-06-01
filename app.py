@@ -54,7 +54,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=5) # Aumenta a tolerância Y para agrupar linhas próximas
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3) # Reverte a tolerância Y para o padrão original
             if not texto: continue
             
             linhas = texto.split('\n')
@@ -66,8 +66,11 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
 
-                if current_match_data: last_known_date = current_match_data.group(1)
-                if current_match_valor: last_known_value = current_match_valor.group(1)
+                # Atualiza last_known_date e last_known_value para a próxima iteração, se encontrados na linha atual
+                if current_match_data:
+                    last_known_date = current_match_data.group(1)
+                if current_match_valor:
+                    last_known_value = current_match_valor.group(1)
                 
                 # 2. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
@@ -86,18 +89,26 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 
                 # 4. Lógica de Captura (Acúmulo)
                 if rubrica_detectada:
-                    # Prioriza o valor da linha, mas usa o último valor conhecido se não houver na linha
-                    valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
-                    data_para_rubrica = last_known_date if last_known_date else "PENDENTE"
+                    if rubrica_detectada == "CESTA":
+                        # Lógica especial para CESTA: herda data e valor da linha anterior se não estiverem na linha atual
+                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
+                        data_para_rubrica = current_match_data.group(1) if current_match_data else last_known_date if last_known_date else "PENDENTE"
+                    else:
+                        # Lógica padrão para outras rubricas: prioriza data/valor da linha atual
+                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else "PENDENTE"
+                        data_para_rubrica = current_match_data.group(1) if current_match_data else "PENDENTE"
 
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
                         "VALOR": valor_para_rubrica,
                         "HISTÓRICO": linha_up[:80],
-                        "DATA": data_para_rubrica # Adiciona a data aqui para rubricas que aparecem depois
+                        "DATA": data_para_rubrica
                     })
-                    last_known_date = None # Consome a data conhecida
-                    last_known_value = None # Consome o valor conhecido
+                    # Reseta last_known_date e last_known_value apenas se a rubrica encontrada não for CESTA
+                    # Para CESTA, eles são consumidos na atribuição, mas podem ser úteis para a próxima linha se houver outra CESTA
+                    if rubrica_detectada != "CESTA":
+                        last_known_date = None
+                        last_known_value = None
                 
                 elif current_match_valor and cesto_acumulador:
                     # Associa o valor à última rubrica pendente no cesto
@@ -105,18 +116,16 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
 
                 # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
-                # A lógica de selagem agora é mais integrada com a detecção de rubricas.
-                # Se uma data é encontrada e há itens no cesto sem data, atribui a eles.
+                # Se uma data é encontrada, sela os itens acumulados com essa data.
                 if current_match_data:
                     data_encontrada = current_match_data.group(1)
                     if cesto_acumulador:
                         for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE": # Apenas se a data ainda não foi atribuída
+                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE":
                                 item["DATA"] = data_encontrada
                             resultados.append(item)
                         cesto_acumulador = []
-                    last_known_date = None # Reseta a data conhecida após a selagem
-                    last_known_value = None # Reseta o valor conhecido
+                    # last_known_date e last_known_value são resetados após a selagem para evitar herança indevida para o próximo bloco de transações.
 
     return resultados
 
