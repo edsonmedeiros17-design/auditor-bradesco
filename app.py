@@ -41,14 +41,12 @@ premium_ui_css = """
     }
     
     .section-title {
-        font-size: 28px !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
-        letter-spacing: -0.02em !important;
+        letter-spacing: 0.15em !important;
         color: #C5A566 !important;
         margin-bottom: 20px !important;
         text-transform: uppercase;
-        font-size: 14px !important;
-        letter-spacing: 0.15em !important;
     }
     
     /* Componentes Institucionais Organizados */
@@ -156,13 +154,14 @@ premium_ui_css = """
 st.markdown(premium_ui_css, unsafe_allow_html=True)
 
 # ==========================================
-# PARÂMETROS E MOTOR DE AUDITORIA (PRESERVADOS)
+# PARÂMETROS E MOTOR DE AUDITORIA FORENSE
 # ==========================================
 RUBRICAS_ALERTA = [
     "CESTA", "PACOTE", "MORA DE OPERAÇÃO", "MORA CREDITO PESSOAL",
     "MORA OPERACAO DE CREDITO", "BX", "PARCELA CREDITO PESSOAL",
     "GASTOS CARTAO DE CREDITO", "SEGURO", "ADIANT", "APLIC",
-    "ENCARGOS", "ANUIDADE", "OPERACOES VENCIDAS", "DIV. EM ATRASO"
+    "ENCARGOS", "ANUIDADE", "OPERACOES VENCIDAS", "DIV. EM ATRASO",
+    "ENCARGOS LIMITE DE CRED"
 ]
 
 def remover_acentos_e_padronizar(texto):
@@ -184,21 +183,57 @@ def converter_pdf_para_dataframe(pdf_bytes):
                 if len(partes) < 2:
                     continue
                 
+                # Passo 1: Identificação da Data Inicial (se houver na linha)
                 tem_data = re.match(r'^\d{2}/\d{2}/\d{4}', partes[0])
                 if tem_data:
                     data = partes[0]
                     resto = partes[1:]
                 else:
-                    data = pd.NA
+                    data = pd.NA  # Deixa vazio para capturar a DATA INFERIOR depois
                     resto = partes
                 
-                valor = resto[-1] if len(resto) > 0 else ""
-                doc = resto[-2] if len(resto) > 1 and resto[-2].isdigit() else ""
+                # Passo 2: Mapeamento Reverso Inteligente de Valores Contábeis
+                valores_candidatos = []
+                for idx in range(len(resto) - 1, -1, -1):
+                    token = resto[idx]
+                    # Identifica padrões numéricos decimais de moeda (ex: 115,62 ou 19,31) e ignora taxas com %
+                    if re.search(r'^-?\d+([\.,]\d{2})+$', token) and '%' not in token:
+                        valores_candidatos.append(idx)
                 
-                if doc:
-                    descricao = " ".join(resto[:-2])
+                indices_para_remover = set()
+                valor = ""
+                
+                if len(valores_candidatos) >= 2:
+                    # Conforme a estrutura padrão: o último valor à direita é o Saldo, o penúltimo é o Valor do Débito
+                    idx_saldo = valores_candidatos[0]
+                    idx_valor = valores_candidatos[1]
+                    valor = resto[idx_valor]
+                    indices_para_remover.add(idx_saldo)
+                    indices_para_remover.add(idx_valor)
+                elif len(valores_candidatos) == 1:
+                    # Se houver apenas uma ocorrência decimal isolada, ela representa o valor movimentado
+                    idx_valor = valores_candidatos[0]
+                    valor = resto[idx_valor]
+                    indices_para_remover.add(idx_valor)
                 else:
-                    descricao = " ".join(resto[:-1])
+                    # Fallback de contingência estrutural
+                    valor = resto[-1] if len(resto) > 0 else ""
+                    if len(resto) > 0:
+                        indices_para_remover.add(len(resto) - 1)
+                
+                # Passo 3: Limpeza e isolamento do Histórico de Rubricas
+                resto_sem_valores = [resto[i] for i in range(len(resto)) if i not in indices_para_remover]
+                
+                # Extração do número do documento corporativo (tokens puramente numéricos longos)
+                doc = ""
+                descricao_tokens = []
+                for token in resto_sem_valores:
+                    if token.isdigit() and len(token) >= 4:
+                        doc = token
+                    else:
+                        descricao_tokens.append(token)
+                
+                descricao = " ".join(descricao_tokens)
                 
                 if descricao:
                     dados_extraidos.append({
@@ -214,8 +249,9 @@ def analisar_e_filtrar_estrito(df_extrato, rubricas_filtradas):
     df.columns = [c.strip().title() for c in df.columns]
     
     if 'Data' in df.columns and 'Descricao' in df.columns:
+        # Aplicação cirúrgica da Regra de DATA INFERIOR demonstrada no "ANEXA 1"
         df['Data'] = df['Data'].replace(r'^\s*$', pd.NA, regex=True)
-        df['Data'] = df['Data'].bfill()  # Regra de Data Inferior ativa
+        df['Data'] = df['Data'].bfill()  # Preenche de baixo para cima puxando a data limite inferior
         
         df['Alerta'] = 'Normal'
         df['Rubrica Detectada'] = 'Nenhuma'
@@ -230,7 +266,7 @@ def analisar_e_filtrar_estrito(df_extrato, rubricas_filtradas):
         df = df.drop(columns=['Descricao_Limpa'])
         df_filtrado_estrito = df[df['Alerta'] == '⚠️ AUDITAR'].copy()
         
-        # --- ALTERAÇÃO APLICADA: DATA, NOME DA RUBRICA, VALOR DESCONTADO ---
+        # Formatação final estrita exigida pelo escopo do projeto
         if not df_filtrado_estrito.empty:
             df_filtrado_estrito = df_filtrado_estrito[['Data', 'Rubrica Detectada', 'Valor']]
             df_filtrado_estrito.columns = ['DATA', 'NOME DA RUBRICA', 'VALOR DESCONTADO']
@@ -269,7 +305,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 3. Seção Sobre a Empresa
-st.markdown("<div class='section-title'>About the Firm</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Sobre a Empresa</div>", unsafe_allow_html=True)
 st.markdown("""
 <div style='max-width: 900px; font-size: 16px; color: #94A3B8; line-height: 1.8; font-weight: 300; margin-bottom: 40px;'>
     A <b style='color: #FFFFFF;'>EDSON MEDEIROS - Consultoria & Compliance</b> consolida-se como uma boutique estratégica de inteligência digital e integridade corporativa. Atendemos com total discrição e exclusividade, desenvolvendo metodologias sob medida baseadas em auditoria forense de alto padrão para identificar assimetrias, mitigar riscos operacionais e reestruturar passivos bancários com autoridade inabalável.
@@ -347,7 +383,7 @@ if arquivo_enviado is not None:
     nome_arquivo = arquivo_enviado.name.lower()
     try:
         if nome_arquivo.endswith('.pdf'):
-            with st.spinner("Decodificando camadas criptográficas do PDF..."):
+            with st.spinner("Decodificando camadas contábeis do PDF..."):
                 df_base = converter_pdf_para_dataframe(bytes_do_arquivo)
         elif nome_arquivo.endswith('.csv'):
             df_base = pd.read_csv(io.BytesIO(bytes_do_arquivo))
@@ -357,8 +393,9 @@ if arquivo_enviado is not None:
         st.error(f"Erro na aquisição do documento: {e}")
 
 elif simular_dados:
+    # Cenário reconstruído identicamente ao exemplo real da imagem "ANEXA 1"
     dados_simulados = {
-        'Data': ['07/02/2017', '', '', '08/02/2017'],
+        'Data': ['07/02/2017', None, None, '08/02/2017'],
         'Descricao': [
             'SAQUE DINHEIRO ATM',
             'MORA CREDITO PESSOAL', 
@@ -366,7 +403,7 @@ elif simular_dados:
             'SAQUE DIN CORBAN CARTAO ESPECIE'
         ],
         'Docto': ['6017411', '5070038', '8118726', '3714083'],
-        'Valor': ['-500,00', '-115,62', '-19,31', '-130,00']
+        'Valor': ['500,00', '115,62', '19,31', '130,00']
     }
     df_base = pd.DataFrame(dados_simulados)
 
