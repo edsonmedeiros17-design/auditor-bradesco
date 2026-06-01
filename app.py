@@ -6,136 +6,157 @@ import io
 import re
 
 # ==========================================
-# METADADOS E REMOÇÃO TOTAL DE ARTEFATOS PADRÃO
+# METADADOS DA PÁGINA & BLINDAGEM DE INTERFACE
 # ==========================================
 st.set_page_config(
-    page_title="EDSON MEDEIROS | Consultoria & Inteligência Digital",
+    page_title="EDSON MEDEIROS | Consultoria & Compliance",
     page_icon="💼",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# ARQUITETURA DE DESIGN ULTRA-PROFISSIONAL (CSS)
+# ESTÉTICA INTERNACIONAL (CSS LUXO SILENCIOSO)
 # ==========================================
-corporate_css = """
+premium_ui_css = """
 <style>
-    /* Importação da fonte padrão de interfaces governamentais e bancárias europeias */
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
     
-    /* Ocultação total e estrita de cabeçalhos, rodapés e menus do Streamlit para parecer um sistema nativo */
+    /* Remoção estrita de componentes nativos do Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none !important;}
     
-    /* Suavização de renderização e transição global */
-    * {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
-    /* Fundo Executivo Premium Sólido e Elegante */
+    /* Configurações Globais da Identidade Visual */
     .stApp {
-        background-color: #0B0E14 !important;
-        color: #F1F5F9 !important;
+        background-color: #101418 !important;
+        color: #E2E8F0 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
     
-    /* Tipografia de Alta Autoridade */
-    h1 {
-        font-size: 38px !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.03em !important;
-        color: #FFFFFF !important;
-        line-height: 1.2 !important;
-        margin-bottom: 8px !important;
-    }
-    
-    .subtitle-executive {
-        color: #94A3B8 !important;
-        font-size: 16px !important;
-        font-weight: 400 !important;
-        max-width: 700px;
-        line-height: 1.6;
-    }
-    
-    h3 {
-        color: #F1F5F9 !important;
-        font-weight: 600 !important;
-        font-size: 16px !important;
-        letter-spacing: -0.01em !important;
-        text-transform: uppercase;
+    /* Tipografia de Alto Padrão */
+    .brand-gold {
         color: #C5A566 !important;
     }
-
-    /* Bloco Organizador Minimalista de Alta Classe */
-    .corporate-card {
-        background-color: #111622;
-        border: 1px solid #1E293B;
-        border-radius: 8px;
-        padding: 30px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    }
-    .corporate-card:hover {
-        border-color: #334155;
+    
+    .section-title {
+        font-size: 28px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
+        color: #C5A566 !important;
+        margin-bottom: 20px !important;
+        text-transform: uppercase;
+        font-size: 14px !important;
+        letter-spacing: 0.15em !important;
     }
     
-    /* Destaque Ativo de Configurações */
-    .active-card {
-        border-left: 3px solid #C5A566 !important;
+    /* Componentes Institucionais Organizados */
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 0;
+        border-bottom: 1px solid rgba(197, 165, 102, 0.1);
     }
-
-    /* Botões Executivos Foscos com Resposta Touch/Click Limpa */
-    div.stButton > button {
-        background-color: #C5A566 !important;
-        color: #0B0E14 !important;
-        border: 1px solid #C5A566 !important;
+    
+    .hero-container {
+        padding: 90px 0 60px 0;
+        max-width: 850px;
+    }
+    
+    .hero-title {
+        font-size: 48px !important;
+        font-weight: 700 !important;
+        line-height: 1.15 !important;
+        color: #FFFFFF !important;
+        letter-spacing: -0.03em !important;
+        margin-bottom: 24px !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 18px !important;
+        color: #94A3B8 !important;
+        line-height: 1.6 !important;
+        font-weight: 300 !important;
+    }
+    
+    /* Cards Executivos de Serviços e Diferenciais */
+    .premium-card {
+        background-color: #14191F;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        padding: 32px;
+        height: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .premium-card:hover {
+        border-color: rgba(197, 165, 102, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    /* Customização de Inputs Operacionais */
+    .stFileUploader {
+        border: 1px dashed rgba(197, 165, 102, 0.2) !important;
         border-radius: 6px !important;
-        padding: 12px 24px !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        letter-spacing: -0.01em !important;
-        transition: all 0.2s ease-in-out !important;
+        background-color: #13181E !important;
+    }
+    
+    .stMultiSelect div[data-baseweb="select"] {
+        background-color: #13181E !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Botões de Ação Sofisticados */
+    div.stButton > button {
+        background-color: transparent !important;
+        color: #C5A566 !important;
+        border: 1px solid #C5A566 !important;
+        border-radius: 4px !important;
+        padding: 12px 28px !important;
+        font-weight: 500 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase;
+        transition: all 0.3s ease !important;
         width: 100%;
     }
     div.stButton > button:hover {
-        background-color: #DFBA73 !important;
-        border-color: #DFBA73 !important;
-        box-shadow: 0 4px 12px rgba(197, 165, 102, 0.2) !important;
-        transform: translateY(-1px);
-    }
-    div.stButton > button:active {
-        transform: translateY(0);
-    }
-
-    /* Input de Upload Customizado */
-    .stFileUploader {
-        border: 1px dashed #334155 !important;
-        border-radius: 8px !important;
-        background-color: #0E131F !important;
-        padding: 12px !important;
-    }
-
-    /* Divisores Sutis de Alta Precisão */
-    .corporate-divider {
-        height: 1px;
-        background-color: #1E293B;
-        margin: 32px 0;
+        background-color: #C5A566 !important;
+        color: #101418 !important;
+        box-shadow: 0 4px 15px rgba(197, 165, 102, 0.15) !important;
     }
     
-    /* Customização fina de tabelas e inputs Streamlit */
-    .stMultiSelect div[data-baseweb="select"] {
-        background-color: #0E131F !important;
-        border: 1px solid #334155 !important;
-        border-radius: 6px !important;
+    .contact-link-box {
+        display: inline-block;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 16px 24px;
+        border-radius: 4px;
+        color: #E2E8F0 !important;
+        text-decoration: none !important;
+        font-weight: 500;
+        font-size: 14px;
+        margin-right: 15px;
+        transition: all 0.2s ease;
+    }
+    .contact-link-box:hover {
+        border-color: #C5A566;
+        color: #C5A566 !important;
+    }
+    
+    .corporate-divider {
+        height: 1px;
+        background-color: rgba(255, 255, 255, 0.05);
+        margin: 55px 0;
     }
 </style>
 """
-st.markdown(corporate_css, unsafe_allow_html=True)
+st.markdown(premium_ui_css, unsafe_allow_html=True)
 
 # ==========================================
-# REGRAS DE NEGÓCIO E CONSTANTES (PRESERVADAS)
+# PARÂMETROS E MOTOR DE AUDITORIA (PRESERVADOS)
 # ==========================================
 RUBRICAS_ALERTA = [
     "CESTA", "PACOTE", "MORA DE OPERAÇÃO", "MORA CREDITO PESSOAL",
@@ -194,7 +215,7 @@ def analisar_e_filtrar_estrito(df_extrato, rubricas_filtradas):
     
     if 'Data' in df.columns and 'Descricao' in df.columns:
         df['Data'] = df['Data'].replace(r'^\s*$', pd.NA, regex=True)
-        df['Data'] = df['Data'].bfill()  # Motor de Data Inferior
+        df['Data'] = df['Data'].bfill()  # Regra de Data Inferior ativa
         
         df['Alerta'] = 'Normal'
         df['Rubrica Detectada'] = 'Nenhuma'
@@ -207,68 +228,118 @@ def analisar_e_filtrar_estrito(df_extrato, rubricas_filtradas):
             df.loc[condicao, 'Rubrica Detectada'] = rubrica
             
         df = df.drop(columns=['Descricao_Limpa'])
-        
         df_filtrado_estrito = df[df['Alerta'] == '⚠️ AUDITAR'].copy()
         
-        # FILTRAGEM ESTRETA EXIGIDA: Apenas DATA, NOME DA RUBRICA, VALOR
+        # --- ALTERAÇÃO APLICADA: DATA, NOME DA RUBRICA, VALOR DESCONTADO ---
         if not df_filtrado_estrito.empty:
             df_filtrado_estrito = df_filtrado_estrito[['Data', 'Rubrica Detectada', 'Valor']]
-            df_filtrado_estrito.columns = ['DATA', 'NOME DA RUBRICA', 'VALOR']
+            df_filtrado_estrito.columns = ['DATA', 'NOME DA RUBRICA', 'VALOR DESCONTADO']
         
         return df_filtrado_estrito
         
     return pd.DataFrame()
 
 # ==========================================
-# INTERFACE GRÁFICA (ALTA RESOLUÇÃO CORPORATIVA)
+# CONSTRUTOR DA INTERFACE INSTITUCIONAL PRESTÍGIO
 # ==========================================
 
-# Barra Topo de Identidade de Marca
+# 1. Header Minimalista
 st.markdown("""
-<div style='display: flex; justify-content: space-between; align-items: center; padding: 10px 0;'>
-    <div style='font-size: 13px; letter-spacing: 0.15em; color: #C5A566; font-weight: 700;'>EDSON MEDEIROS</div>
-    <div style='font-size: 11px; color: #64748B; font-weight: 500;'>SISTEMA DE COMPLIANCE DIGITAL v3.2</div>
+<div class='nav-container'>
+    <div style='font-size: 16px; letter-spacing: 0.15em; font-weight: 700; color: #FFFFFF;'>
+        EDSON MEDEIROS <span class='brand-gold' style='font-weight: 300;'>| CONSULTORIA & COMPLIANCE</span>
+    </div>
+    <div style='font-size: 13px; color: #94A3B8; font-weight: 400;'>
+        <span style='margin-left: 20px; color: #C5A566;'>• Corporate</span>
+        <span style='margin-left: 20px;'>• Soluções</span>
+        <span style='margin-left: 20px;'>• Auditoria</span>
+    </div>
 </div>
-<div class='corporate-divider' style='margin-top: 10px; margin-bottom: 30px;'></div>
 """, unsafe_allow_html=True)
 
-# Seção de Entrada Principal (Hero Alinhado à Esquerda - Estilo Enterprise)
+# 2. Hero Section Impactante
 st.markdown("""
-<div>
-    <h1>Console de Auditoria e Análise Bancária</h1>
-    <p class='subtitle-executive'>
-        Plataforma restrita para cruzamento de dados analíticos, extração automatizada de passivos e reconciliação cronológica estruturada com motor de retroalimentação temporal.
+<div class='hero-container'>
+    <h1 class='hero-title'>Excelência Estratégica e Rigor Contábil de Classe Mundial.</h1>
+    <p class='hero-subtitle'>
+        Salvaguardamos o patrimônio de corporações de alta performance através de blindagem financeira, auditoria cambial avançada e inteligência regulatória. Luxo silencioso traduzido em precisão absoluta.
     </p>
 </div>
-<div class='corporate-divider'></div>
+<div class='corporate-divider' style='margin-top: 10px;'></div>
 """, unsafe_allow_html=True)
 
-# Painel Duplo Simétrico de Operações
-col1, col2 = st.columns([1.6, 1.4], gap="large")
+# 3. Seção Sobre a Empresa
+st.markdown("<div class='section-title'>About the Firm</div>", unsafe_allow_html=True)
+st.markdown("""
+<div style='max-width: 900px; font-size: 16px; color: #94A3B8; line-height: 1.8; font-weight: 300; margin-bottom: 40px;'>
+    A <b style='color: #FFFFFF;'>EDSON MEDEIROS - Consultoria & Compliance</b> consolida-se como uma boutique estratégica de inteligência digital e integridade corporativa. Atendemos com total discrição e exclusividade, desenvolvendo metodologias sob medida baseadas em auditoria forense de alto padrão para identificar assimetrias, mitigar riscos operacionais e reestruturar passivos bancários com autoridade inabalável.
+</div>
+""", unsafe_allow_html=True)
 
-with col1:
-    st.markdown("<div class='corporate-card'><h3>1. Carregamento de Documentos</h3>", unsafe_allow_html=True)
-    arquivo_enviado = st.file_uploader("Selecione ou arraste o extrato bancário original para análise imediata", type=["pdf", "csv", "xlsx"])
-    st.markdown("<div style='margin: 18px 0; text-align: center; color: #475569; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;'>OU UTILIZE O AMBIENTE DE SIMULAÇÃO</div>", unsafe_allow_html=True)
-    simular_dados = st.button("Executar Demonstração com Padrão de Dados Real")
-    st.markdown("</div>", unsafe_allow_html=True)
+# 4. Seção de Serviços (Cards Organizados)
+st.markdown("<div class='section-title'>Nossos Serviços</div>", unsafe_allow_html=True)
+s_col1, s_col2, s_col3 = st.columns(3, gap="medium")
 
-with col2:
-    st.markdown("<div class='corporate-card active-card'><h3>2. Escopo de Monitoramento</h3>", unsafe_allow_html=True)
+with s_col1:
+    st.markdown("""
+    <div class='premium-card'>
+        <h4 style='color: #FFFFFF; font-size: 18px; margin-bottom: 12px; font-weight: 600;'>Corporate Compliance</h4>
+        <p style='color: #94A3B8; font-size: 14px; line-height: 1.6; font-weight: 300;'>
+            Alinhamento estrito às matrizes regulatórias e governança avançada para mitigar contingências comerciais perante órgãos fiscalizadores.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with s_col2:
+    st.markdown("""
+    <div class='premium-card'>
+        <h4 style='color: #C5A566; font-size: 18px; margin-bottom: 12px; font-weight: 600;'>Auditoria Digital de Ativos</h4>
+        <p style='color: #94A3B8; font-size: 14px; line-height: 1.6; font-weight: 300;'>
+            Varredura algorítmica de extratos com rastreamento reverso para captura e eliminação cirúrgica de débitos comerciais indevidos.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with s_col3:
+    st.markdown("""
+    <div class='premium-card'>
+        <h4 style='color: #FFFFFF; font-size: 18px; margin-bottom: 12px; font-weight: 600;'>Consultoria Estratégica</h4>
+        <p style='color: #94A3B8; font-size: 14px; line-height: 1.6; font-weight: 300;'>
+            Engenharia de proteção de caixa estruturada para empresas maduras que demandam exclusividade e tomada de decisão de alto nível.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div class='corporate-divider'></div>", unsafe_allow_html=True)
+
+# ==========================================
+# 5. MÓDULO INTEGRADO DA FERRAMENTA DE AUDITORIA
+# ==========================================
+st.markdown("<div class='section-title'>Console de Inteligência Cambial</div>", unsafe_allow_html=True)
+
+tool_col1, tool_col2 = st.columns([1.6, 1.4], gap="large")
+
+with tool_col1:
+    st.markdown("<div style='font-size: 14px; color: #E2E8F0; margin-bottom: 10px; font-weight: 500;'>Entrada de Documentos Digitais</div>", unsafe_allow_html=True)
+    arquivo_enviado = st.file_uploader("Arraste ou selecione o arquivo original (PDF, XLSX, CSV)", type=["pdf", "csv", "xlsx"], label_visibility="collapsed")
+    st.markdown("<div style='margin: 15px 0; text-align: center; color: #475569; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;'>OU DEFLAGRE O PROCESSO EM AMBIENTE SEGURO DE SIMULAÇÃO</div>", unsafe_allow_html=True)
+    simular_dados = st.button("Simular Análise Baseada no Modelo de Extrato Anexo 1")
+
+with tool_col2:
+    st.markdown("<div style='font-size: 14px; color: #E2E8F0; margin-bottom: 10px; font-weight: 500;'>Parametrização Estrita de Busca</div>", unsafe_allow_html=True)
     rubricas_selecionadas = st.multiselect(
-        label="Selecione as rubricas específicas para rastreamento ativo:",
+        label="Parâmetros ativos de auditoria",
         options=RUBRICAS_ALERTA,
         default=RUBRICAS_ALERTA,
-        help="As movimentações que não corresponderem a estes critérios serão integralmente desconsideradas do relatório."
+        label_visibility="collapsed"
     )
     st.markdown("""
-        <div style='margin-top: 20px; font-size: 12px; color: #64748B; line-height: 1.5;'>
-            * O motor executa a varredura baseando-se no modelo de <b>Data Inferior</b>, associando débitos sem data explícita ao lote subsequente imediato.
+        <div style='margin-top: 15px; font-size: 12px; color: #64748B; line-height: 1.5; font-weight: 300;'>
+            * O sistema isolará apenas as ocorrências dos alvos marcados acima, efetuando o recálculo retroativo baseado no fechamento por <b>Data Inferior</b> do lote de movimentações.
         </div>
     """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# Processamento da Informação
+# Processamento Lógico Ativo
 df_base = None
 
 if arquivo_enviado is not None:
@@ -276,14 +347,14 @@ if arquivo_enviado is not None:
     nome_arquivo = arquivo_enviado.name.lower()
     try:
         if nome_arquivo.endswith('.pdf'):
-            with st.spinner("Decodificando strings estruturadas do arquivo PDF..."):
+            with st.spinner("Decodificando camadas criptográficas do PDF..."):
                 df_base = converter_pdf_para_dataframe(bytes_do_arquivo)
         elif nome_arquivo.endswith('.csv'):
             df_base = pd.read_csv(io.BytesIO(bytes_do_arquivo))
         else:
             df_base = pd.read_excel(io.BytesIO(bytes_do_arquivo))
     except Exception as e:
-        st.error(f"Erro ao processar o arquivo de entrada: {e}")
+        st.error(f"Erro na aquisição do documento: {e}")
 
 elif simular_dados:
     dados_simulados = {
@@ -299,45 +370,55 @@ elif simular_dados:
     }
     df_base = pd.DataFrame(dados_simulados)
 
-# Exibição do Relatório Final de Auditoria
+# Saída do Relatório da Auditoria
 if df_base is not None:
-    st.markdown("<div class='corporate-divider'></div>", unsafe_allow_html=True)
     relatorio_final = analisar_e_filtrar_estrito(df_base, rubricas_selecionadas)
+    st.markdown("<br>", unsafe_allow_html=True)
     
     if relatorio_final.empty:
         st.info("Nenhuma inconsistência contendo as rubricas selecionadas foi detectada neste lote de documentos.")
     else:
-        st.markdown("<h2 style='font-size: 20px; font-weight: 600; margin-bottom: 20px;'>Relatório Consolidado de Inconformidades</h2>", unsafe_allow_html=True)
-        
-        # Grid Executivo de Resumo de Dados
-        kpi_col1, kpi_col2 = st.columns(2)
-        with kpi_col1:
-            st.markdown(f"""
-            <div class='corporate-card' style='padding: 20px; text-align: left;'>
-                <div style='color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase;'>Status da Análise</div>
-                <div style='color: #EF4444; font-size: 24px; font-weight: 700; margin-top: 5px;'>REGISTROS DETECTADOS</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with kpi_col2:
-            st.markdown(f"""
-            <div class='corporate-card' style='padding: 20px; text-align: left;'>
-                <div style='color: #64748B; font-size: 12px; font-weight: 600; text-transform: uppercase;'>Total de Ocorrências</div>
-                <div style='color: #FFFFFF; font-size: 24px; font-weight: 700; margin-top: 5px;'>{len(relatorio_final)} Lançamentos</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Renderização Limpa e Impecável da Tabela Corporativa
+        st.markdown("<div style='font-size: 14px; color: #C5A566; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 15px;'>RESULTADO DA EXTRAÇÃO DE PASSIVOS REGULATÓRIOS</div>", unsafe_allow_html=True)
         st.dataframe(
             relatorio_final, 
             use_container_width=True,
             hide_index=True
         )
 
-# Rodapé com Assinatura Legal e Corporativa
+st.markdown("<div class='corporate-divider'></div>", unsafe_allow_html=True)
+
+# 6. Seção de Diferenciais
+st.markdown("<div class='section-title'>Nossos Diferenciais</div>", unsafe_allow_html=True)
+d_col1, d_col2, d_col3, d_col4 = st.columns(4, gap="small")
+
+with d_col1:
+    st.markdown("<div class='premium-card'><h5 style='color:#FFF;font-size:15px;margin-bottom:8px;'>Excelência</h5><p style='color:#94A3B8;font-size:13px;font-weight:300;line-height:1.5;'>Rigor analítico internacional em cada linha de dados avaliada.</p></div>", unsafe_allow_html=True)
+with d_col2:
+    st.markdown("<div class='premium-card'><h5 style='color:#C5A566;font-size:15px;margin-bottom:8px;'>Estratégia</h5><p style='color:#94A3B8;font-size:13px;font-weight:300;line-height:1.5;'>Abordagem preventiva focada na otimização de ativos reais.</p></div>", unsafe_allow_html=True)
+with d_col3:
+    st.markdown("<div class='premium-card'><h5 style='color:#FFF;font-size:15px;margin-bottom:8px;'>Segurança</h5><p style='color:#94A3B8;font-size:13px;font-weight:300;line-height:1.5;'>Ambiente operacional seguro com total sigilo de dados contábeis.</p></div>", unsafe_allow_html=True)
+with d_col4:
+    st.markdown("<div class='premium-card'><h5 style='color:#FFF;font-size:15px;margin-bottom:8px;'>Confiança</h5><p style='color:#94A3B8;font-size:13px;font-weight:300;line-height:1.5;'>Parcerias consolidadas construídas sob o pilar do luxo silencioso.</p></div>", unsafe_allow_html=True)
+
+st.markdown("<div class='corporate-divider'></div>", unsafe_allow_html=True)
+
+# 7. Área de Contato Elegante
+st.markdown("<div class='section-title'>Canais de Atendimento Restritos</div>", unsafe_allow_html=True)
+st.markdown("""
+<div style='margin-bottom: 25px; font-size: 15px; color: #94A3B8; font-weight: 300;'>
+    Inicie uma interlocução corporativa com nosso comitê de compliance por meio dos canais de alta prioridade abaixo:
+</div>
+<div>
+    <a href='https://wa.me/seu_numero' target='_blank' class='contact-link-box'>Comunicação via WhatsApp</a>
+    <a href='mailto:contato@edsonmedeiros.com' class='contact-link-box'>Abertura de Chamado por E-mail</a>
+</div>
+""", unsafe_allow_html=True)
+
+# 8. Rodapé Discreto e Refinado
 st.markdown("""
 <div class='corporate-divider' style='margin-top: 60px;'></div>
-<div style='display: flex; justify-content: space-between; align-items: center; padding: 10px 0; color: #475569; font-size: 11px; font-weight: 500;'>
-    <div>© 2026 EDSON MEDEIROS - CONSULTORIA & INTELIGÊNCIA DIGITAL</div>
-    <div>CONVENÇÃO DE SEGURANÇA E PRIVACIDADE DE DADOS ATIVA</div>
+<div style='display: flex; justify-content: space-between; align-items: center; padding: 10px 0; color: #475569; font-size: 11px; font-weight: 500; letter-spacing: 0.02em;'>
+    <div>© 2026 EDSON MEDEIROS - CONSULTORIA & COMPLIANCE. ALL RIGHTS RESERVED.</div>
+    <div>SISTEMA PROTEGIDO POR PROTOCOLOS DE ALTA CRIPTOGRAFIA</div>
 </div>
 """, unsafe_allow_html=True)
