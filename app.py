@@ -49,10 +49,12 @@ TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
+    last_known_date = None
+    last_known_value = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
+            texto = page.extract_text(x_tolerance=3, y_tolerance=5) # Aumenta a tolerância Y para agrupar linhas próximas
             if not texto: continue
             
             linhas = texto.split('\n')
@@ -61,12 +63,17 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not linha_up: continue
 
                 # 1. Identifica Data e Valor
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
-                match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+                current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+                current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+
+                if current_match_data: last_known_date = current_match_data.group(1)
+                if current_match_valor: last_known_value = current_match_valor.group(1)
                 
                 # 2. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
                     cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
+                    last_known_date = None # Reseta a data conhecida ao encontrar um termo de exclusão
+                    last_known_value = None # Reseta o valor conhecido
                     continue 
 
                 # 3. Busca Rubrica
@@ -79,27 +86,37 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 
                 # 4. Lógica de Captura (Acúmulo)
                 if rubrica_detectada:
-                    valor_na_linha = match_valor.group(1) if match_valor else "PENDENTE"
+                    # Prioriza o valor da linha, mas usa o último valor conhecido se não houver na linha
+                    valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
+                    data_para_rubrica = last_known_date if last_known_date else "PENDENTE"
+
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_na_linha,
-                        "HISTÓRICO": linha_up[:80]
+                        "VALOR": valor_para_rubrica,
+                        "HISTÓRICO": linha_up[:80],
+                        "DATA": data_para_rubrica # Adiciona a data aqui para rubricas que aparecem depois
                     })
+                    last_known_date = None # Consome a data conhecida
+                    last_known_value = None # Consome o valor conhecido
                 
-                elif match_valor and cesto_acumulador:
+                elif current_match_valor and cesto_acumulador:
                     # Associa o valor à última rubrica pendente no cesto
                     if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+                        cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
 
                 # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
-                if match_data:
-                    data_encontrada = match_data.group(1)
+                # A lógica de selagem agora é mais integrada com a detecção de rubricas.
+                # Se uma data é encontrada e há itens no cesto sem data, atribui a eles.
+                if current_match_data:
+                    data_encontrada = current_match_data.group(1)
                     if cesto_acumulador:
                         for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE":
+                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE": # Apenas se a data ainda não foi atribuída
                                 item["DATA"] = data_encontrada
-                                resultados.append(item)
+                            resultados.append(item)
                         cesto_acumulador = []
+                    last_known_date = None # Reseta a data conhecida após a selagem
+                    last_known_value = None # Reseta o valor conhecido
 
     return resultados
 
