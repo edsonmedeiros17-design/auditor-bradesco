@@ -4,6 +4,8 @@ import pandas as pd
 import re
 from datetime import datetime
 import io
+import unicodedata
+
 try:
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -24,112 +26,114 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS ---
+# --- 2. RÚBRICAS SOLICITADAS ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA DE OPERAÇÃO|MORA OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
+    "MORA DE OPERAÇÃO": r"MORA.*OPERACAO",
+    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO.*PESSOAL",
+    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED|MORA.*OPERACAO.*DE.*CREDITO",
     "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO DE CREDITO|CARTAO DE CREDITO|GASTOS CARTAO",
+    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO.*PESSOAL",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
+    "ADIANT": r"ADIANT|ADIANTAMENTO.*DEPOSITANTE",
     "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
+    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
+    "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
+    "OPERACOES VENCIDAS": r"OPERACOES.*VENCIDAS",
+    "DIV. EM ATRASO": r"DIV.*EM.*ATRASO|DIVIDA.*EM.*ATRASO"
 }
 
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
+def normalizar_texto(txt):
+    if not txt: return ""
+    txt = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+    txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
+    txt = re.sub(r'\s+', ' ', txt).strip()
+    return txt
 
-# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 2) ---
-def realizar_auditoria(arquivo, rubricas_alvo):
+# --- 3. MOTOR DE AUDITORIA DUAL (SUPERIOR / INFERIOR) ---
+def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
-    cesto_acumulador = []
-    last_known_date = None
-    last_known_value = None
+    cesto_pendente = []
+    data_superior = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3) # Reverte a tolerância Y para o padrão original
-            if not texto: continue
+            words = page.extract_words(x_tolerance=3, y_tolerance=3)
+            if not words: continue
+
+            # Mapeamento de colunas
+            col_debito_x = (420, 520)
+            col_saldo_x = (520, 650)
+            for w in words:
+                txt_w = normalizar_texto(w['text'])
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 10, w['x1'] + 10)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 10, w['x1'] + 10)
+
+            linhas_dict = {}
+            for w in words:
+                y = round(w['top'], 0)
+                if y not in linhas_dict: linhas_dict[y] = []
+                linhas_dict[y].append(w)
             
-            linhas = texto.split('\n')
-            for linha in linhas:
-                linha_up = linha.upper().strip()
-                if not linha_up: continue
-
-                # 1. Identifica Data e Valor
-                current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
-                current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
-
-                # Atualiza last_known_date e last_known_value para a próxima iteração, se encontrados na linha atual
-                if current_match_data:
-                    last_known_date = current_match_data.group(1)
-                if current_match_valor:
-                    last_known_value = current_match_valor.group(1)
+            y_ordenados = sorted(linhas_dict.keys())
+            
+            for i, y in enumerate(y_ordenados):
+                palavras_linha = sorted(linhas_dict[y], key=lambda x: x['x0'])
+                texto_linha = " ".join([p['text'] for p in palavras_linha])
+                linha_norm = normalizar_texto(texto_linha)
                 
-                # 2. Reset por Termos de Exclusão
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
-                    last_known_date = None # Reseta a data conhecida ao encontrar um termo de exclusão
-                    last_known_value = None # Reseta o valor conhecido
-                    continue 
-
-                # 3. Busca Rubrica
-                rubrica_detectada = None
-                if "%" not in linha_up:
-                    for nome in rubricas_alvo:
-                        if re.search(RUBRICAS_MESTRE[nome], linha_up):
-                            rubrica_detectada = nome
-                            break
-                
-                # 4. Lógica de Captura (Acúmulo)
-                if rubrica_detectada:
-                    if rubrica_detectada == "CESTA":
-                        # Lógica especial para CESTA: herda data e valor da linha anterior se não estiverem na linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else last_known_date if last_known_date else "PENDENTE"
-                    else:
-                        # Lógica padrão para outras rubricas: prioriza data/valor da linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else "PENDENTE"
-
-                    cesto_acumulador.append({
-                        "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_para_rubrica,
-                        "HISTÓRICO": linha_up[:80],
-                        "DATA": data_para_rubrica
-                    })
-                    # Reseta last_known_date e last_known_value apenas se a rubrica encontrada não for CESTA
-                    # Para CESTA, eles são consumidos na atribuição, mas podem ser úteis para a próxima linha se houver outra CESTA
-                    if rubrica_detectada != "CESTA":
-                        last_known_date = None
-                        last_known_value = None
-                
-                elif current_match_valor and cesto_acumulador:
-                    # Associa o valor à última rubrica pendente no cesto
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
-
-                # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
-                # Se uma data é encontrada, sela os itens acumulados com essa data.
-                if current_match_data:
-                    data_encontrada = current_match_data.group(1)
-                    if cesto_acumulador:
-                        for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE":
-                                item["DATA"] = data_encontrada
+                # A. Identificar Data
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
+                if match_data:
+                    data_encontrada = match_data.group(1)
+                    if modo_data == "Data Inferior":
+                        for item in cesto_pendente:
+                            item["DATA"] = data_encontrada
                             resultados.append(item)
-                        cesto_acumulador = []
-                    # last_known_date e last_known_value são resetados após a selagem para evitar herança indevida para o próximo bloco de transações.
+                        cesto_pendente = []
+                    else:
+                        data_superior = data_encontrada
+
+                # B. Identificar Rubrica
+                rubrica_detectada = None
+                for nome in rubricas_alvo:
+                    if re.search(RUBRICAS_MESTRE[nome], linha_norm):
+                        rubrica_detectada = nome
+                        break
+                
+                if rubrica_detectada:
+                    valor_debito = None
+                    indices_contexto = [i]
+                    if i > 0: indices_contexto.insert(0, i-1)
+                    if i < len(y_ordenados) - 1: indices_contexto.append(i+1)
+                    
+                    for idx in indices_contexto:
+                        for p in linhas_dict[y_ordenados[idx]]:
+                            m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
+                            if m_val:
+                                centro_x = (p['x0'] + p['x1']) / 2
+                                if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
+                                    valor_debito = m_val.group(1)
+                                    break
+                        if valor_debito: break
+                    
+                    if valor_debito:
+                        item_base = {
+                            "CATEGORIA": rubrica_detectada,
+                            "VALOR": valor_debito,
+                            "HISTÓRICO": texto_linha[:100]
+                        }
+                        if modo_data == "Data Inferior":
+                            cesto_pendente.append(item_base)
+                        elif data_superior:
+                            item_base["DATA"] = data_superior
+                            resultados.append(item_base)
 
     return resultados
 
-# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS (MODELO ANEXO 1, 3, 5) ---
+# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS ---
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
     def fix_date(d):
@@ -141,14 +145,12 @@ def gerar_excel_calculos(df, rubrica_nome):
     df['ANO'] = df['DT'].dt.year
     df['MES_NUM'] = df['DT'].dt.month
     
-    # Agrupar e somar valores do mesmo mês/ano (Exemplo 05/2021)
     agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
     
     wb = Workbook()
     ws = wb.active
     ws.title = "Tabela de Cálculos"
     
-    # Estilos
     font_header = Font(bold=True, size=11)
     font_title = Font(bold=True, size=12)
     fill_blue = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
@@ -156,7 +158,6 @@ def gerar_excel_calculos(df, rubrica_nome):
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     align_center = Alignment(horizontal='center', vertical='center')
     
-    # Cabeçalho
     ws.merge_cells('A1:E1')
     ws['A1'] = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
     ws['A1'].font = font_title
@@ -171,7 +172,7 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws['A2'].alignment = align_center
     
     anos = sorted(agrupado['ANO'].unique())
-    if not anos: anos = [datetime.now().year] # Fallback
+    if not anos: anos = [datetime.now().year]
     
     for idx, ano in enumerate(anos):
         col = idx + 2
@@ -179,7 +180,6 @@ def gerar_excel_calculos(df, rubrica_nome):
         ws.cell(row=2, column=col).alignment = align_center
         ws.cell(row=2, column=col).fill = fill_blue
     
-    # Preencher Valores
     for m_idx, mes in enumerate(meses_nomes):
         row = m_idx + 3
         ws.cell(row=row, column=1, value=mes).font = font_header
@@ -194,7 +194,6 @@ def gerar_excel_calculos(df, rubrica_nome):
             ws.cell(row=row, column=col).fill = fill_peach
             ws.cell(row=row, column=col).border = border
 
-    # Fórmulas: VALOR ANUAL (Soma da Coluna)
     row_anual = 15
     ws.cell(row=row_anual, column=1, value="VALOR ANUAL:").font = font_header
     ws.cell(row=row_anual, column=1).fill = fill_blue
@@ -209,7 +208,6 @@ def gerar_excel_calculos(df, rubrica_nome):
         cell.fill = fill_peach
         cell.border = border
 
-    # Fórmula: VALOR TOTAL (Soma dos Totais Anuais)
     row_total = 16
     ws.cell(row=row_total, column=1, value="VALOR TOTAL:").font = font_header
     ws.cell(row=row_total, column=1).fill = fill_blue
@@ -222,7 +220,6 @@ def gerar_excel_calculos(df, rubrica_nome):
     cell_total.font = font_header
     cell_total.alignment = Alignment(horizontal='right')
     
-    # Fórmula: VALOR EM DOBRO (Total * 2)
     row_dobro = 17
     ws.merge_cells(start_row=row_dobro, start_column=1, end_row=row_dobro+1, end_column=1)
     ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
@@ -249,57 +246,71 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
+st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
+modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1, help="Superior: Data acima da rubrica. Inferior: Data abaixo da rubrica (Bradesco).")
+
+st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
-if 'sel_all' not in st.session_state: st.session_state.sel_all = True
+
+if 'selecionadas_dict' not in st.session_state:
+    st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
+
+def mudar_selecao(valor):
+    for r in RUBRICAS_MESTRE.keys():
+        st.session_state.selecionadas_dict[r] = valor
+    st.rerun()
 
 col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"): st.session_state.sel_all = True
-if col_b2.button("Desmarcar Todas"): st.session_state.sel_all = False
+if col_b1.button("Marcar Todas"): mudar_selecao(True)
+if col_b2.button("Desmarcar Todas"): mudar_selecao(False)
 
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
-    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+    if st.sidebar.checkbox(r, value=st.session_state.selecionadas_dict[r], key=f"check_{r}"):
+        st.session_state.selecionadas_dict[r] = True
         selecionadas.append(r)
+    else:
+        st.session_state.selecionadas_dict[r] = False
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
-        dados = realizar_auditoria(upload, selecionadas)
-        if dados:
-            df = pd.DataFrame(dados)
-            df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
-            
-            # Ordenação Cronológica Real
-            def fix_date(d):
-                p = d.split('/')
-                if len(p[2]) == 2: p[2] = "20" + p[2]
-                return "/".join(p)
-            df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
-            df = df.sort_values('DT_O', ascending=True)
-            
-            total_geral = df['V_NUM'].sum()
-            c1, c2 = st.columns(2)
-            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
-            with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
-            
-            st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
-            st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
-            
-            cats = df['CATEGORIA'].unique()
-            for cat in cats:
-                df_cat = df[df['CATEGORIA'] == cat]
-                excel_file = gerar_excel_calculos(df_cat, cat)
-                st.download_button(
-                    label=f"📊 Baixar Tabela: {cat}",
-                    data=excel_file,
-                    file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            
-            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
-            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
-        else:
-            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+    if not selecionadas:
+        st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
+    else:
+        with st.spinner(f"Realizando auditoria pericial ({modo_leitura})..."):
+            dados = realizar_auditoria(upload, selecionadas, modo_leitura)
+            if dados:
+                df = pd.DataFrame(dados)
+                df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+                
+                def fix_date(d):
+                    p = d.split('/')
+                    if len(p[2]) == 2: p[2] = "20" + p[2]
+                    return "/".join(p)
+                df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+                df = df.sort_values('DT_O', ascending=True)
+                
+                total_geral = df['V_NUM'].sum()
+                c1, c2 = st.columns(2)
+                with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
+                with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                
+                st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
+                
+                for cat in df['CATEGORIA'].unique():
+                    df_cat = df[df['CATEGORIA'] == cat]
+                    excel_file = gerar_excel_calculos(df_cat, cat)
+                    st.download_button(
+                        label=f"📊 Baixar Tabela: {cat}",
+                        data=excel_file,
+                        key=f"dl_{cat}",
+                        file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                
+                st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
+            else:
+                st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
