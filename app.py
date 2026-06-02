@@ -26,18 +26,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS (ALTA SENSIBILIDADE) ---
+# --- 2. RÚBRICAS SOLICITADAS (BUSCA FRAGMENTADA) ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA.*OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO.*PESSOAL",
-    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED|MORA.*OPERACAO.*DE.*CREDITO",
+    "MORA DE OPERAÇÃO": r"MORA.*OPER",
+    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO",
+    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED",
     "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO.*PESSOAL",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
+    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO|ANUIDADE",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO.*DEPOSITANTE",
+    "ADIANT": r"ADIANT|ADIANTAMENTO",
     "APLIC": r"APLICACAO|APLIC\b",
     "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
     "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
@@ -52,7 +52,7 @@ def normalizar_texto(txt):
     txt = re.sub(r'\s+', ' ', txt).strip()
     return txt
 
-# --- 3. MOTOR DE AUDITORIA DE VARREDURA PROFUNDA ---
+# --- 3. MOTOR DE AUDITORIA DE ALTA SENSIBILIDADE ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
@@ -60,23 +60,20 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            # Extrair palavras com tolerância aumentada para evitar quebras
-            words = page.extract_words(x_tolerance=4, y_tolerance=4)
+            words = page.extract_words(x_tolerance=3, y_tolerance=3)
             if not words: continue
 
-            # Mapeamento de colunas dinâmico (Detecção por Parede Vertical)
-            col_debito_x = (400, 550) # Zona provável de débito
-            col_saldo_x = (550, 680)  # Zona provável de saldo
-            
+            # Mapeamento de colunas dinâmico
+            col_debito_x = (400, 550)
+            col_saldo_x = (550, 680)
             for w in words:
                 txt_w = normalizar_texto(w['text'])
                 if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 15, w['x1'] + 15)
                 if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 15, w['x1'] + 15)
 
-            # Agrupar por linhas Y com margem de tolerância (agrupar palavras desalinhadas)
             linhas_dict = {}
             for w in words:
-                y = round(w['top'] / 2) * 2 # Agrupa palavras em faixas de 2 pixels
+                y = round(w['top'], 0)
                 if y not in linhas_dict: linhas_dict[y] = []
                 linhas_dict[y].append(w)
             
@@ -99,7 +96,7 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     else:
                         data_superior = data_encontrada
 
-                # B. Identificar Rubrica (Busca em Profundidade)
+                # B. Identificar Rubrica
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
@@ -107,9 +104,8 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                         break
                 
                 if rubrica_detectada:
-                    # C. Captura de Valor por Contexto Expandido (Varredura de 5 linhas)
                     valor_debito = None
-                    # Analisa a linha atual e as 2 acima/abaixo para capturar desalinhamentos severos
+                    # Varredura de contexto expandido
                     indices_contexto = [i]
                     for offset in [1, 2]:
                         if i - offset >= 0: indices_contexto.append(i - offset)
@@ -117,11 +113,9 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     
                     for idx in indices_contexto:
                         for p in linhas_dict[y_ordenados[idx]]:
-                            # Regex robusta para valores monetários
                             m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
                             if m_val:
                                 centro_x = (p['x0'] + p['x1']) / 2
-                                # Validação rigorosa da Coluna de Débito
                                 if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
                                     valor_debito = m_val.group(1)
                                     break
@@ -255,30 +249,36 @@ st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_ht
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
-modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1, help="Superior: Data acima da rubrica. Inferior: Data abaixo da rubrica (Bradesco).")
+modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
 
+# Lógica de seleção robusta
 if 'selecionadas_dict' not in st.session_state:
     st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
 
-def mudar_selecao(valor):
+def toggle_all(valor):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state.selecionadas_dict[r] = valor
-    st.rerun()
+    # Atualizar as chaves das checkboxes individuais também
+    for r in RUBRICAS_MESTRE.keys():
+        st.session_state[f"check_{r}"] = valor
 
 col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"): mudar_selecao(True)
-if col_b2.button("Desmarcar Todas"): mudar_selecao(False)
+if col_b1.button("Marcar Todas"):
+    toggle_all(True)
+    st.rerun()
+if col_b2.button("Desmarcar Todas"):
+    toggle_all(False)
+    st.rerun()
 
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
-    if st.sidebar.checkbox(r, value=st.session_state.selecionadas_dict[r], key=f"check_{r}"):
-        st.session_state.selecionadas_dict[r] = True
+    is_checked = st.sidebar.checkbox(r, value=st.session_state.selecionadas_dict[r], key=f"check_{r}")
+    st.session_state.selecionadas_dict[r] = is_checked
+    if is_checked:
         selecionadas.append(r)
-    else:
-        st.session_state.selecionadas_dict[r] = False
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
@@ -286,7 +286,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner(f"Realizando auditoria de varredura profunda ({modo_leitura})..."):
+        with st.spinner(f"Realizando auditoria integral ({modo_leitura})..."):
             dados = realizar_auditoria(upload, selecionadas, modo_leitura)
             if dados:
                 df = pd.DataFrame(dados)
