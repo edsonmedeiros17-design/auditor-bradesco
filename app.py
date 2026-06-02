@@ -26,7 +26,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS ---
+# --- 2. RÚBRICAS SOLICITADAS (ALTA SENSIBILIDADE) ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
@@ -52,7 +52,7 @@ def normalizar_texto(txt):
     txt = re.sub(r'\s+', ' ', txt).strip()
     return txt
 
-# --- 3. MOTOR DE AUDITORIA DUAL (SUPERIOR / INFERIOR) ---
+# --- 3. MOTOR DE AUDITORIA DE VARREDURA PROFUNDA ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
@@ -60,20 +60,23 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            words = page.extract_words(x_tolerance=3, y_tolerance=3)
+            # Extrair palavras com tolerância aumentada para evitar quebras
+            words = page.extract_words(x_tolerance=4, y_tolerance=4)
             if not words: continue
 
-            # Mapeamento de colunas
-            col_debito_x = (420, 520)
-            col_saldo_x = (520, 650)
+            # Mapeamento de colunas dinâmico (Detecção por Parede Vertical)
+            col_debito_x = (400, 550) # Zona provável de débito
+            col_saldo_x = (550, 680)  # Zona provável de saldo
+            
             for w in words:
                 txt_w = normalizar_texto(w['text'])
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 10, w['x1'] + 10)
-                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 10, w['x1'] + 10)
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 15, w['x1'] + 15)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 15, w['x1'] + 15)
 
+            # Agrupar por linhas Y com margem de tolerância (agrupar palavras desalinhadas)
             linhas_dict = {}
             for w in words:
-                y = round(w['top'], 0)
+                y = round(w['top'] / 2) * 2 # Agrupa palavras em faixas de 2 pixels
                 if y not in linhas_dict: linhas_dict[y] = []
                 linhas_dict[y].append(w)
             
@@ -96,7 +99,7 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     else:
                         data_superior = data_encontrada
 
-                # B. Identificar Rubrica
+                # B. Identificar Rubrica (Busca em Profundidade)
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
@@ -104,16 +107,21 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                         break
                 
                 if rubrica_detectada:
+                    # C. Captura de Valor por Contexto Expandido (Varredura de 5 linhas)
                     valor_debito = None
+                    # Analisa a linha atual e as 2 acima/abaixo para capturar desalinhamentos severos
                     indices_contexto = [i]
-                    if i > 0: indices_contexto.insert(0, i-1)
-                    if i < len(y_ordenados) - 1: indices_contexto.append(i+1)
+                    for offset in [1, 2]:
+                        if i - offset >= 0: indices_contexto.append(i - offset)
+                        if i + offset < len(y_ordenados): indices_contexto.append(i + offset)
                     
                     for idx in indices_contexto:
                         for p in linhas_dict[y_ordenados[idx]]:
+                            # Regex robusta para valores monetários
                             m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
                             if m_val:
                                 centro_x = (p['x0'] + p['x1']) / 2
+                                # Validação rigorosa da Coluna de Débito
                                 if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
                                     valor_debito = m_val.group(1)
                                     break
@@ -123,7 +131,7 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                         item_base = {
                             "CATEGORIA": rubrica_detectada,
                             "VALOR": valor_debito,
-                            "HISTÓRICO": texto_linha[:100]
+                            "HISTÓRICO": texto_linha[:120]
                         }
                         if modo_data == "Data Inferior":
                             cesto_pendente.append(item_base)
@@ -278,7 +286,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner(f"Realizando auditoria pericial ({modo_leitura})..."):
+        with st.spinner(f"Realizando auditoria de varredura profunda ({modo_leitura})..."):
             dados = realizar_auditoria(upload, selecionadas, modo_leitura)
             if dados:
                 df = pd.DataFrame(dados)
