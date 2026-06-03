@@ -26,34 +26,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS (REGEX ULTRA-FLEXÍVEL) ---
-# O padrão \s* permite espaços entre as letras, capturando "C E S T A" ou "CESTA"
+# --- 2. RÚBRICAS SOLICITADAS (BUSCA POR PALAVRAS-CHAVE) ---
+# Usamos termos curtos e poderosos para garantir a detecção mesmo com formatação quebrada
 RUBRICAS_MESTRE = {
-    "CESTA": r"C\s*E\s*S\s*T\s*A",
-    "PACOTE": r"P\s*A\s*C\s*O\s*T\s*E",
-    "MORA DE OPERAÇÃO": r"M\s*O\s*R\s*A.*O\s*P\s*E\s*R\s*A\s*C\s*A\s*O",
-    "MORA CREDITO PESSOAL": r"M\s*O\s*R\s*A.*C\s*R\s*E\s*D.*P\s*E\s*S\s*S",
-    "MORA OPERACAO DE CREDITO": r"M\s*O\s*R\s*A.*O\s*P\s*E\s*R.*C\s*R\s*E\s*D",
-    "BX": r"\bB\s*X\b",
-    "PARCELA CREDITO PESSOAL": r"P\s*A\s*R\s*C.*C\s*R\s*E\s*D.*P\s*E\s*S\s*S",
-    "GASTOS CARTAO DE CREDITO": r"G\s*A\s*S\s*T\s*O\s*S.*C\s*A\s*R\s*T\s*A\s*O|C\s*A\s*R\s*T\s*A\s*O.*C\s*R\s*E\s*D\s*I\s*T\s*O",
-    "SEGURO": r"S\s*E\s*G\s*U\s*R\s*O|S\s*E\s*G\s*U\s*R\s*A\s*D\s*O\s*R\s*A|S\s*E\s*G\b",
-    "ADIANT": r"A\s*D\s*I\s*A\s*N\s*T",
-    "APLIC": r"A\s*P\s*L\s*I\s*C\s*A\s*C\s*A\s*O|A\s*P\s*L\s*I\s*C\b",
-    "ENCARGOS": r"E\s*N\s*C\s*A\s*R\s*G\s*O\s*S|E\s*N\s*C\s*A\s*R\s*G\s*O|E\s*N\s*C.*L\s*I\s*M\s*I\s*T\s*E|L\s*I\s*M\s*I\s*T\s*E.*C\s*R\s*E\s*D",
-    "ANUIDADE": r"A\s*N\s*U\s*I\s*D\s*A\s*D\s*E",
-    "OPERACOES VENCIDAS": r"O\s*P\s*E\s*R\s*A\s*C\s*O\s*E\s*S.*V\s*E\s*N\s*C\s*I\s*D\s*A\s*S",
-    "DIV. EM ATRASO": r"D\s*I\s*V\s*I\s*D\s*A.*A\s*T\s*R\s*A\s*S\s*O|D\s*I\s*V.*A\s*T\s*R\s*A\s*S\s*O"
+    "CESTA": r"CESTA",
+    "PACOTE": r"PACOTE",
+    "MORA DE OPERAÇÃO": r"MORA.*OPER",
+    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO",
+    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED",
+    "BX": r"\bBX\b",
+    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO",
+    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
+    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
+    "ADIANT": r"ADIANT|ADIANTAMENTO",
+    "APLIC": r"APLICACAO|APLIC\b",
+    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
+    "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
+    "OPERACOES VENCIDAS": r"OPERACOES.*VENCIDAS",
+    "DIV. EM ATRASO": r"DIV.*EM.*ATRASO|DIVIDA.*EM.*ATRASO"
 }
 
 def normalizar_texto(txt):
     if not txt: return ""
-    # Remove acentos e caracteres especiais, mantém apenas letras e números para busca
+    # Remove acentos e mantém apenas letras e números para busca pura
     txt = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
-    txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
+    txt = re.sub(r'[^A-Z0-9]', '', txt.upper())
     return txt
 
-# --- 3. MOTOR DE AUDITORIA PERICIAL (ALTA SENSIBILIDADE) ---
+# --- 3. MOTOR DE AUDITORIA PERICIAL (HÍBRIDO E ROBUSTO) ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
@@ -61,17 +61,19 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
+            # Extração híbrida: palavras para coordenadas + texto bruto para rubricas
             words = page.extract_words(x_tolerance=3, y_tolerance=3)
             if not words: continue
 
-            # Mapeamento de colunas dinâmico
+            # Mapeamento de colunas dinâmico (buscando por coordenadas X)
             col_debito_x = (400, 550)
             col_saldo_x = (550, 680)
             for w in words:
-                txt_w = normalizar_texto(w['text'])
+                txt_w = w['text'].upper()
                 if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 20, w['x1'] + 20)
                 if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 20, w['x1'] + 20)
 
+            # Agrupar palavras por linha (Y)
             linhas_dict = {}
             for w in words:
                 y = round(w['top'], 0)
@@ -85,8 +87,8 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                 texto_linha = " ".join([p['text'] for p in palavras_linha])
                 linha_norm = normalizar_texto(texto_linha)
                 
-                # A. Identificar Data
-                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_norm)
+                # A. Identificar Data (Formato DD/MM/AAAA ou DD/MM/YY)
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", texto_linha)
                 if match_data:
                     data_encontrada = match_data.group(1)
                     if modo_data == "Data Inferior":
@@ -97,10 +99,13 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     else:
                         data_superior = data_encontrada
 
-                # B. Identificar Rubrica (Busca Ultra-Flexível)
+                # B. Identificar Rubrica (Busca por Substring no texto normalizado)
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
-                    if re.search(RUBRICAS_MESTRE[nome], linha_norm, re.IGNORECASE):
+                    # Normalizamos a rubrica da mesma forma que a linha para comparação perfeita
+                    rubrica_norm = normalizar_texto(nome)
+                    # Busca flexível: se a rubrica normalizada estiver contida na linha normalizada
+                    if rubrica_norm in linha_norm or re.search(RUBRICAS_MESTRE[nome], texto_linha.upper()):
                         rubrica_detectada = nome
                         break
                 
@@ -114,10 +119,11 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     
                     for idx in indices_contexto:
                         for p in linhas_dict[y_ordenados[idx]]:
+                            # Busca por valor monetário (ex: 1.234,56 ou 64,75)
                             m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
                             if m_val:
                                 centro_x = (p['x0'] + p['x1']) / 2
-                                # Validação rigorosa na Coluna de Débito
+                                # Validação rigorosa na Coluna de Débito (X)
                                 if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
                                     valor_debito = m_val.group(1)
                                     break
