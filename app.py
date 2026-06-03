@@ -24,7 +24,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS ---
+# --- 2. RÚBRICAS EXATAS CONFORME SOLICITADO ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
@@ -45,41 +45,39 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 2) ---
-def realizar_auditoria(arquivo, rubricas_alvo):
+# --- 3. MOTOR DUAL: DATA SUPERIOR E DATA INFERIOR ---
+
+def realizar_auditoria_data_superior(arquivo, rubricas_alvo):
+    """
+    FORMATO DATA SUPERIOR: A data aparece no topo, todas as movimentações abaixo
+    herdam essa data até a próxima data encontrada.
+    Padrão ANEXO 1.
+    """
     resultados = []
-    cesto_acumulador = []
-    last_known_date = None
-    last_known_value = None
+    ultima_data = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3) # Reverte a tolerância Y para o padrão original
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
             if not texto: continue
             
             linhas = texto.split('\n')
             for linha in linhas:
                 linha_up = linha.upper().strip()
                 if not linha_up: continue
-
-                # 1. Identifica Data e Valor
-                current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
-                current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
-
-                # Atualiza last_known_date e last_known_value para a próxima iteração, se encontrados na linha atual
-                if current_match_data:
-                    last_known_date = current_match_data.group(1)
-                if current_match_valor:
-                    last_known_value = current_match_valor.group(1)
+                
+                # 1. Detecta Data (atualiza a data vigente)
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+                if match_data:
+                    ultima_data = match_data.group(1)
+                    # Se a data está sozinha ou no início, ela é a data vigente para as próximas movimentações
+                    continue
                 
                 # 2. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
-                    last_known_date = None # Reseta a data conhecida ao encontrar um termo de exclusão
-                    last_known_value = None # Reseta o valor conhecido
-                    continue 
-
-                # 3. Busca Rubrica
+                    continue
+                
+                # 3. Busca Rubrica na linha
                 rubrica_detectada = None
                 if "%" not in linha_up:
                     for nome in rubricas_alvo:
@@ -87,61 +85,130 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # 4. Lógica de Captura (Acúmulo)
+                # 4. Se encontrou rubrica, extrai valor
                 if rubrica_detectada:
-                    if rubrica_detectada == "CESTA":
-                        # Lógica especial para CESTA: herda data e valor da linha anterior se não estiverem na linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else last_known_date if last_known_date else "PENDENTE"
-                    else:
-                        # Lógica padrão para outras rubricas: prioriza data/valor da linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else "PENDENTE"
-
-                    cesto_acumulador.append({
+                    match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+                    valor = match_valor.group(1) if match_valor else "PENDENTE"
+                    
+                    resultados.append({
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_para_rubrica,
+                        "VALOR": valor,
                         "HISTÓRICO": linha_up[:80],
-                        "DATA": data_para_rubrica
+                        "DATA": ultima_data if ultima_data else "PENDENTE"
                     })
-                    # Reseta last_known_date e last_known_value apenas se a rubrica encontrada não for CESTA
-                    # Para CESTA, eles são consumidos na atribuição, mas podem ser úteis para a próxima linha se houver outra CESTA
-                    if rubrica_detectada != "CESTA":
-                        last_known_date = None
-                        last_known_value = None
-                
-                elif current_match_valor and cesto_acumulador:
-                    # Associa o valor à última rubrica pendente no cesto
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
-
-                # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
-                # Se uma data é encontrada, sela os itens acumulados com essa data.
-                if current_match_data:
-                    data_encontrada = current_match_data.group(1)
-                    if cesto_acumulador:
-                        for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE":
-                                item["DATA"] = data_encontrada
-                            resultados.append(item)
-                        cesto_acumulador = []
-                    # last_known_date e last_known_value são resetados após a selagem para evitar herança indevida para o próximo bloco de transações.
-
+    
     return resultados
 
-# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS (MODELO ANEXO 1, 3, 5) ---
+
+def realizar_auditoria_data_inferior(arquivo, rubricas_alvo):
+    """
+    FORMATO DATA INFERIOR: Múltiplas movimentações aparecem sem data ao lado.
+    A data referente está ABAIXO delas (após linha divisória).
+    Padrão ANEXO 2.
+    """
+    resultados = []
+    bloco_acumulador = []  # Acumula movimentações até encontrar uma data
+    
+    with pdfplumber.open(arquivo) as pdf:
+        for page in pdf.pages:
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
+            if not texto: continue
+            
+            linhas = texto.split('\n')
+            for idx, linha in enumerate(linhas):
+                linha_up = linha.upper().strip()
+                if not linha_up: continue
+                
+                # 1. Procura por data (marca a data inferior do bloco)
+                match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+                
+                if match_data:
+                    data_encontrada = match_data.group(1)
+                    
+                    # 2. Se há movimentações acumuladas, sela-as com essa data
+                    if bloco_acumulador:
+                        for item in bloco_acumulador:
+                            item["DATA"] = data_encontrada
+                            resultados.append(item)
+                        bloco_acumulador = []
+                    
+                    # 3. Se a data está na mesma linha da rubrica, processa aqui também
+                    rubrica_detectada = None
+                    if "%" not in linha_up:
+                        for nome in rubricas_alvo:
+                            if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                                rubrica_detectada = nome
+                                break
+                    
+                    if rubrica_detectada:
+                        match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+                        valor = match_valor.group(1) if match_valor else "PENDENTE"
+                        
+                        resultados.append({
+                            "CATEGORIA": rubrica_detectada,
+                            "VALOR": valor,
+                            "HISTÓRICO": linha_up[:80],
+                            "DATA": data_encontrada
+                        })
+                    continue
+                
+                # 4. Se não é data, tenta extrair rubrica para acumular
+                if re.search(TERMOS_EXCLUSAO, linha_up):
+                    continue
+                
+                rubrica_detectada = None
+                if "%" not in linha_up:
+                    for nome in rubricas_alvo:
+                        if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                            rubrica_detectada = nome
+                            break
+                
+                # 5. Acumula a movimentação (sem data ainda)
+                if rubrica_detectada:
+                    match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+                    valor = match_valor.group(1) if match_valor else "PENDENTE"
+                    
+                    bloco_acumulador.append({
+                        "CATEGORIA": rubrica_detectada,
+                        "VALOR": valor,
+                        "HISTÓRICO": linha_up[:80],
+                        "DATA": "PENDENTE"  # Será preenchida quando a data for encontrada
+                    })
+    
+    # Se sobraram itens acumulados no final, tenta extrair data da próxima página ou marca como pendente
+    for item in bloco_acumulador:
+        resultados.append(item)
+    
+    return resultados
+
+
+def realizar_auditoria(arquivo, rubricas_alvo, modo_leitura="DATA_SUPERIOR"):
+    """
+    Função wrapper que escolhe o motor correto baseado no modo.
+    """
+    if modo_leitura == "DATA_INFERIOR":
+        return realizar_auditoria_data_inferior(arquivo, rubricas_alvo)
+    else:
+        return realizar_auditoria_data_superior(arquivo, rubricas_alvo)
+
+
+# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS ---
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
+    
     def fix_date(d):
+        if d == "PENDENTE":
+            return pd.NaT
         p = d.split('/')
-        if len(p[2]) == 2: p[2] = "20" + p[2]
+        if len(p[2]) == 2: 
+            p[2] = "20" + p[2]
         return "/".join(p)
     
-    df['DT'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y')
+    df['DT'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
     df['ANO'] = df['DT'].dt.year
     df['MES_NUM'] = df['DT'].dt.month
     
-    # Agrupar e somar valores do mesmo mês/ano (Exemplo 05/2021)
+    # Agrupar e somar valores do mesmo mês/ano
     agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
     
     wb = Workbook()
@@ -171,7 +238,8 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws['A2'].alignment = align_center
     
     anos = sorted(agrupado['ANO'].unique())
-    if not anos: anos = [datetime.now().year] # Fallback
+    if not anos: 
+        anos = [datetime.now().year]
     
     for idx, ano in enumerate(anos):
         col = idx + 2
@@ -194,7 +262,7 @@ def gerar_excel_calculos(df, rubrica_nome):
             ws.cell(row=row, column=col).fill = fill_peach
             ws.cell(row=row, column=col).border = border
 
-    # Fórmulas: VALOR ANUAL (Soma da Coluna)
+    # Fórmulas: VALOR ANUAL
     row_anual = 15
     ws.cell(row=row_anual, column=1, value="VALOR ANUAL:").font = font_header
     ws.cell(row=row_anual, column=1).fill = fill_blue
@@ -209,7 +277,7 @@ def gerar_excel_calculos(df, rubrica_nome):
         cell.fill = fill_peach
         cell.border = border
 
-    # Fórmula: VALOR TOTAL (Soma dos Totais Anuais)
+    # Fórmula: VALOR TOTAL
     row_total = 16
     ws.cell(row=row_total, column=1, value="VALOR TOTAL:").font = font_header
     ws.cell(row=row_total, column=1).fill = fill_blue
@@ -222,7 +290,7 @@ def gerar_excel_calculos(df, rubrica_nome):
     cell_total.font = font_header
     cell_total.alignment = Alignment(horizontal='right')
     
-    # Fórmula: VALOR EM DOBRO (Total * 2)
+    # Fórmula: VALOR EM DOBRO
     row_dobro = 17
     ws.merge_cells(start_row=row_dobro, start_column=1, end_row=row_dobro+1, end_column=1)
     ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
@@ -245,43 +313,69 @@ def gerar_excel_calculos(df, rubrica_nome):
     wb.save(output)
     return output.getvalue()
 
+
 # --- 5. DASHBOARD ---
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
+# Sidebar: Seletor de Modo de Leitura
+st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
+modo_leitura = st.sidebar.radio(
+    "Selecione o formato do extrato:",
+    options=["DATA_SUPERIOR", "DATA_INFERIOR"],
+    format_func=lambda x: "Data Superior (ANEXO 1)" if x == "DATA_SUPERIOR" else "Data Inferior (ANEXO 2)",
+    horizontal=False
+)
+
+st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
-if 'sel_all' not in st.session_state: st.session_state.sel_all = True
+
+if 'sel_all' not in st.session_state: 
+    st.session_state.sel_all = True
 
 col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"): st.session_state.sel_all = True
-if col_b2.button("Desmarcar Todas"): st.session_state.sel_all = False
+if col_b1.button("Marcar Todas"): 
+    st.session_state.sel_all = True
+if col_b2.button("Desmarcar Todas"): 
+    st.session_state.sel_all = False
 
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
     if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
         selecionadas.append(r)
 
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"**Modo Ativo:** {modo_leitura.replace('_', ' ')}")
+
+# Upload do PDF
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
     with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
-        dados = realizar_auditoria(upload, selecionadas)
+        dados = realizar_auditoria(upload, selecionadas, modo_leitura)
+        
         if dados:
             df = pd.DataFrame(dados)
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
-            # Ordenação Cronológica Real
+            # Ordenação Cronológica
             def fix_date(d):
+                if d == "PENDENTE":
+                    return pd.NaT
                 p = d.split('/')
-                if len(p[2]) == 2: p[2] = "20" + p[2]
+                if len(p[2]) == 2: 
+                    p[2] = "20" + p[2]
                 return "/".join(p)
+            
             df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
             df = df.sort_values('DT_O', ascending=True)
             
             total_geral = df['V_NUM'].sum()
             c1, c2 = st.columns(2)
-            with c1: st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
-            with c2: st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+            with c1: 
+                st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
+            with c2: 
+                st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
             
             st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
             st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
