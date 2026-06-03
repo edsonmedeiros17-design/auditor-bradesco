@@ -11,7 +11,7 @@ try:
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
 except ImportError:
-    st.error("Erro: A biblioteca 'openpyxl' não está instalada. Certifique-se de incluir 'openpyxl' no seu arquivo requirements.txt.")
+    st.error("Erro: A biblioteca 'openpyxl' não está instalada.")
 
 # --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
@@ -26,15 +26,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS ---
+# --- 2. RÚBRICAS SOLICITADAS (DETECÇÃO FLEXÍVEL) ---
+# Usamos termos-chave para garantir que o robô encontre a rubrica mesmo com abreviações ou espaços
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA.*OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO.*PESSOAL",
-    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED|MORA.*OPERACAO.*DE.*CREDITO",
+    "MORA DE OPERAÇÃO": r"MORA.*OPER",
+    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO",
+    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED",
     "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO.*PESSOAL",
+    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO",
     "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
     "ADIANT": r"ADIANT|ADIANTAMENTO",
@@ -51,26 +52,26 @@ def normalizar_texto(txt):
     txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
     return txt
 
-# --- 3. MOTOR DE AUDITORIA PERICIAL (ANEXO 1 E 2) ---
+# --- 3. MOTOR DE AUDITORIA DEFINITIVO ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
-    data_superior_ativa = None
+    data_ativa = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
             words = page.extract_words(x_tolerance=3, y_tolerance=3)
             if not words: continue
 
-            # Mapeamento dinâmico de colunas
+            # Mapeamento de colunas dinâmico
             col_debito_x = (400, 550)
             col_saldo_x = (550, 680)
             for w in words:
                 txt_w = w['text'].upper()
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 15, w['x1'] + 15)
-                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 15, w['x1'] + 15)
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 20, w['x1'] + 20)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 20, w['x1'] + 20)
 
-            # Agrupar palavras por linha Y
+            # Agrupar por linhas Y
             linhas_dict = {}
             for w in words:
                 y = round(w['top'], 0)
@@ -84,25 +85,22 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                 texto_linha = " ".join([p['text'] for p in palavras_linha])
                 linha_norm = normalizar_texto(texto_linha)
                 
-                # A. Identificação de Data
+                # A. Identificar Data
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", texto_linha)
-                
                 if match_data:
                     data_encontrada = match_data.group(1)
-                    
                     if modo_data == "Data Inferior":
-                        # Lógica ANEXO 2: A data sela todos os itens acima dela
+                        # ANEXO 2: Sela tudo o que estava pendente acima
                         for item in cesto_pendente:
                             item["DATA"] = data_encontrada
                             resultados.append(item)
                         cesto_pendente = []
-                        # No modo inferior, a data da linha também pode carimbar o item da própria linha
-                        data_superior_ativa = data_encontrada 
+                        data_ativa = data_encontrada # Para itens na mesma linha
                     else:
-                        # Lógica ANEXO 1: A data ativa o bloco para todos os itens abaixo
-                        data_superior_ativa = data_encontrada
+                        # ANEXO 1: Define a data para os itens abaixo
+                        data_ativa = data_encontrada
 
-                # B. Identificação de Rubrica
+                # B. Identificar Rubrica
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
                     if re.search(RUBRICAS_MESTRE[nome], linha_norm):
@@ -111,7 +109,7 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                 
                 if rubrica_detectada:
                     valor_debito = None
-                    # Varredura circular (mesma linha, 1 acima, 1 abaixo)
+                    # Varredura circular (mesma linha e adjacentes)
                     indices_contexto = [i]
                     if i > 0: indices_contexto.append(i-1)
                     if i < len(y_ordenados)-1: indices_contexto.append(i+1)
@@ -132,18 +130,15 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                             "VALOR": valor_debito,
                             "HISTÓRICO": texto_linha[:120]
                         }
-                        
                         if modo_data == "Data Inferior":
-                            # Se a linha já tem data, carimba agora, senão vai para o cesto (ANEXO 2)
                             if match_data:
                                 item_base["DATA"] = data_encontrada
                                 resultados.append(item_base)
                             else:
                                 cesto_pendente.append(item_base)
                         else:
-                            # Modo Superior (ANEXO 1): Usa a última data ativa vista acima
-                            if data_superior_ativa:
-                                item_base["DATA"] = data_superior_ativa
+                            if data_ativa:
+                                item_base["DATA"] = data_ativa
                                 resultados.append(item_base)
 
     return resultados
@@ -262,7 +257,7 @@ st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_ht
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
-modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1, help="Superior: ANEXO 1. Inferior: ANEXO 2.")
+modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
