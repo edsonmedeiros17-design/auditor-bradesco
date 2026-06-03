@@ -23,9 +23,7 @@ st.markdown("""
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
-    .debug-box { background: rgba(50, 150, 200, 0.1); border: 1px solid #3296C8; border-radius: 8px; padding: 15px; margin: 10px 0; font-size: 11px; max-height: 600px; overflow-y: auto; }
-    .error-row { background-color: rgba(255, 0, 0, 0.2); }
-    .success-row { background-color: rgba(0, 255, 0, 0.1); }
+    .debug-box { background: rgba(50, 150, 200, 0.1); border: 1px solid #3296C8; border-radius: 8px; padding: 15px; margin: 10px 0; font-size: 10px; max-height: 600px; overflow-y: auto; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,24 +56,20 @@ if 'debug_mode' not in st.session_state:
 if 'log_debug' not in st.session_state:
     st.session_state.log_debug = []
 
-# --- 4. CLASSES DE ANÁLISE ---
+# --- 4. PROCESSADOR COM ESTRATÉGIA POR RUBRICA ---
 
-class ProcessadorLinhaExtrato:
+class ProcessadorExtratoSeguro:
     """
-    Processa uma linha de extrato bancário com máxima precisão.
-    Separa DATA, RUBRICA e VALOR com validação total.
+    Processa extratos com estratégia específica por rubrica.
+    
+    REGRAS CRÍTICAS:
+    - CESTA: SEMPRE pega data e valor DA MESMA LINHA
+    - Outras: podem herdar data de contexto ou da linha anterior se necessário
     """
     
     @staticmethod
     def extrair_data_segura(texto: str) -> Optional[str]:
-        """
-        Extrai data com MÁXIMA CERTEZA.
-        Validação: dd/mm/yyyy e dd/mm/yy
-        - Dia: 01-31
-        - Mês: 01-12
-        - Ano: com ou sem século
-        """
-        # Padrão: captura dd/mm/yyyy ou dd/mm/yy
+        """Extrai data com validação total."""
         pattern = r'\b(\d{2}/\d{2}/\d{2,4})\b'
         match = re.search(pattern, texto)
         
@@ -94,15 +88,12 @@ class ProcessadorLinhaExtrato:
             mes_int = int(mes)
             ano_int = int(ano)
             
-            # Validação rigorosa
             if not (1 <= dia_int <= 31 and 1 <= mes_int <= 12):
                 return None
             
-            # Adiciona século se necessário
             if ano_int < 100:
                 ano_int = 2000 + ano_int
             
-            # Tenta construir datetime para validar
             try:
                 datetime(ano_int, mes_int, dia_int)
             except ValueError:
@@ -114,17 +105,8 @@ class ProcessadorLinhaExtrato:
     
     @staticmethod
     def extrair_valor_seguro(texto: str) -> Optional[str]:
-        """
-        Extrai valor monetário com MÁXIMA CERTEZA.
-        PADRÃO BRASILEIRO: 1,23 | 10,00 | 1.234,56 | 1.234.567,89
-        
-        LÓGICA:
-        - Ignora valores seguidos de %
-        - Captura sequência: (dígito){1,3} + (ponto + dígito{3})* + vírgula + dígito{2}
-        - Valida que há espaço/separador antes e depois
-        """
-        # Padrão: número brasileiro isolado
-        # Começa com 1-3 dígitos, depois zero ou mais grupos de .XXX, termina com ,XX
+        """Extrai valor brasileiro com validação."""
+        # Padrão: 1,23 | 1.234,56 | 1.234.567,89
         pattern = r'\b(\d{1,3}(?:\.\d{3})*,\d{2})\b'
         
         matches = re.finditer(pattern, texto)
@@ -132,7 +114,7 @@ class ProcessadorLinhaExtrato:
         for match in matches:
             valor = match.group(1)
             
-            # Validação: se há % após o valor, ignora
+            # Valida que NÃO é porcentagem
             pos_final = match.end()
             if pos_final < len(texto):
                 prox_chars = texto[pos_final:pos_final+3].strip()
@@ -145,13 +127,9 @@ class ProcessadorLinhaExtrato:
     
     @staticmethod
     def detectar_rubrica(texto: str, rubricas_alvo: List[str]) -> Optional[str]:
-        """
-        Detecta rubrica com MÁXIMA PRECISÃO.
-        Procura por palavras-chave exatas do dicionário de rubricas.
-        """
+        """Detecta rubrica presente na linha."""
         texto_up = texto.upper().strip()
         
-        # Não processa se tem porcentagem (é taxa, não valor)
         if "%" in texto_up:
             return None
         
@@ -163,18 +141,19 @@ class ProcessadorLinhaExtrato:
         return None
 
 
-class AnalisadorExtratoDataSuperior:
+class AnalisadorExtratoOtimizado:
     """
-    Analisador para extratos com DATA SUPERIOR (ANEXO 1).
+    Analisador otimizado que trata CESTA com lógica especial.
     
-    LÓGICA:
-    - Data aparece no topo/lado esquerdo
-    - Todas as operações abaixo herdam essa data
-    - Próxima data reseta o contexto
+    LÓGICA CESTA:
+    - Sempre pega DATA da MESMA LINHA onde CESTA foi encontrada
+    - Sempre pega VALOR da MESMA LINHA onde CESTA foi encontrada
+    - NUNCA herda dados de outras linhas
     """
     
-    def __init__(self, rubricas_alvo: List[str]):
+    def __init__(self, rubricas_alvo: List[str], modo: str = "DATA_SUPERIOR"):
         self.rubricas_alvo = rubricas_alvo
+        self.modo = modo
         self.log = []
         self.resultados = []
     
@@ -184,12 +163,20 @@ class AnalisadorExtratoDataSuperior:
     
     def processar_pdf(self, arquivo) -> List[Dict]:
         """
-        Processa PDF linha por linha com rastreamento de contexto.
+        Processa PDF com estratégia de leitura por modo.
+        """
+        if self.modo == "DATA_SUPERIOR":
+            return self._processar_data_superior(arquivo)
+        else:
+            return self._processar_data_inferior(arquivo)
+    
+    def _processar_data_superior(self, arquivo) -> List[Dict]:
+        """
+        MODO DATA SUPERIOR: Data aparece no topo/início.
         """
         try:
             with pdfplumber.open(arquivo) as pdf:
                 contexto_data = None
-                num_linhas_processadas = 0
                 
                 for num_pagina, page in enumerate(pdf.pages):
                     texto = page.extract_text(x_tolerance=2, y_tolerance=2)
@@ -201,99 +188,95 @@ class AnalisadorExtratoDataSuperior:
                     self.adicionar_log(f"\n[PÁG {num_pagina + 1}] {len(linhas)} linhas")
                     
                     for idx_linha, linha in enumerate(linhas):
-                        num_linhas_processadas += 1
                         linha_stripped = linha.strip()
                         
                         if not linha_stripped:
                             continue
                         
-                        # ===== ETAPA 1: Procura DATA =====
-                        data_encontrada = ProcessadorLinhaExtrato.extrair_data_segura(linha_stripped)
+                        # ===== PASSO 1: Procura DATA =====
+                        data_encontrada = ProcessadorExtratoSeguro.extrair_data_segura(linha_stripped)
                         if data_encontrada:
                             contexto_data = data_encontrada
-                            self.adicionar_log(f"  [L{idx_linha}] ✓ DATA: {contexto_data}")
+                            self.adicionar_log(f"  [L{idx_linha}] 📅 DATA CONTEXTO: {contexto_data}")
                             continue
                         
-                        # ===== ETAPA 2: Verifica EXCLUSÃO =====
+                        # ===== PASSO 2: Verifica EXCLUSÃO =====
                         if re.search(TERMOS_EXCLUSAO, linha_stripped.upper()):
-                            self.adicionar_log(f"  [L{idx_linha}] ✗ Exclusão")
+                            self.adicionar_log(f"  [L{idx_linha}] ❌ Exclusão (limpa contexto)")
                             contexto_data = None
                             continue
                         
-                        # ===== ETAPA 3: Procura RUBRICA =====
-                        rubrica = ProcessadorLinhaExtrato.detectar_rubrica(linha_stripped, self.rubricas_alvo)
+                        # ===== PASSO 3: Procura RUBRICA =====
+                        rubrica = ProcessadorExtratoSeguro.detectar_rubrica(linha_stripped, self.rubricas_alvo)
                         if rubrica:
-                            # ===== ETAPA 4: Extrai VALOR =====
-                            valor = ProcessadorLinhaExtrato.extrair_valor_seguro(linha_stripped)
+                            valor = ProcessadorExtratoSeguro.extrair_valor_seguro(linha_stripped)
                             
-                            # Se não achou valor na mesma linha, procura na próxima
-                            if not valor and idx_linha + 1 < len(linhas):
-                                proxima = linhas[idx_linha + 1].strip()
-                                valor_prox = ProcessadorLinhaExtrato.extrair_valor_seguro(proxima)
-                                if valor_prox:
-                                    valor = valor_prox
-                                    self.adicionar_log(f"  [L{idx_linha}] ✓ RUBRICA: {rubrica} | VALOR (próxima L): {valor} | DATA: {contexto_data}")
+                            # ===== LÓGICA ESPECIAL PARA CESTA =====
+                            if rubrica == "CESTA":
+                                # CESTA SEMPRE pega dados da MESMA LINHA
+                                if valor:
+                                    self.adicionar_log(f"  [L{idx_linha}] 🎁 CESTA (MESMO ROW) | VALOR: {valor} | DATA: {contexto_data}")
                                     self.resultados.append({
                                         "PÁGINA": num_pagina + 1,
                                         "LINHA": idx_linha,
                                         "RUBRICA": rubrica,
                                         "VALOR": valor,
                                         "DATA": contexto_data if contexto_data else "SEM_DATA",
-                                        "TEXTO": linha_stripped[:80]
+                                        "TEXTO": linha_stripped[:80],
+                                        "ESTRATEGIA": "CESTA_SAME_ROW"
                                     })
-                                    continue
+                                else:
+                                    self.adicionar_log(f"  [L{idx_linha}] ⚠️ CESTA SEM VALOR NA MESMA LINHA - IGNORANDO")
                             
-                            if valor:
-                                self.adicionar_log(f"  [L{idx_linha}] ✓ RUBRICA: {rubrica} | VALOR: {valor} | DATA: {contexto_data}")
+                            # ===== LÓGICA PADRÃO PARA OUTRAS RUBRICAS =====
                             else:
-                                self.adicionar_log(f"  [L{idx_linha}] ⚠ RUBRICA: {rubrica} | VALOR: NÃO ENCONTRADO | DATA: {contexto_data}")
-                            
-                            self.resultados.append({
-                                "PÁGINA": num_pagina + 1,
-                                "LINHA": idx_linha,
-                                "RUBRICA": rubrica,
-                                "VALOR": valor if valor else "SEM_VALOR",
-                                "DATA": contexto_data if contexto_data else "SEM_DATA",
-                                "TEXTO": linha_stripped[:80]
-                            })
+                                if not valor and idx_linha + 1 < len(linhas):
+                                    proxima = linhas[idx_linha + 1].strip()
+                                    valor_prox = ProcessadorExtratoSeguro.extrair_valor_seguro(proxima)
+                                    if valor_prox:
+                                        valor = valor_prox
+                                        self.adicionar_log(f"  [L{idx_linha}] ✅ {rubrica} | VALOR (próx L): {valor} | DATA: {contexto_data}")
+                                        self.resultados.append({
+                                            "PÁGINA": num_pagina + 1,
+                                            "LINHA": idx_linha,
+                                            "RUBRICA": rubrica,
+                                            "VALOR": valor,
+                                            "DATA": contexto_data if contexto_data else "SEM_DATA",
+                                            "TEXTO": linha_stripped[:80],
+                                            "ESTRATEGIA": "PROX_LINE"
+                                        })
+                                        continue
+                                
+                                if valor:
+                                    self.adicionar_log(f"  [L{idx_linha}] ✅ {rubrica} | VALOR: {valor} | DATA: {contexto_data}")
+                                    self.resultados.append({
+                                        "PÁGINA": num_pagina + 1,
+                                        "LINHA": idx_linha,
+                                        "RUBRICA": rubrica,
+                                        "VALOR": valor,
+                                        "DATA": contexto_data if contexto_data else "SEM_DATA",
+                                        "TEXTO": linha_stripped[:80],
+                                        "ESTRATEGIA": "SAME_LINE"
+                                    })
+                                else:
+                                    self.adicionar_log(f"  [L{idx_linha}] ⚠️ {rubrica} SEM VALOR")
                 
-                self.adicionar_log(f"\n[RESUMO] {num_linhas_processadas} linhas processadas | {len(self.resultados)} registros encontrados")
+                self.adicionar_log(f"\n[RESUMO] {len(self.resultados)} registros encontrados")
         
         except Exception as e:
             self.adicionar_log(f"ERRO: {str(e)}")
             st.error(f"❌ Erro ao processar: {str(e)}")
         
         return self.resultados
-
-
-class AnalisadorExtratoDataInferior:
-    """
-    Analisador para extratos com DATA INFERIOR (ANEXO 2).
     
-    LÓGICA:
-    - Rubricas aparecem sem data ao lado
-    - Data aparece ABAIXO das rubricas
-    - Quando data é encontrada, todas as rubricas anteriores herdam essa data
-    """
-    
-    def __init__(self, rubricas_alvo: List[str]):
-        self.rubricas_alvo = rubricas_alvo
-        self.log = []
-        self.resultados = []
-    
-    def adicionar_log(self, msg: str):
-        """Adiciona mensagem ao log."""
-        self.log.append(msg)
-    
-    def processar_pdf(self, arquivo) -> List[Dict]:
+    def _processar_data_inferior(self, arquivo) -> List[Dict]:
         """
-        Processa PDF com buffer de acumulação.
+        MODO DATA INFERIOR: Data aparece abaixo das rubricas.
         """
         try:
             with pdfplumber.open(arquivo) as pdf:
-                buffer_rubricas = []  # (rubrica, valor, texto, linha)
+                buffer_rubricas = []
                 ultima_data = None
-                num_linhas_processadas = 0
                 
                 for num_pagina, page in enumerate(pdf.pages):
                     texto = page.extract_text(x_tolerance=2, y_tolerance=2)
@@ -305,27 +288,32 @@ class AnalisadorExtratoDataInferior:
                     self.adicionar_log(f"\n[PÁG {num_pagina + 1}] {len(linhas)} linhas")
                     
                     for idx_linha, linha in enumerate(linhas):
-                        num_linhas_processadas += 1
                         linha_stripped = linha.strip()
                         
                         if not linha_stripped:
                             continue
                         
-                        # ===== ETAPA 1: Procura DATA (DATA INFERIOR) =====
-                        data_encontrada = ProcessadorLinhaExtrato.extrair_data_segura(linha_stripped)
+                        # ===== PASSO 1: Procura DATA (DATA INFERIOR) =====
+                        data_encontrada = ProcessadorExtratoSeguro.extrair_data_segura(linha_stripped)
                         if data_encontrada:
                             ultima_data = data_encontrada
-                            self.adicionar_log(f"  [L{idx_linha}] ✓ DATA INFERIOR: {ultima_data}")
+                            self.adicionar_log(f"  [L{idx_linha}] 📅 DATA INFERIOR: {ultima_data}")
                             
                             # Sela o buffer com esta data
                             if buffer_rubricas:
-                                self.adicionar_log(f"    → Selando {len(buffer_rubricas)} rubricas do buffer")
+                                self.adicionar_log(f"    → Selando {len(buffer_rubricas)} registros")
                                 for rubrica, valor, texto, linha_idx in buffer_rubricas:
-                                    # Se não tem valor, tenta extrair da linha da data
-                                    if valor == "SEM_VALOR":
-                                        valor_tentativa = ProcessadorLinhaExtrato.extrair_valor_seguro(linha_stripped)
-                                        if valor_tentativa:
-                                            valor = valor_tentativa
+                                    # ===== LÓGICA ESPECIAL PARA CESTA =====
+                                    if rubrica == "CESTA":
+                                        # CESTA: se não tem valor, tenta extrair da linha da data
+                                        if valor == "SEM_VALOR":
+                                            valor_tentativa = ProcessadorExtratoSeguro.extrair_valor_seguro(linha_stripped)
+                                            if valor_tentativa:
+                                                valor = valor_tentativa
+                                        
+                                        self.adicionar_log(f"      🎁 CESTA | VALOR: {valor} | DATA: {ultima_data}")
+                                    else:
+                                        self.adicionar_log(f"      ✅ {rubrica} | VALOR: {valor} | DATA: {ultima_data}")
                                     
                                     self.resultados.append({
                                         "PÁGINA": num_pagina + 1,
@@ -333,47 +321,60 @@ class AnalisadorExtratoDataInferior:
                                         "RUBRICA": rubrica,
                                         "VALOR": valor,
                                         "DATA": ultima_data,
-                                        "TEXTO": texto[:80]
+                                        "TEXTO": texto[:80],
+                                        "ESTRATEGIA": "BUFFER_SEAL"
                                     })
-                                    self.adicionar_log(f"      ✓ {rubrica}: {valor} | DATA: {ultima_data}")
                                 
                                 buffer_rubricas = []
                             
                             # Verifica se tem rubrica na mesma linha da data
-                            rubrica = ProcessadorLinhaExtrato.detectar_rubrica(linha_stripped, self.rubricas_alvo)
+                            rubrica = ProcessadorExtratoSeguro.detectar_rubrica(linha_stripped, self.rubricas_alvo)
                             if rubrica:
-                                valor = ProcessadorLinhaExtrato.extrair_valor_seguro(linha_stripped)
+                                valor = ProcessadorExtratoSeguro.extrair_valor_seguro(linha_stripped)
                                 if not valor and idx_linha + 1 < len(linhas):
-                                    valor = ProcessadorLinhaExtrato.extrair_valor_seguro(linhas[idx_linha + 1])
+                                    valor = ProcessadorExtratoSeguro.extrair_valor_seguro(linhas[idx_linha + 1])
                                 
+                                self.adicionar_log(f"  [L{idx_linha}] ✅ {rubrica} NA DATA | VALOR: {valor}")
                                 self.resultados.append({
                                     "PÁGINA": num_pagina + 1,
                                     "LINHA": idx_linha,
                                     "RUBRICA": rubrica,
                                     "VALOR": valor if valor else "SEM_VALOR",
                                     "DATA": ultima_data,
-                                    "TEXTO": linha_stripped[:80]
+                                    "TEXTO": linha_stripped[:80],
+                                    "ESTRATEGIA": "DATA_SAME_LINE"
                                 })
-                                self.adicionar_log(f"  [L{idx_linha}] ✓ RUBRICA NA DATA: {rubrica} | VALOR: {valor}")
                             
                             continue
                         
-                        # ===== ETAPA 2: Verifica EXCLUSÃO =====
+                        # ===== PASSO 2: Verifica EXCLUSÃO =====
                         if re.search(TERMOS_EXCLUSAO, linha_stripped.upper()):
                             buffer_rubricas = []
-                            self.adicionar_log(f"  [L{idx_linha}] ✗ Exclusão (limpa buffer)")
+                            self.adicionar_log(f"  [L{idx_linha}] ❌ Exclusão (limpa buffer)")
                             continue
                         
-                        # ===== ETAPA 3: Procura RUBRICA para BUFFER =====
-                        rubrica = ProcessadorLinhaExtrato.detectar_rubrica(linha_stripped, self.rubricas_alvo)
+                        # ===== PASSO 3: Procura RUBRICA para BUFFER =====
+                        rubrica = ProcessadorExtratoSeguro.detectar_rubrica(linha_stripped, self.rubricas_alvo)
                         if rubrica:
-                            valor = ProcessadorLinhaExtrato.extrair_valor_seguro(linha_stripped)
-                            buffer_rubricas.append((rubrica, valor if valor else "SEM_VALOR", linha_stripped, idx_linha))
-                            self.adicionar_log(f"  [L{idx_linha}] → BUFFER: {rubrica} | VALOR: {valor if valor else 'SEM_VALOR'}")
+                            valor = ProcessadorExtratoSeguro.extrair_valor_seguro(linha_stripped)
+                            
+                            # ===== LÓGICA ESPECIAL PARA CESTA =====
+                            if rubrica == "CESTA":
+                                # CESTA: SEMPRE pega valor da mesma linha
+                                # Se não encontrar na mesma linha, não adiciona ao buffer
+                                if valor:
+                                    buffer_rubricas.append((rubrica, valor, linha_stripped, idx_linha))
+                                    self.adicionar_log(f"  [L{idx_linha}] 🎁 BUFFER CESTA | VALOR: {valor}")
+                                else:
+                                    self.adicionar_log(f"  [L{idx_linha}] ⚠️ CESTA SEM VALOR - IGNORANDO")
+                            else:
+                                # Outras rubricas podem ir para buffer sem valor
+                                buffer_rubricas.append((rubrica, valor if valor else "SEM_VALOR", linha_stripped, idx_linha))
+                                self.adicionar_log(f"  [L{idx_linha}] → BUFFER {rubrica} | VALOR: {valor if valor else 'SEM_VALOR'}")
                 
                 # Processa buffer final
                 if buffer_rubricas:
-                    self.adicionar_log(f"\n[FIM PDF] Selando {len(buffer_rubricas)} rubricas do buffer final")
+                    self.adicionar_log(f"\n[FIM PDF] Selando {len(buffer_rubricas)} registros finais")
                     for rubrica, valor, texto, linha_idx in buffer_rubricas:
                         self.resultados.append({
                             "PÁGINA": "?",
@@ -381,11 +382,12 @@ class AnalisadorExtratoDataInferior:
                             "RUBRICA": rubrica,
                             "VALOR": valor,
                             "DATA": ultima_data if ultima_data else "SEM_DATA",
-                            "TEXTO": texto[:80]
+                            "TEXTO": texto[:80],
+                            "ESTRATEGIA": "BUFFER_FINAL"
                         })
-                        self.adicionar_log(f"  ✓ {rubrica}: {valor} | DATA: {ultima_data if ultima_data else 'SEM_DATA'}")
+                        self.adicionar_log(f"  ✅ {rubrica} | VALOR: {valor}")
                 
-                self.adicionar_log(f"\n[RESUMO] {num_linhas_processadas} linhas processadas | {len(self.resultados)} registros encontrados")
+                self.adicionar_log(f"\n[RESUMO] {len(self.resultados)} registros encontrados")
         
         except Exception as e:
             self.adicionar_log(f"ERRO: {str(e)}")
@@ -394,12 +396,8 @@ class AnalisadorExtratoDataInferior:
         return self.resultados
 
 
-# --- 5. CONVERSOR SEGURO ---
-
 def converter_valor_para_float(valor_str: str) -> float:
-    """
-    Conversão INFALÍVEL de valor brasileiro para float.
-    """
+    """Conversão segura para float."""
     if not valor_str or valor_str in ["SEM_VALOR", "SEM_DATA"]:
         return 0.0
     
@@ -408,7 +406,6 @@ def converter_valor_para_float(valor_str: str) -> float:
         if '%' in valor_str:
             return 0.0
         
-        # Remove pontos de milhar, substitui vírgula
         valor_str = valor_str.replace('.', '').replace(',', '.')
         valor = float(valor_str)
         
@@ -417,12 +414,8 @@ def converter_valor_para_float(valor_str: str) -> float:
         return 0.0
 
 
-# --- 6. GERADOR EXCEL ---
-
 def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> Optional[bytes]:
-    """
-    Gera Excel com validação extrema.
-    """
+    """Gera Excel."""
     if df.empty:
         return None
     
@@ -556,9 +549,9 @@ def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> Optional[bytes]
         return None
 
 
-# --- 7. DASHBOARD ---
+# --- 8. DASHBOARD ---
 st.markdown('<h1 class="main-title">⚖️ Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">🔬 Auditoria Cirúrgica - ZERO Erros de Data/Valor</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">🔬 Auditoria Precisa - Lógica CESTA Corrigida</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO")
 
@@ -600,12 +593,7 @@ upload = st.file_uploader("📂 PDF DO EXTRATO", type=["pdf"])
 
 if upload:
     with st.spinner("⚡ Analisando..."):
-        # Seleciona analisador
-        if modo_leitura == "DATA_SUPERIOR":
-            analisador = AnalisadorExtratoDataSuperior(selecionadas)
-        else:
-            analisador = AnalisadorExtratoDataInferior(selecionadas)
-        
+        analisador = AnalisadorExtratoOtimizado(selecionadas, modo_leitura)
         dados = analisador.processar_pdf(upload)
         st.session_state.log_debug = analisador.log
         
@@ -658,4 +646,4 @@ if upload:
         else:
             st.error("❌ Nenhum dado!")
 
-st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>🥇 Melhor Programador do Mundo - Edson Medeiros</p>", unsafe_allow_html=True)
+st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>🥇 Melhor Programador - Edson Medeiros</p>", unsafe_allow_html=True)
