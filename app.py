@@ -21,6 +21,7 @@ st.markdown("""
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
+    .info-card { background: rgba(191,175,131,0.1); border: 2px solid #BFAF83; border-radius: 10px; padding: 15px; margin: 15px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -45,25 +46,18 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR COM LÓGICA DE DATA SUPERIOR/INFERIOR (MODELO ANEXO 1 E 2) ---
-def realizar_auditoria(arquivo, rubricas_alvo):
+# --- 3. MOTOR COM LÓGICA DE DATA SUPERIOR/INFERIOR ---
+def realizar_auditoria_data_superior(arquivo, rubricas_alvo):
     """
-    Motor de auditoria com lógica avançada de Data Superior/Inferior.
-    
-    DATA SUPERIOR (ANEXO 1):
-    - Data aparece ao lado da primeira movimentação
-    - Todas as movimentações até a próxima data pertencem àquela data
-    
-    DATA INFERIOR (ANEXO 2):
-    - Movimentações aparecem sem data
-    - Data aparece apenas na última movimentação do período (ou linha divisória)
-    - Todas as movimentações anteriores pertencem àquela data
+    Análise no formato DATA SUPERIOR (ANEXO 1):
+    - Data aparece logo ao lado da primeira movimentação
+    - Todas as movimentações abaixo até a próxima 'linha divisória' pertencem àquela data
+    - O robô segue para a coluna débito e coleta o valor EXATO da rubrica
     """
     resultados = []
     linhas_processadas = []
     
     with pdfplumber.open(arquivo) as pdf:
-        # Coleta todas as linhas do PDF
         for page in pdf.pages:
             texto = page.extract_text(x_tolerance=3, y_tolerance=3)
             if not texto:
@@ -71,10 +65,8 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             linhas = texto.split('\n')
             linhas_processadas.extend(linhas)
     
-    # Processamento inteligente: duas passagens
     i = 0
     data_atual = None
-    bloco_movimentacoes = []
     
     while i < len(linhas_processadas):
         linha = linhas_processadas[i].strip()
@@ -87,24 +79,18 @@ def realizar_auditoria(arquivo, rubricas_alvo):
         # Detecta data no formato DD/MM/YYYY ou DD/MM/YY
         match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
         
-        # Detecta linha divisória (sequência de traços)
-        eh_linha_divisoria = re.search(r"^[\s\-_=]{5,}$", linha)
-        
         # Detecta valor no formato brasileiro (1.234,56)
         match_valor = re.search(r"([\d\.]+,\d{2})", linha)
         
-        # LÓGICA 1: Se encontra data E (rubrica ou apenas data) = DATA SUPERIOR
+        # Detecta linha divisória
+        eh_linha_divisoria = re.search(r"^[\s\-_=]{5,}$", linha)
+        
+        # LÓGICA DATA SUPERIOR: Data identifica o período
         if match_data:
             data_encontrada = match_data.group(1)
-            
-            # Processa bloco anterior (DATA INFERIOR)
-            if bloco_movimentacoes:
-                resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_atual, rubricas_alvo))
-                bloco_movimentacoes = []
-            
             data_atual = data_encontrada
             
-            # Verifica se há rubrica na mesma linha da data (DATA SUPERIOR)
+            # Verifica se há rubrica na mesma linha da data
             rubrica_detectada = detectar_rubrica(linha_up, rubricas_alvo)
             if rubrica_detectada and match_valor:
                 resultados.append({
@@ -115,38 +101,108 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     "TIPO": "DATA_SUPERIOR"
                 })
         
-        # LÓGICA 2: Se encontra rubrica = adiciona ao bloco (DATA INFERIOR)
-        else:
+        # Coleta rubricas no período até próxima data/divisória
+        elif data_atual:
             # Reset por termos de exclusão
             if re.search(TERMOS_EXCLUSAO, linha_up):
-                if bloco_movimentacoes:
-                    resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_atual, rubricas_alvo))
-                    bloco_movimentacoes = []
                 i += 1
                 continue
             
             rubrica_detectada = detectar_rubrica(linha_up, rubricas_alvo)
             
-            if rubrica_detectada or (match_valor and bloco_movimentacoes):
-                bloco_movimentacoes.append({
-                    "linha_original": linha,
-                    "linha_upper": linha_up,
-                    "rubrica": rubrica_detectada,
-                    "valor": match_valor.group(1) if match_valor else None,
-                    "tem_data": bool(match_data)
+            if rubrica_detectada and match_valor:
+                resultados.append({
+                    "DATA": data_atual,
+                    "CATEGORIA": rubrica_detectada,
+                    "VALOR": match_valor.group(1),
+                    "HISTÓRICO": linha[:80],
+                    "TIPO": "DATA_SUPERIOR"
                 })
+            
+            # Linha divisória = reset da data atual
+            if eh_linha_divisoria:
+                data_atual = None
         
-        # LÓGICA 3: Linha divisória = finaliza bloco (DATA INFERIOR)
+        i += 1
+    
+    return resultados
+
+
+def realizar_auditoria_data_inferior(arquivo, rubricas_alvo):
+    """
+    Análise no formato DATA INFERIOR (ANEXO 2):
+    - Movimentações aparecem com a data ao lado ou apenas na última movimentação
+    - Todas as movimentações que não possuem data pertencem à data da última movimentação daquele período
+    - Usa linha divisória como marcador de fim do período
+    """
+    resultados = []
+    linhas_processadas = []
+    
+    with pdfplumber.open(arquivo) as pdf:
+        for page in pdf.pages:
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
+            if not texto:
+                continue
+            linhas = texto.split('\n')
+            linhas_processadas.extend(linhas)
+    
+    i = 0
+    bloco_movimentacoes = []
+    data_do_bloco = None
+    
+    while i < len(linhas_processadas):
+        linha = linhas_processadas[i].strip()
+        if not linha:
+            i += 1
+            continue
+        
+        linha_up = linha.upper()
+        
+        # Detecta data
+        match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+        
+        # Detecta valor
+        match_valor = re.search(r"([\d\.]+,\d{2})", linha)
+        
+        # Detecta linha divisória
+        eh_linha_divisoria = re.search(r"^[\s\-_=]{5,}$", linha)
+        
+        # Reset por termos de exclusão
+        if re.search(TERMOS_EXCLUSAO, linha_up):
+            if bloco_movimentacoes:
+                resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_do_bloco, rubricas_alvo))
+                bloco_movimentacoes = []
+                data_do_bloco = None
+            i += 1
+            continue
+        
+        rubrica_detectada = detectar_rubrica(linha_up, rubricas_alvo)
+        
+        # Se encontra data, atualiza a data do bloco
+        if match_data:
+            data_do_bloco = match_data.group(1)
+        
+        # Adiciona movimento ao bloco se tem rubrica ou valor
+        if rubrica_detectada or match_valor:
+            bloco_movimentacoes.append({
+                "linha_original": linha,
+                "linha_upper": linha_up,
+                "rubrica": rubrica_detectada,
+                "valor": match_valor.group(1) if match_valor else None,
+                "tem_data": bool(match_data)
+            })
+        
+        # Linha divisória = finaliza bloco
         if eh_linha_divisoria and bloco_movimentacoes:
-            resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_atual, rubricas_alvo))
+            resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_do_bloco, rubricas_alvo))
             bloco_movimentacoes = []
-            data_atual = None
+            data_do_bloco = None
         
         i += 1
     
     # Processa bloco final se existir
     if bloco_movimentacoes:
-        resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_atual, rubricas_alvo))
+        resultados.extend(processar_bloco_data_inferior(bloco_movimentacoes, data_do_bloco, rubricas_alvo))
     
     return resultados
 
@@ -191,18 +247,6 @@ def processar_bloco_data_inferior(bloco, data_final, rubricas_alvo):
                     "HISTÓRICO": item["linha_original"][:80],
                     "TIPO": "DATA_INFERIOR"
                 })
-        elif item["valor"] and resultados:  # Valor órfão: associa à última rubrica
-            # Busca pela última rubrica não atribuída
-            for j in range(len(bloco) - 1, -1, -1):
-                if bloco[j]["rubrica"] and bloco[j]["valor"] is None:
-                    resultados.append({
-                        "DATA": data_final,
-                        "CATEGORIA": bloco[j]["rubrica"],
-                        "VALOR": item["valor"],
-                        "HISTÓRICO": bloco[j]["linha_original"][:80],
-                        "TIPO": "DATA_INFERIOR_ASSOCIADO"
-                    })
-                    break
     
     return resultados
 
@@ -331,71 +375,114 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
-st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
-if 'sel_all' not in st.session_state:
-    st.session_state.sel_all = True
+# --- SELEÇÃO DE FORMATO DE DATA ---
+st.markdown('<h3 style="color:#BFAF83; margin-top:20px;">📅 Formato do Extrato Bancário</h3>', unsafe_allow_html=True)
 
-col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"):
-    st.session_state.sel_all = True
-if col_b2.button("Desmarcar Todas"):
-    st.session_state.sel_all = False
+col_formato = st.columns(2)
 
-selecionadas = []
-for r in RUBRICAS_MESTRE.keys():
-    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
-        selecionadas.append(r)
+with col_formato[0]:
+    if st.button("📍 DATA SUPERIOR (ANEXO 1)", use_container_width=True):
+        st.session_state.formato = "DATA_SUPERIOR"
 
-upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+with col_formato[1]:
+    if st.button("📍 DATA INFERIOR (ANEXO 2)", use_container_width=True):
+        st.session_state.formato = "DATA_INFERIOR"
 
-if upload:
-    with st.spinner("Analisando extratos com lógica avançada de Data Superior/Inferior..."):
-        dados = realizar_auditoria(upload, selecionadas)
-        if dados:
-            df = pd.DataFrame(dados)
-            df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+# Inicializa formato na sessão
+if 'formato' not in st.session_state:
+    st.session_state.formato = None
+
+# Exibe informação do formato selecionado
+if st.session_state.formato:
+    if st.session_state.formato == "DATA_SUPERIOR":
+        st.markdown("""
+        <div class="info-card">
+        <strong>✅ Modo: DATA SUPERIOR</strong><br>
+        📌 Data aparece ao lado da primeira movimentação<br>
+        📌 Todas as movimentações abaixo até a próxima linha divisória pertencem àquela data<br>
+        📌 O robô coleta o valor exato de cada rubrica identificada
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="info-card">
+        <strong>✅ Modo: DATA INFERIOR</strong><br>
+        📌 Movimentações aparecem sem data ao lado<br>
+        📌 Data aparece apenas na última movimentação do período<br>
+        📌 Todas as movimentações sem data pertencem à última data identificada
+        </div>
+        """, unsafe_allow_html=True)
+
+# --- SELEÇÃO DE RUBRICAS ---
+if st.session_state.formato:
+    st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
+    if 'sel_all' not in st.session_state:
+        st.session_state.sel_all = True
+
+    col_b1, col_b2 = st.sidebar.columns(2)
+    if col_b1.button("Marcar Todas"):
+        st.session_state.sel_all = True
+    if col_b2.button("Desmarcar Todas"):
+        st.session_state.sel_all = False
+
+    selecionadas = []
+    for r in RUBRICAS_MESTRE.keys():
+        if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+            selecionadas.append(r)
+
+    upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+
+    if upload:
+        with st.spinner(f"Analisando extrato no formato {st.session_state.formato}..."):
+            # Executa auditoria baseado no formato selecionado
+            if st.session_state.formato == "DATA_SUPERIOR":
+                dados = realizar_auditoria_data_superior(upload, selecionadas)
+            else:
+                dados = realizar_auditoria_data_inferior(upload, selecionadas)
             
-            # Ordenação Cronológica Real
-            def fix_date(d):
-                p = d.split('/')
-                if len(p[2]) == 2:
-                    p[2] = "20" + p[2]
-                return "/".join(p)
-            
-            df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
-            df = df.sort_values('DT_O', ascending=True)
-            
-            total_geral = df['V_NUM'].sum()
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
-            with c2:
-                st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
-            with c3:
-                df_superior = df[df['TIPO'] == 'DATA_SUPERIOR']
-                df_inferior = df[~df['TIPO'].str.contains('DATA_SUPERIOR', na=False)]
-                st.markdown(f'<div class="metric-card"><h4>SUPERIOR / INFERIOR</h4><h2 style="color:#BFAF83;">{len(df_superior)} / {len(df_inferior)}</h2></div>', unsafe_allow_html=True)
-            
-            st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
-            st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
-            
-            cats = df['CATEGORIA'].unique()
-            cols = st.columns(2)
-            for idx, cat in enumerate(cats):
-                df_cat = df[df['CATEGORIA'] == cat]
-                excel_file = gerar_excel_calculos(df_cat, cat)
-                col_idx = idx % 2
-                with cols[col_idx]:
-                    st.download_button(
-                        label=f"📊 {cat}",
-                        data=excel_file,
-                        file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-            
-            st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
-            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'TIPO', 'HISTÓRICO']], use_container_width=True)
-        else:
-            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+            if dados:
+                df = pd.DataFrame(dados)
+                df['V_NUM'] = df['VALOR'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+                
+                # Ordenação Cronológica Real
+                def fix_date(d):
+                    p = d.split('/')
+                    if len(p[2]) == 2:
+                        p[2] = "20" + p[2]
+                    return "/".join(p)
+                
+                df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+                df = df.sort_values('DT_O', ascending=True)
+                
+                total_geral = df['V_NUM'].sum()
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown(f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4><h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'<div class="metric-card"><h4>LANÇAMENTOS</h4><h2 style="color:#BFAF83;">{len(df)}</h2></div>', unsafe_allow_html=True)
+                
+                st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>', unsafe_allow_html=True)
+                st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
+                
+                cats = df['CATEGORIA'].unique()
+                cols = st.columns(2)
+                for idx, cat in enumerate(cats):
+                    df_cat = df[df['CATEGORIA'] == cat]
+                    excel_file = gerar_excel_calculos(df_cat, cat)
+                    col_idx = idx % 2
+                    with cols[col_idx]:
+                        st.download_button(
+                            label=f"📊 {cat}",
+                            data=excel_file,
+                            file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                
+                st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
+                st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'TIPO', 'HISTÓRICO']], use_container_width=True)
+            else:
+                st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+else:
+    st.warning("⚠️ Por favor, selecione o formato do extrato acima para continuar.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
