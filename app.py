@@ -26,33 +26,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS (BUSCA FRAGMENTADA) ---
+# --- 2. RÚBRICAS SOLICITADAS (REGEX ULTRA-FLEXÍVEL) ---
+# O padrão \s* permite espaços entre as letras, capturando "C E S T A" ou "CESTA"
 RUBRICAS_MESTRE = {
-    "CESTA": r"CESTA",
-    "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA.*OPER",
-    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO",
-    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED",
-    "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO|ANUIDADE",
-    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO",
-    "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES.*VENCIDAS",
-    "DIV. EM ATRASO": r"DIV.*EM.*ATRASO|DIVIDA.*EM.*ATRASO"
+    "CESTA": r"C\s*E\s*S\s*T\s*A",
+    "PACOTE": r"P\s*A\s*C\s*O\s*T\s*E",
+    "MORA DE OPERAÇÃO": r"M\s*O\s*R\s*A.*O\s*P\s*E\s*R\s*A\s*C\s*A\s*O",
+    "MORA CREDITO PESSOAL": r"M\s*O\s*R\s*A.*C\s*R\s*E\s*D.*P\s*E\s*S\s*S",
+    "MORA OPERACAO DE CREDITO": r"M\s*O\s*R\s*A.*O\s*P\s*E\s*R.*C\s*R\s*E\s*D",
+    "BX": r"\bB\s*X\b",
+    "PARCELA CREDITO PESSOAL": r"P\s*A\s*R\s*C.*C\s*R\s*E\s*D.*P\s*E\s*S\s*S",
+    "GASTOS CARTAO DE CREDITO": r"G\s*A\s*S\s*T\s*O\s*S.*C\s*A\s*R\s*T\s*A\s*O|C\s*A\s*R\s*T\s*A\s*O.*C\s*R\s*E\s*D\s*I\s*T\s*O",
+    "SEGURO": r"S\s*E\s*G\s*U\s*R\s*O|S\s*E\s*G\s*U\s*R\s*A\s*D\s*O\s*R\s*A|S\s*E\s*G\b",
+    "ADIANT": r"A\s*D\s*I\s*A\s*N\s*T",
+    "APLIC": r"A\s*P\s*L\s*I\s*C\s*A\s*C\s*A\s*O|A\s*P\s*L\s*I\s*C\b",
+    "ENCARGOS": r"E\s*N\s*C\s*A\s*R\s*G\s*O\s*S|E\s*N\s*C\s*A\s*R\s*G\s*O|E\s*N\s*C.*L\s*I\s*M\s*I\s*T\s*E|L\s*I\s*M\s*I\s*T\s*E.*C\s*R\s*E\s*D",
+    "ANUIDADE": r"A\s*N\s*U\s*I\s*D\s*A\s*D\s*E",
+    "OPERACOES VENCIDAS": r"O\s*P\s*E\s*R\s*A\s*C\s*O\s*E\s*S.*V\s*E\s*N\s*C\s*I\s*D\s*A\s*S",
+    "DIV. EM ATRASO": r"D\s*I\s*V\s*I\s*D\s*A.*A\s*T\s*R\s*A\s*S\s*O|D\s*I\s*V.*A\s*T\s*R\s*A\s*S\s*O"
 }
 
 def normalizar_texto(txt):
     if not txt: return ""
+    # Remove acentos e caracteres especiais, mantém apenas letras e números para busca
     txt = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
     txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
-    txt = re.sub(r'\s+', ' ', txt).strip()
     return txt
 
-# --- 3. MOTOR DE AUDITORIA DE ALTA SENSIBILIDADE ---
+# --- 3. MOTOR DE AUDITORIA PERICIAL (ALTA SENSIBILIDADE) ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
@@ -68,8 +69,8 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
             col_saldo_x = (550, 680)
             for w in words:
                 txt_w = normalizar_texto(w['text'])
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 15, w['x1'] + 15)
-                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 15, w['x1'] + 15)
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 20, w['x1'] + 20)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 20, w['x1'] + 20)
 
             linhas_dict = {}
             for w in words:
@@ -96,16 +97,16 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                     else:
                         data_superior = data_encontrada
 
-                # B. Identificar Rubrica
+                # B. Identificar Rubrica (Busca Ultra-Flexível)
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
-                    if re.search(RUBRICAS_MESTRE[nome], linha_norm):
+                    if re.search(RUBRICAS_MESTRE[nome], linha_norm, re.IGNORECASE):
                         rubrica_detectada = nome
                         break
                 
                 if rubrica_detectada:
                     valor_debito = None
-                    # Varredura de contexto expandido
+                    # Varredura circular expandida (mesma linha, 2 acima, 2 abaixo)
                     indices_contexto = [i]
                     for offset in [1, 2]:
                         if i - offset >= 0: indices_contexto.append(i - offset)
@@ -116,6 +117,7 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                             m_val = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", p['text'])
                             if m_val:
                                 centro_x = (p['x0'] + p['x1']) / 2
+                                # Validação rigorosa na Coluna de Débito
                                 if centro_x > col_debito_x[0] and centro_x < col_saldo_x[0]:
                                     valor_debito = m_val.group(1)
                                     break
@@ -254,15 +256,12 @@ modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferio
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
 
-# Lógica de seleção robusta
 if 'selecionadas_dict' not in st.session_state:
     st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
 
 def toggle_all(valor):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state.selecionadas_dict[r] = valor
-    # Atualizar as chaves das checkboxes individuais também
-    for r in RUBRICAS_MESTRE.keys():
         st.session_state[f"check_{r}"] = valor
 
 col_b1, col_b2 = st.sidebar.columns(2)
@@ -286,7 +285,7 @@ if upload:
     if not selecionadas:
         st.warning("⚠️ Selecione pelo menos uma rubrica na barra lateral.")
     else:
-        with st.spinner(f"Realizando auditoria integral ({modo_leitura})..."):
+        with st.spinner(f"Realizando auditoria pericial ({modo_leitura})..."):
             dados = realizar_auditoria(upload, selecionadas, modo_leitura)
             if dados:
                 df = pd.DataFrame(dados)
