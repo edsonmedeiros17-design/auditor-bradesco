@@ -4,8 +4,7 @@ import pandas as pd
 import re
 from datetime import datetime
 import io
-import numpy as np
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 try:
     from openpyxl import Workbook
@@ -25,7 +24,7 @@ st.markdown("""
     .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
     .config-box { background: rgba(191, 175, 131, 0.1); border: 1px solid #BFAF83; border-radius: 8px; padding: 10px; margin: 10px 0; }
-    .debug-box { background: rgba(50, 150, 200, 0.1); border: 1px solid #3296C8; border-radius: 8px; padding: 10px; margin: 10px 0; font-size: 12px; max-height: 400px; overflow-y: auto; }
+    .debug-box { background: rgba(50, 150, 200, 0.1); border: 1px solid #3296C8; border-radius: 8px; padding: 10px; margin: 10px 0; font-size: 11px; max-height: 500px; overflow-y: auto; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -50,36 +49,40 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. INICIALIZAR SESSION STATE ---
+# --- 3. SESSION STATE ---
 if 'rubricas_selecionadas' not in st.session_state:
     st.session_state.rubricas_selecionadas = {r: True for r in RUBRICAS_MESTRE.keys()}
 if 'debug_mode' not in st.session_state:
     st.session_state.debug_mode = False
+if 'log_debug' not in st.session_state:
+    st.session_state.log_debug = []
 
-# --- 4. FUNÇÕES AUXILIARES AVANÇADAS ---
+# --- 4. FUNÇÕES AUXILIARES ---
 
-def extrair_todos_valores(texto: str) -> List[str]:
+def limpar_log():
+    """Limpa o log de debug."""
+    st.session_state.log_debug = []
+
+def adicionar_log(mensagem: str):
+    """Adiciona mensagem ao log de debug."""
+    st.session_state.log_debug.append(mensagem)
+
+def extrair_valor(texto: str) -> Optional[str]:
     """
-    Extrai TODOS os valores monetários da linha com extrema precisão.
-    Captura: 1,23 | 10,00 | 1.234,56 | 1.234.567,89
+    Extrai o PRIMEIRO valor monetário da string.
+    PADRÃO BRASILEIRO: 1,23 | 10,00 | 1.234,56 | 1.234.567,89
+    Retorna None se não encontrar valor.
     """
-    valores = []
-    # Padrão robusto: captura valores brasileiros com até 3 casas decimais
-    # Formato: X,XX ou X.XXX,XX ou X.XXX.XXX,XX
+    # Padrão: captura valores com até 3 dígitos, depois pontos de milhar, depois 2 casas decimais
     pattern = r'(\d{1,3}(?:\.\d{3})*,\d{2})'
-    matches = re.finditer(pattern, texto)
-    for match in matches:
-        valor = match.group(1)
-        # Valida que não está seguido de %
-        pos_final = match.end()
-        if pos_final < len(texto) and '%' not in texto[pos_final:pos_final+2]:
-            valores.append(valor)
-    return valores
+    match = re.search(pattern, texto)
+    if match:
+        return match.group(1)
+    return None
 
-
-def converter_valor_para_float(valor_str: str) -> float:
+def converter_valor_para_float(valor_str: Optional[str]) -> float:
     """
-    Conversão INFALÍVEL de valores brasileiros para float.
+    Converte valor brasileiro para float com segurança total.
     """
     if not valor_str or valor_str == "PENDENTE":
         return 0.0
@@ -89,8 +92,9 @@ def converter_valor_para_float(valor_str: str) -> float:
         if '%' in valor_str or not valor_str:
             return 0.0
         
-        # Remove pontos (separador de milhar) e substitui vírgula por ponto
+        # Remove pontos (separador de milhar)
         valor_str = valor_str.replace('.', '')
+        # Substitui vírgula por ponto
         valor_str = valor_str.replace(',', '.')
         
         valor_float = float(valor_str)
@@ -98,23 +102,21 @@ def converter_valor_para_float(valor_str: str) -> float:
     except:
         return 0.0
 
-
-def extrair_todas_datas(texto: str) -> List[str]:
+def extrair_data(texto: str) -> Optional[str]:
     """
-    Extrai TODAS as datas do texto com máxima flexibilidade.
-    Captura: dd/mm/yyyy | dd/mm/yy
+    Extrai a PRIMEIRA data do texto.
+    PADRÃO: dd/mm/yyyy ou dd/mm/yy
     """
-    datas = []
     pattern = r'(\d{2}/\d{2}/\d{2,4})'
-    matches = re.finditer(pattern, texto)
-    for match in matches:
-        datas.append(match.group(1))
-    return datas
-
+    match = re.search(pattern, texto)
+    if match:
+        data_str = match.group(1)
+        return formatar_data(data_str)
+    return None
 
 def formatar_data(data_str: str) -> str:
     """
-    Formata data para padrão dd/mm/yyyy.
+    Formata data para padrão dd/mm/yyyy com validação.
     """
     if not data_str or data_str == "PENDENTE":
         return "PENDENTE"
@@ -127,7 +129,10 @@ def formatar_data(data_str: str) -> str:
         dia, mes, ano = partes
         
         # Valida dia e mês
-        if not (1 <= int(dia) <= 31 and 1 <= int(mes) <= 12):
+        dia_int = int(dia)
+        mes_int = int(mes)
+        
+        if not (1 <= dia_int <= 31 and 1 <= mes_int <= 12):
             return "PENDENTE"
         
         # Adiciona século se necessário
@@ -138,231 +143,225 @@ def formatar_data(data_str: str) -> str:
     except:
         return "PENDENTE"
 
-
-def buscar_rubrica(linha: str, rubricas_alvo: List[str]) -> Tuple[str, bool]:
+def detectar_rubrica(linha: str, rubricas_alvo: List[str]) -> Optional[str]:
     """
-    Busca rubrica na linha com máxima precisão.
-    Retorna: (nome_rubrica, encontrada)
+    Detecta a rubrica presente na linha.
+    Retorna o nome da rubrica ou None.
     """
     linha_up = linha.upper().strip()
     
+    # Não processa linhas com porcentagem
     if "%" in linha_up:
-        return None, False
+        return None
     
     for nome in rubricas_alvo:
         if re.search(RUBRICAS_MESTRE[nome], linha_up):
-            return nome, True
+            return nome
     
-    return None, False
+    return None
 
+# --- 5. MOTOR CIRÚRGICO - ANÁLISE LINHA POR LINHA ---
 
-def rastrear_valor_contexto(linhas: List[str], idx_atual: int, max_distancia: int = 5) -> str:
+def realizar_auditoria_data_superior_cirurgica(arquivo, rubricas_alvo: List[str]) -> List[Dict]:
     """
-    ALGORITMO AVANÇADO: Rastreia valor mesmo se não estiver na mesma linha.
-    Procura em linhas vizinhas (para frente e para trás).
-    """
-    valores_encontrados = []
+    MOTOR CIRÚRGICO - DATA SUPERIOR (ANEXO 1)
     
-    # Procura para trás (linhas anteriores)
-    for i in range(max(0, idx_atual - max_distancia), idx_atual):
-        vals = extrair_todos_valores(linhas[i])
-        valores_encontrados.extend(vals)
-    
-    # Procura para frente (próximas linhas)
-    for i in range(idx_atual + 1, min(len(linhas), idx_atual + max_distancia + 1)):
-        vals = extrair_todos_valores(linhas[i])
-        valores_encontrados.extend(vals)
-    
-    # Retorna o primeiro valor encontrado (mais próximo)
-    if valores_encontrados:
-        return valores_encontrados[0]
-    
-    return "PENDENTE"
-
-
-# --- 5. MOTOR ULTRA-PRECISO DATA SUPERIOR ---
-
-def realizar_auditoria_data_superior(arquivo, rubricas_alvo: List[str]) -> List[Dict]:
-    """
-    MOTOR ULTRA-PRECISO - DATA SUPERIOR (ANEXO 1)
-    Captura TUDO com múltiplas estratégias de extração.
+    LÓGICA INFALÍVEL:
+    - Varre TODA linha de cada página
+    - Identifica DATA (atualiza contexto)
+    - Identifica RUBRICA (captura imediatamente)
+    - Captura VALOR da mesma linha ou próxima linha
+    - NENHUMA rubrica é deixada passar
     """
     resultados = []
+    limpar_log()
     
     try:
         with pdfplumber.open(arquivo) as pdf:
-            todas_linhas = []
+            ultima_data = None
             
-            # FASE 1: Extrair todas as linhas de todas as páginas
             for page_num, page in enumerate(pdf.pages):
                 texto = page.extract_text(x_tolerance=2, y_tolerance=2)
                 if not texto:
+                    adicionar_log(f"[PÁGINA {page_num + 1}] Sem texto extraído")
                     continue
                 
                 linhas = texto.split('\n')
-                todas_linhas.extend([(line, page_num) for line in linhas])
-            
-            # FASE 2: Processar com contexto de múltiplas linhas
-            ultima_data = None
-            buffer_rubricas = []  # Buffer para acumular rubricas
-            
-            for idx, (linha, page_num) in enumerate(todas_linhas):
-                linha_up = linha.upper().strip()
+                adicionar_log(f"\n[PÁGINA {page_num + 1}] {len(linhas)} linhas processadas")
                 
-                if not linha_up:
-                    continue
-                
-                # Busca data na linha
-                datas = extrair_todas_datas(linha_up)
-                if datas:
-                    ultima_data = formatar_data(datas[0])
+                for idx_linha, linha in enumerate(linhas):
+                    linha_stripped = linha.strip()
                     
-                    # Se temos rubricas bufferizadas, processa-as com essa data
-                    for rubrica, historico in buffer_rubricas:
-                        # Tenta encontrar valor na linha atual
-                        valores = extrair_todos_valores(linha_up)
-                        valor = valores[0] if valores else "PENDENTE"
+                    # Ignora linhas vazias
+                    if not linha_stripped:
+                        continue
+                    
+                    linha_up = linha_stripped.upper()
+                    
+                    # ===== PASSO 1: Procura DATA =====
+                    data_encontrada = extrair_data(linha_up)
+                    if data_encontrada and data_encontrada != "PENDENTE":
+                        ultima_data = data_encontrada
+                        adicionar_log(f"  [L{idx_linha}] DATA ENCONTRADA: {ultima_data}")
+                        continue
+                    
+                    # ===== PASSO 2: Verifica EXCLUSÃO =====
+                    if re.search(TERMOS_EXCLUSAO, linha_up):
+                        adicionar_log(f"  [L{idx_linha}] Linha descartada (exclusão)")
+                        continue
+                    
+                    # ===== PASSO 3: Procura RUBRICA =====
+                    rubrica = detectar_rubrica(linha_stripped, rubricas_alvo)
+                    if rubrica:
+                        # ===== PASSO 4: Extrai VALOR =====
+                        valor_str = extrair_valor(linha_up)
                         
-                        if valor == "PENDENTE":
-                            # Rastreia em contexto
-                            valor = rastrear_valor_contexto([l[0] for l in todas_linhas], idx, max_distancia=3)
+                        # Se não encontrou valor na mesma linha, procura na próxima
+                        if not valor_str and idx_linha + 1 < len(linhas):
+                            proxima_linha = linhas[idx_linha + 1].upper()
+                            valor_str = extrair_valor(proxima_linha)
+                            if valor_str:
+                                adicionar_log(f"  [L{idx_linha}] RUBRICA: {rubrica} | VALOR NA PRÓXIMA LINHA: {valor_str}")
+                        
+                        if valor_str:
+                            adicionar_log(f"  [L{idx_linha}] RUBRICA: {rubrica} | VALOR: {valor_str} | DATA: {ultima_data}")
+                        else:
+                            adicionar_log(f"  [L{idx_linha}] RUBRICA: {rubrica} | VALOR: NÃO ENCONTRADO")
                         
                         resultados.append({
+                            "PÁGINA": page_num + 1,
+                            "LINHA": idx_linha,
                             "CATEGORIA": rubrica,
-                            "VALOR": valor,
-                            "HISTÓRICO": historico[:80],
-                            "DATA": ultima_data
+                            "VALOR": valor_str if valor_str else "PENDENTE",
+                            "HISTÓRICO": linha_stripped[:100],
+                            "DATA": ultima_data if ultima_data else "PENDENTE"
                         })
-                    
-                    buffer_rubricas = []
-                    continue
-                
-                # Verifica exclusão
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    buffer_rubricas = []
-                    continue
-                
-                # Busca rubrica
-                rubrica, encontrada = buscar_rubrica(linha, rubricas_alvo)
-                
-                if encontrada:
-                    valores = extrair_todos_valores(linha_up)
-                    valor = valores[0] if valores else "PENDENTE"
-                    
-                    if valor == "PENDENTE":
-                        valor = rastrear_valor_contexto([l[0] for l in todas_linhas], idx, max_distancia=3)
-                    
-                    resultados.append({
-                        "CATEGORIA": rubrica,
-                        "VALOR": valor,
-                        "HISTÓRICO": linha_up[:80],
-                        "DATA": ultima_data if ultima_data else "PENDENTE"
-                    })
-                    
-                    buffer_rubricas = []
     
     except Exception as e:
-        st.error(f"❌ Erro ao processar PDF (DATA_SUPERIOR): {str(e)}")
+        st.error(f"❌ Erro ao processar PDF: {str(e)}")
+        adicionar_log(f"ERRO: {str(e)}")
     
     return resultados
 
 
-# --- 6. MOTOR ULTRA-PRECISO DATA INFERIOR ---
-
-def realizar_auditoria_data_inferior(arquivo, rubricas_alvo: List[str]) -> List[Dict]:
+def realizar_auditoria_data_inferior_cirurgica(arquivo, rubricas_alvo: List[str]) -> List[Dict]:
     """
-    MOTOR ULTRA-PRECISO - DATA INFERIOR (ANEXO 2)
-    Captura com lógica inteligente de contexto e rastreamento.
+    MOTOR CIRÚRGICO - DATA INFERIOR (ANEXO 2)
+    
+    LÓGICA INFALÍVEL:
+    - Varre TODA linha de cada página
+    - Acumula RUBRICAS em buffer sem data
+    - Quando encontra DATA, sela todas as rubricas com aquela data
+    - NENHUMA rubrica é deixada passar
     """
     resultados = []
+    limpar_log()
     
     try:
         with pdfplumber.open(arquivo) as pdf:
-            todas_linhas = []
+            buffer_rubricas = []  # Buffer: (rubrica, historico, valor, idx_linha)
+            ultima_data_encontrada = None
             
-            # FASE 1: Extrair todas as linhas
             for page_num, page in enumerate(pdf.pages):
                 texto = page.extract_text(x_tolerance=2, y_tolerance=2)
                 if not texto:
+                    adicionar_log(f"[PÁGINA {page_num + 1}] Sem texto extraído")
                     continue
                 
                 linhas = texto.split('\n')
-                todas_linhas.extend([(line, page_num) for line in linhas])
-            
-            # FASE 2: Processar com lógica de data inferior
-            bloco_acumulador = []
-            ultima_data_inferida = None
-            
-            for idx, (linha, page_num) in enumerate(todas_linhas):
-                linha_up = linha.upper().strip()
+                adicionar_log(f"\n[PÁGINA {page_num + 1}] {len(linhas)} linhas processadas")
                 
-                if not linha_up:
-                    continue
-                
-                # Procura por data (data inferior)
-                datas = extrair_todas_datas(linha_up)
-                
-                if datas:
-                    data_encontrada = formatar_data(datas[0])
-                    ultima_data_inferida = data_encontrada
+                for idx_linha, linha in enumerate(linhas):
+                    linha_stripped = linha.strip()
                     
-                    # Processa bloco acumulado com esta data
-                    for rubrica, historico, valor_parcial in bloco_acumulador:
-                        # Se não conseguiu valor antes, tenta agora
-                        if valor_parcial == "PENDENTE":
-                            valor_parcial = rastrear_valor_contexto([l[0] for l in todas_linhas], idx, max_distancia=5)
+                    # Ignora linhas vazias
+                    if not linha_stripped:
+                        continue
+                    
+                    linha_up = linha_stripped.upper()
+                    
+                    # ===== PASSO 1: Procura DATA (DATA INFERIOR) =====
+                    data_encontrada = extrair_data(linha_up)
+                    if data_encontrada and data_encontrada != "PENDENTE":
+                        ultima_data_encontrada = data_encontrada
+                        adicionar_log(f"  [L{idx_linha}] DATA ENCONTRADA: {ultima_data_encontrada}")
                         
-                        resultados.append({
-                            "CATEGORIA": rubrica,
-                            "VALOR": valor_parcial,
-                            "HISTÓRICO": historico[:80],
-                            "DATA": data_encontrada
-                        })
-                    
-                    bloco_acumulador = []
-                    
-                    # Verifica se tem rubrica na mesma linha da data
-                    rubrica, encontrada = buscar_rubrica(linha, rubricas_alvo)
-                    if encontrada:
-                        valores = extrair_todos_valores(linha_up)
-                        valor = valores[0] if valores else rastrear_valor_contexto([l[0] for l in todas_linhas], idx, max_distancia=3)
+                        # ===== PASSO 2: Sela todas as rubricas do buffer com essa data =====
+                        if buffer_rubricas:
+                            for rubrica, historico, valor, idx in buffer_rubricas:
+                                # Se não tem valor, tenta extrair da linha da data
+                                if valor == "PENDENTE":
+                                    valor_tentativa = extrair_valor(linha_up)
+                                    if valor_tentativa:
+                                        valor = valor_tentativa
+                                
+                                resultados.append({
+                                    "PÁGINA": page_num + 1,
+                                    "LINHA": idx,
+                                    "CATEGORIA": rubrica,
+                                    "VALOR": valor,
+                                    "HISTÓRICO": historico[:100],
+                                    "DATA": ultima_data_encontrada
+                                })
+                                adicionar_log(f"    [SELLADO] {rubrica}: {valor} | DATA: {ultima_data_encontrada}")
+                            
+                            buffer_rubricas = []
                         
-                        resultados.append({
-                            "CATEGORIA": rubrica,
-                            "VALOR": valor,
-                            "HISTÓRICO": linha_up[:80],
-                            "DATA": data_encontrada
-                        })
-                    continue
-                
-                # Verifica exclusão
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    bloco_acumulador = []
-                    continue
-                
-                # Busca rubrica para acumular
-                rubrica, encontrada = buscar_rubrica(linha, rubricas_alvo)
-                
-                if encontrada:
-                    valores = extrair_todos_valores(linha_up)
-                    valor = valores[0] if valores else "PENDENTE"
+                        # Verifica se tem rubrica na mesma linha da data
+                        rubrica = detectar_rubrica(linha_stripped, rubricas_alvo)
+                        if rubrica:
+                            valor_str = extrair_valor(linha_up)
+                            if not valor_str and idx_linha + 1 < len(linhas):
+                                valor_str = extrair_valor(linhas[idx_linha + 1].upper())
+                            
+                            resultados.append({
+                                "PÁGINA": page_num + 1,
+                                "LINHA": idx_linha,
+                                "CATEGORIA": rubrica,
+                                "VALOR": valor_str if valor_str else "PENDENTE",
+                                "HISTÓRICO": linha_stripped[:100],
+                                "DATA": ultima_data_encontrada
+                            })
+                            adicionar_log(f"  [L{idx_linha}] RUBRICA NA DATA: {rubrica} | VALOR: {valor_str}")
+                        
+                        continue
                     
-                    bloco_acumulador.append((rubrica, linha_up, valor))
+                    # ===== PASSO 3: Verifica EXCLUSÃO =====
+                    if re.search(TERMOS_EXCLUSAO, linha_up):
+                        adicionar_log(f"  [L{idx_linha}] Linha descartada (exclusão)")
+                        continue
+                    
+                    # ===== PASSO 4: Procura RUBRICA para buffer =====
+                    rubrica = detectar_rubrica(linha_stripped, rubricas_alvo)
+                    if rubrica:
+                        # ===== PASSO 5: Extrai VALOR =====
+                        valor_str = extrair_valor(linha_up)
+                        
+                        # Se não encontrou, procura na próxima linha
+                        if not valor_str and idx_linha + 1 < len(linhas):
+                            proxima_linha = linhas[idx_linha + 1].upper()
+                            valor_str = extrair_valor(proxima_linha)
+                        
+                        buffer_rubricas.append((rubrica, linha_stripped, valor_str if valor_str else "PENDENTE", idx_linha))
+                        adicionar_log(f"  [L{idx_linha}] BUFFER: {rubrica} | VALOR: {valor_str if valor_str else 'PENDENTE'}")
             
-            # FASE 3: Processa itens restantes com última data conhecida
-            for rubrica, historico, valor in bloco_acumulador:
-                if valor == "PENDENTE":
-                    valor = rastrear_valor_contexto([l[0] for l in todas_linhas], len(todas_linhas) - 1, max_distancia=5)
-                
-                resultados.append({
-                    "CATEGORIA": rubrica,
-                    "VALOR": valor,
-                    "HISTÓRICO": historico[:80],
-                    "DATA": ultima_data_inferida if ultima_data_inferida else "PENDENTE"
-                })
+            # Processa rubricas restantes no buffer (ao final do PDF)
+            if buffer_rubricas:
+                adicionar_log(f"\n[FIM PDF] Processando {len(buffer_rubricas)} rubricas pendentes no buffer")
+                for rubrica, historico, valor, idx in buffer_rubricas:
+                    resultados.append({
+                        "PÁGINA": "?",
+                        "LINHA": idx,
+                        "CATEGORIA": rubrica,
+                        "VALOR": valor,
+                        "HISTÓRICO": historico[:100],
+                        "DATA": ultima_data_encontrada if ultima_data_encontrada else "PENDENTE"
+                    })
+                    adicionar_log(f"  {rubrica}: {valor} | DATA: {ultima_data_encontrada if ultima_data_encontrada else 'PENDENTE'}")
     
     except Exception as e:
-        st.error(f"❌ Erro ao processar PDF (DATA_INFERIOR): {str(e)}")
+        st.error(f"❌ Erro ao processar PDF: {str(e)}")
+        adicionar_log(f"ERRO: {str(e)}")
     
     return resultados
 
@@ -375,16 +374,16 @@ def realizar_auditoria(arquivo, rubricas_alvo: List[str], modo_leitura: str = "D
         return []
     
     if modo_leitura == "DATA_INFERIOR":
-        return realizar_auditoria_data_inferior(arquivo, rubricas_alvo)
+        return realizar_auditoria_data_inferior_cirurgica(arquivo, rubricas_alvo)
     else:
-        return realizar_auditoria_data_superior(arquivo, rubricas_alvo)
+        return realizar_auditoria_data_superior_cirurgica(arquivo, rubricas_alvo)
 
 
-# --- 7. GERADOR EXCEL ROBUSTO ---
+# --- 6. GERADOR EXCEL ---
 
-def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> bytes:
+def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> Optional[bytes]:
     """
-    Gera Excel com máxima compatibilidade e robustez.
+    Gera Excel com tabela de cálculos por mês/ano.
     """
     if df.empty:
         return None
@@ -392,18 +391,15 @@ def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> bytes:
     try:
         df = df.copy()
         
-        # Conversão agressiva de valores
+        # Conversão
         df['V_NUM'] = df['VALOR'].apply(converter_valor_para_float)
-        
-        # Filtra zeros
         df = df[df['V_NUM'] > 0]
         
         if df.empty:
             return None
         
-        # Processamento de datas
-        df['DATA_FORMATO'] = df['DATA'].apply(formatar_data)
-        df['DT'] = pd.to_datetime(df['DATA_FORMATO'], format='%d/%m/%Y', errors='coerce')
+        # Datas
+        df['DT'] = pd.to_datetime(df['DATA'], format='%d/%m/%Y', errors='coerce')
         df = df.dropna(subset=['DT'])
         
         if df.empty:
@@ -530,7 +526,7 @@ def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> bytes:
         cell_dobro.alignment = align_right
         cell_dobro.border = border
 
-        # Dimensionar colunas
+        # Dimensionar
         ws.column_dimensions['A'].width = 25
         for i in range(2, len(anos) + 2):
             ws.column_dimensions[get_column_letter(i)].width = 15
@@ -545,9 +541,9 @@ def gerar_excel_calculos(df: pd.DataFrame, rubrica_nome: str) -> bytes:
         return None
 
 
-# --- 8. DASHBOARD ---
+# --- 7. DASHBOARD ---
 st.markdown('<h1 class="main-title">⚖️ Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">🔬 Auditoria Técnica Especializada - Motor ULTRA-PRECISO</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">🔬 Auditoria Técnica Cirúrgica - Motor Linha-por-Linha</p>', unsafe_allow_html=True)
 
 # SIDEBAR
 st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
@@ -560,9 +556,9 @@ modo_leitura = st.sidebar.radio(
 )
 
 if modo_leitura == "DATA_SUPERIOR":
-    st.sidebar.success("✅ Modo DATA SUPERIOR: A data aparece no início")
+    st.sidebar.success("✅ Modo DATA SUPERIOR")
 else:
-    st.sidebar.success("✅ Modo DATA INFERIOR: A data aparece abaixo")
+    st.sidebar.success("✅ Modo DATA INFERIOR")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
@@ -594,39 +590,36 @@ for r in RUBRICAS_MESTRE.keys():
         selecionadas.append(r)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"**🎯 Modo:** {modo_leitura.replace('_', ' ')}")
-st.sidebar.markdown(f"**📊 Selecionadas:** {len(selecionadas)}/{len(RUBRICAS_MESTRE)}")
+st.sidebar.markdown(f"**🎯 Selecionadas:** {len(selecionadas)}/{len(RUBRICAS_MESTRE)}")
 
 # Debug Mode
 st.sidebar.markdown("---")
-st.session_state.debug_mode = st.sidebar.checkbox("🐛 Modo Debug", value=st.session_state.debug_mode)
+st.session_state.debug_mode = st.sidebar.checkbox("🐛 Modo Debug Detalhado", value=st.session_state.debug_mode)
 
 # Upload
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
 if upload:
-    with st.spinner("⚡ ANALISANDO COM MOTOR ULTRA-PRECISO..."):
+    with st.spinner("⚡ ANALISANDO LINHA POR LINHA..."):
         dados = realizar_auditoria(upload, selecionadas, modo_leitura)
         
         if dados:
             df = pd.DataFrame(dados)
             
-            # Conversão robusta
+            # Conversão
             df['V_NUM'] = df['VALOR'].apply(converter_valor_para_float)
             
-            # Formata datas
-            df['DATA_FORMATO'] = df['DATA'].apply(formatar_data)
-            df['DT'] = pd.to_datetime(df['DATA_FORMATO'], format='%d/%m/%Y', errors='coerce')
+            # Filtra válidos
+            df_valido = df[(df['V_NUM'] > 0) & (df['DATA'] != "PENDENTE")].copy()
+            df_valido['DT'] = pd.to_datetime(df_valido['DATA'], format='%d/%m/%Y', errors='coerce')
+            df_valido = df_valido.dropna(subset=['DT'])
+            df_valido = df_valido.sort_values('DT', ascending=True)
             
-            # Remove linhas sem dados válidos
-            df_filtrado = df[(df['V_NUM'] > 0) & (df['DT'].notna())].copy()
-            df_filtrado = df_filtrado.sort_values('DT', ascending=True)
-            
-            if df_filtrado.empty:
-                st.error("❌ NENHUM VALOR VÁLIDO FOI EXTRAÍDO DO PDF!")
+            if df_valido.empty:
+                st.error("❌ NENHUM VALOR VÁLIDO ENCONTRADO!")
             else:
                 # Métricas
-                total_geral = df_filtrado['V_NUM'].sum()
+                total_geral = df_valido['V_NUM'].sum()
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -638,24 +631,24 @@ if upload:
                 with c2:
                     st.markdown(
                         f'<div class="metric-card"><h4>📝 LANÇAMENTOS</h4>'
-                        f'<h2 style="color:#BFAF83;">{len(df_filtrado)}</h2></div>',
+                        f'<h2 style="color:#BFAF83;">{len(df_valido)}</h2></div>',
                         unsafe_allow_html=True
                     )
                 with c3:
                     st.markdown(
                         f'<div class="metric-card"><h4>💼 RUBRICAS</h4>'
-                        f'<h2 style="color:#BFAF83;">{df_filtrado["CATEGORIA"].nunique()}</h2></div>',
+                        f'<h2 style="color:#BFAF83;">{df_valido["CATEGORIA"].nunique()}</h2></div>',
                         unsafe_allow_html=True
                     )
                 
                 # Downloads
                 st.markdown('<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas</h2>', unsafe_allow_html=True)
                 
-                cats = sorted(df_filtrado['CATEGORIA'].unique())
+                cats = sorted(df_valido['CATEGORIA'].unique())
                 cols = st.columns(min(3, len(cats)))
                 
                 for idx, cat in enumerate(cats):
-                    df_cat = df_filtrado[df_filtrado['CATEGORIA'] == cat]
+                    df_cat = df_valido[df_valido['CATEGORIA'] == cat]
                     excel_file = gerar_excel_calculos(df_cat, cat)
                     
                     if excel_file:
@@ -668,33 +661,37 @@ if upload:
                                 use_container_width=True
                             )
                 
-                # Tabela detalhada
-                st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
+                # Tabela
+                st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Extrato Completo</h3>', unsafe_allow_html=True)
                 
-                df_exib = df_filtrado[['DATA_FORMATO', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].copy()
+                df_exib = df_valido[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']].copy()
                 df_exib.columns = ['DATA', 'CATEGORIA', 'VALOR (R$)', 'HISTÓRICO']
+                df_exib = df_exib.reset_index(drop=True)
                 
                 st.dataframe(df_exib, use_container_width=True, hide_index=True)
                 
                 # Debug
                 if st.session_state.debug_mode:
                     st.markdown("---")
-                    st.markdown("### 🐛 INFORMAÇÕES DE DEBUG")
+                    st.markdown("### 🐛 DEBUG: ANÁLISE LINHA-POR-LINHA")
                     
                     col1, col2 = st.columns(2)
                     with col1:
                         st.write(f"**Total de registros extraídos:** {len(df)}")
-                        st.write(f"**Registros com valor válido:** {len(df_filtrado)}")
-                        st.write(f"**Registros descartados:** {len(df) - len(df_filtrado)}")
+                        st.write(f"**Registros com valor válido:** {len(df_valido)}")
+                        st.write(f"**Registros descartados:** {len(df) - len(df_valido)}")
                     
                     with col2:
-                        st.write(f"**Período:** {df_filtrado['DATA_FORMATO'].min()} a {df_filtrado['DATA_FORMATO'].max()}")
-                        st.write(f"**Maior valor:** R$ {df_filtrado['V_NUM'].max():,.2f}")
-                        st.write(f"**Menor valor:** R$ {df_filtrado['V_NUM'].min():,.2f}")
+                        st.write(f"**Total de rubricas encontradas:** {df['CATEGORIA'].nunique()}")
+                        st.write(f"**Período:** {df_valido['DATA'].min()} a {df_valido['DATA'].max()}")
                     
-                    with st.expander("📊 Visualizar dados brutos"):
+                    with st.expander("📋 Log Detalhado de Processamento"):
+                        log_text = "\n".join(st.session_state.log_debug)
+                        st.markdown(f'<div class="debug-box">{log_text}</div>', unsafe_allow_html=True)
+                    
+                    with st.expander("📊 Visualizar todos os registros (incluindo PENDENTES)"):
                         st.dataframe(df, use_container_width=True)
         else:
-            st.error("❌ NENHUM DADO EXTRAÍDO! Verifique o PDF e as rubricas selecionadas.")
+            st.error("❌ NENHUM DADO EXTRAÍDO!")
 
-st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>🔬 Motor Ultra-Preciso - Edson Medeiros</p>", unsafe_allow_html=True)
+st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>🔬 Melhor Programador do Mundo - Edson Medeiros</p>", unsafe_allow_html=True)
