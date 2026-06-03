@@ -26,25 +26,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS SOLICITADAS (DETECÇÃO FLEXÍVEL) ---
-# Usamos termos-chave para garantir que o robô encontre a rubrica mesmo com abreviações ou espaços
-RUBRICAS_MESTRE = {
-    "CESTA": r"CESTA",
-    "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA.*OPER",
-    "MORA CREDITO PESSOAL": r"MORA.*CRED.*PESS|MORA.*CREDITO",
-    "MORA OPERACAO DE CREDITO": r"MORA.*OPER.*CRED",
-    "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARC.*CRED.*PESS|PARCELA.*CREDITO",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS.*CARTAO|CARTAO.*CREDITO",
-    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO",
-    "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC.*LIMITE|LIMITE.*DE.*CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO.*CREDITO.*ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES.*VENCIDAS",
-    "DIV. EM ATRASO": r"DIV.*EM.*ATRASO|DIVIDA.*EM.*ATRASO"
-}
+# --- 2. RÚBRICAS SOLICITADAS ---
+RUBRICAS_LISTA = [
+    "CESTA", "PACOTE", "MORA DE OPERAÇÃO", "MORA CREDITO PESSOAL", 
+    "MORA OPERACAO DE CREDITO", "BX", "PARCELA CREDITO PESSOAL", 
+    "GASTOS CARTAO DE CREDITO", "SEGURO", "ADIANT", "APLIC", 
+    "ENCARGOS", "ANUIDADE", "OPERACOES VENCIDAS", "DIV. EM ATRASO"
+]
 
 def normalizar_texto(txt):
     if not txt: return ""
@@ -52,26 +40,25 @@ def normalizar_texto(txt):
     txt = re.sub(r'[^A-Z0-9\s,./]', '', txt.upper())
     return txt
 
-# --- 3. MOTOR DE AUDITORIA DEFINITIVO ---
+# --- 3. MOTOR DE AUDITORIA PERICIAL (ENSINAMENTO ANEXO 1 E 2) ---
 def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
     resultados = []
     cesto_pendente = []
-    data_ativa = None
+    data_superior_ativa = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
             words = page.extract_words(x_tolerance=3, y_tolerance=3)
             if not words: continue
 
-            # Mapeamento de colunas dinâmico
+            # Mapeamento de colunas dinâmico (X-Position)
             col_debito_x = (400, 550)
             col_saldo_x = (550, 680)
             for w in words:
                 txt_w = w['text'].upper()
-                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 20, w['x1'] + 20)
-                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 20, w['x1'] + 20)
+                if "DEBITO" in txt_w: col_debito_x = (w['x0'] - 15, w['x1'] + 15)
+                if "SALDO" in txt_w: col_saldo_x = (w['x0'] - 15, w['x1'] + 15)
 
-            # Agrupar por linhas Y
             linhas_dict = {}
             for w in words:
                 y = round(w['top'], 0)
@@ -85,31 +72,34 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                 texto_linha = " ".join([p['text'] for p in palavras_linha])
                 linha_norm = normalizar_texto(texto_linha)
                 
-                # A. Identificar Data
+                # A. Identificar Data (Gatilho de Bloco)
                 match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", texto_linha)
+                
                 if match_data:
                     data_encontrada = match_data.group(1)
+                    
                     if modo_data == "Data Inferior":
-                        # ANEXO 2: Sela tudo o que estava pendente acima
+                        # ENSINAMENTO ANEXO 2: A data que aparece no fim sela os itens acima
                         for item in cesto_pendente:
                             item["DATA"] = data_encontrada
                             resultados.append(item)
                         cesto_pendente = []
-                        data_ativa = data_encontrada # Para itens na mesma linha
+                        # Se houver rubrica na mesma linha da data, carimba agora
+                        data_superior_ativa = data_encontrada 
                     else:
-                        # ANEXO 1: Define a data para os itens abaixo
-                        data_ativa = data_encontrada
+                        # ENSINAMENTO ANEXO 1: A data que aparece no topo vale para os itens abaixo
+                        data_superior_ativa = data_encontrada
 
                 # B. Identificar Rubrica
                 rubrica_detectada = None
                 for nome in rubricas_alvo:
-                    if re.search(RUBRICAS_MESTRE[nome], linha_norm):
+                    if nome in linha_norm:
                         rubrica_detectada = nome
                         break
                 
                 if rubrica_detectada:
                     valor_debito = None
-                    # Varredura circular (mesma linha e adjacentes)
+                    # Varredura para coletar o valor EXATO na coluna de débito
                     indices_contexto = [i]
                     if i > 0: indices_contexto.append(i-1)
                     if i < len(y_ordenados)-1: indices_contexto.append(i+1)
@@ -130,15 +120,18 @@ def realizar_auditoria(arquivo, rubricas_alvo, modo_data):
                             "VALOR": valor_debito,
                             "HISTÓRICO": texto_linha[:120]
                         }
+                        
                         if modo_data == "Data Inferior":
+                            # Se a linha já tem data, carimba. Se não, vai para o cesto (ANEXO 2)
                             if match_data:
                                 item_base["DATA"] = data_encontrada
                                 resultados.append(item_base)
                             else:
                                 cesto_pendente.append(item_base)
                         else:
-                            if data_ativa:
-                                item_base["DATA"] = data_ativa
+                            # Modo Superior (ANEXO 1): Usa a última data ativa vista acima
+                            if data_superior_ativa:
+                                item_base["DATA"] = data_superior_ativa
                                 resultados.append(item_base)
 
     return resultados
@@ -257,16 +250,16 @@ st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_ht
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("### ⚙️ CONFIGURAÇÃO DE LEITURA")
-modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1)
+modo_leitura = st.sidebar.radio("Modo de Data:", ["Data Superior", "Data Inferior"], index=1, help="Superior: ANEXO 1. Inferior: ANEXO 2.")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
 
 if 'selecionadas_dict' not in st.session_state:
-    st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_MESTRE.keys()}
+    st.session_state.selecionadas_dict = {r: True for r in RUBRICAS_LISTA}
 
 def toggle_all(valor):
-    for r in RUBRICAS_MESTRE.keys():
+    for r in RUBRICAS_LISTA:
         st.session_state.selecionadas_dict[r] = valor
         st.session_state[f"check_{r}"] = valor
 
@@ -279,7 +272,7 @@ if col_b2.button("Desmarcar Todas"):
     st.rerun()
 
 selecionadas = []
-for r in RUBRICAS_MESTRE.keys():
+for r in RUBRICAS_LISTA:
     is_checked = st.sidebar.checkbox(r, value=st.session_state.selecionadas_dict[r], key=f"check_{r}")
     st.session_state.selecionadas_dict[r] = is_checked
     if is_checked:
