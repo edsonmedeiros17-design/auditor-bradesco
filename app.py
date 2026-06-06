@@ -9,38 +9,32 @@ try:
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
 except ImportError:
-    st.error("Erro: A biblioteca 'openpyxl' não está instalada. Certifique-se de incluir 'openpyxl' no seu arquivo requirements.txt.")
+    st.error("Erro: A biblioteca 'openpyxl' não está instalada.")
 
 # --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
     .stApp { background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif; }
-    .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
-    .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
+    .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; }
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ---
+# --- 2. RÚBRICAS E CONFIGURAÇÕES ---
 RUBRICAS_MESTRE = {
-    "CESTA": r"CESTA", "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA DE OPERAÇÃO|MORA OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
+    "CESTA": r"CESTA", "PACOTE": r"PACOTE", "MORA DE OPERAÇÃO": r"MORA DE OPERAÇÃO|MORA OPERACAO",
+    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS", "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
     "BX": r"\bBX\b", "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
     "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO DE CREDITO|CARTAO DE CREDITO|GASTOS CARTAO",
     "SEGURO": r"SEGURO|SEGURADORA|SEG\b", "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
     "APLIC": r"APLICACAO|APLIC\b", "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
+    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE", "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
     "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
 }
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR DE AUDITORIA (LÓGICA DATA INFERIOR) ---
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
@@ -53,56 +47,66 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             linhas = texto.split('\n')
             for linha in linhas:
                 linha_up = linha.upper().strip()
+                if not linha_up: continue
+
+                # Regex para encontrar datas e valores
                 match_data = re.search(r"(\d{2}/\d{2}/\d{4})", linha_up)
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
                 
+                # LÓGICA DE DATA INFERIOR: Se encontrar data, aplica ao acumulador
                 if match_data:
                     data_encontrada = match_data.group(1)
-                    for item in cesto_acumulador:
-                        item["DATA"] = data_encontrada
-                        resultados.append(item)
-                    cesto_acumulador = []
+                    if cesto_acumulador:
+                        for item in cesto_acumulador:
+                            item["DATA"] = data_encontrada
+                            resultados.append(item)
+                        cesto_acumulador = []
                 
-                rubrica_detectada = next((nome for nome in rubricas_alvo if re.search(RUBRICAS_MESTRE[nome], linha_up)), None)
+                # Busca por Rubrica
+                rubrica_detectada = None
+                for nome in rubricas_alvo:
+                    if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                        rubrica_detectada = nome
+                        break
+                
                 if rubrica_detectada:
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
                         "VALOR": match_valor.group(1) if match_valor else "0,00",
                         "HISTÓRICO": linha_up[:80],
-                        "DATA": "PENDENTE" 
+                        "DATA": "PENDENTE"
                     })
                 elif match_valor and cesto_acumulador and cesto_acumulador[-1]["VALOR"] == "0,00":
                     cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
+                    
     return resultados
 
-# --- 4. EXPORTAÇÃO EXCEL (CORRIGIDO) ---
+# --- 4. GERAÇÃO DE EXCEL (CORRIGIDO) ---
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
-    df['DT'] = pd.to_datetime(df['DATA'], format='%d/%m/%Y')
-    agrupado = df.groupby([df['DT'].dt.year, df['DT'].dt.month])['V_NUM'].sum().reset_index()
+    df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
     
     wb = Workbook()
     ws = wb.active
-    # CORREÇÃO: Usando aRGB (Prefixo FF)
-    fill_blue = PatternFill(start_color="FFABAAA9", end_color="FFABAAA9", fill_type="solid")
-    fill_peach = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")
     
-    ws.merge_cells('A1:E1')
-    ws['A1'] = f"VALORES DESCONTADOS - {rubrica_nome}"
+    # CORREÇÃO aRGB: Prefixo FF, sem #
+    fill_blue = PatternFill(start_color="FFABAAA9", end_color="FFABAAA9", fill_type="solid")
+    
+    ws.merge_cells('A1:D1')
+    ws['A1'] = f"AUDITORIA: {rubrica_nome}"
     ws['A1'].fill = fill_blue
     
-    # ... (restante da montagem da planilha permanece igual)
     output = io.BytesIO()
     wb.save(output)
     return output.getvalue()
 
 # --- 5. DASHBOARD ---
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-upload = st.file_uploader("📂 ARRASTE O EXTRATO", type=["pdf"])
+upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+
 if upload:
-    selecionadas = list(RUBRICAS_MESTRE.keys())
-    dados = realizar_auditoria(upload, selecionadas)
+    dados = realizar_auditoria(upload, list(RUBRICAS_MESTRE.keys()))
     if dados:
         df = pd.DataFrame(dados)
-        df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
         st.dataframe(df)
+        st.success(f"Análise concluída: {len(df)} movimentos processados.")
