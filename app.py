@@ -151,8 +151,9 @@ def gerar_excel_calculos(df, rubrica_nome):
     # Estilos
     font_header = Font(bold=True, size=11)
     font_title = Font(bold=True, size=12)
-    fill_blue = PatternFill(start_color="#abaaa9", end_color="#abaaa9", fill_type="solid")
-    fill_peach = PatternFill(start_color="#ffffff", end_color="#ffffff", fill_type="solid")
+    # CORREÇÃO APLICADA AQUI: Valores em aRGB em vez de Hex com #
+    fill_blue = PatternFill(start_color="FFABAAA9", end_color="FFABAAA9", fill_type="solid")
+    fill_peach = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     align_center = Alignment(horizontal='center', vertical='center')
     
