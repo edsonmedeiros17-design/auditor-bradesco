@@ -45,14 +45,16 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 1) ---
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 1 E 2) ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
+    last_known_date = None
+    last_known_value = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3) 
             if not texto: continue
             
             linhas = texto.split('\n')
@@ -63,30 +65,38 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 # 1. Identifica Data e Valor na linha atual
                 current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
-                
-                data_linha = current_match_data.group(1) if current_match_data else None
-                valor_linha = current_match_valor.group(1) if current_match_valor else None
 
-                # 2. APLICAÇÃO DA REGRA "DATA INFERIOR" (Conforme Anexo 1)
-                # Se a linha atual contém uma data, essa data pertence às rubricas ACIMA que estavam sem data.
-                if data_linha and cesto_acumulador:
+                # ---------------------------------------------------------
+                # 2. SELAGEM IMEDIATA DE DATA INFERIOR (A Mágica do Anexo 1)
+                # ---------------------------------------------------------
+                # Se encontramos uma data agora, e há rubricas guardadas no cesto (ex: MORA e ENCARGO),
+                # essa data PERTENCE a elas. Fazemos isso PRIMEIRO para garantir que a data seja herdada.
+                if current_match_data and cesto_acumulador:
+                    data_encontrada = current_match_data.group(1)
                     for item in cesto_acumulador:
-                        if item["DATA"] == "PENDENTE":
-                            item["DATA"] = data_linha
-                        
-                        # Transfere para os resultados finais apenas se o valor já tiver sido capturado
-                        if item["VALOR"] != "PENDENTE":
-                            resultados.append(item)
-                    
-                    # Limpa o cesto após selar com a data inferior garantindo que não suje próximas linhas
-                    cesto_acumulador = []
+                        # Substitui a data 'PENDENTE' pela data encontrada abaixo dela
+                        if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE":
+                            item["DATA"] = data_encontrada
+                        # Move a rubrica finalizada para os resultados oficiais
+                        resultados.append(item)
+                    # Limpa o cesto pois o bloco de transações foi fechado com sucesso
+                    cesto_acumulador = [] 
 
-                # 3. Tratamento de Exclusão (Ignora Saldos e Transferências não desejadas)
-                # IMPORTANTE: Feito DEPOIS da leitura da data para não perdermos a data caso esteja nesta mesma linha
+                # 3. Atualiza memórias temporárias para a próxima iteração
+                if current_match_data:
+                    last_known_date = current_match_data.group(1)
+                if current_match_valor:
+                    last_known_value = current_match_valor.group(1)
+                
+                # 4. Reset por Termos de Exclusão
                 if re.search(TERMOS_EXCLUSAO, linha_up):
-                    continue
+                    # Se for exclusão e não teve data, apenas limpa rubricas fantasmas do cesto
+                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
+                    last_known_date = None 
+                    last_known_value = None 
+                    continue 
 
-                # 4. Identificação da Rubrica
+                # 5. Busca Rubrica na linha atual
                 rubrica_detectada = None
                 if "%" not in linha_up:
                     for nome in rubricas_alvo:
@@ -94,31 +104,47 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # 5. Captura (Acúmulo)
+                # 6. Lógica de Captura (Guarda no Cesto)
                 if rubrica_detectada:
-                    # Adiciona ao cesto. Ficará "PENDENTE" aguardando a Data Inferior, a menos que a data já esteja na linha
+                    if rubrica_detectada == "CESTA":
+                        # CESTA olha para trás
+                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
+                        data_para_rubrica = current_match_data.group(1) if current_match_data else last_known_date if last_known_date else "PENDENTE"
+                    else:
+                        # Outras olham para a linha atual (Se não tiver, fica PENDENTE aguardando a Data Inferior)
+                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else "PENDENTE"
+                        data_para_rubrica = current_match_data.group(1) if current_match_data else "PENDENTE"
+
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_linha if valor_linha else "PENDENTE",
+                        "VALOR": valor_para_rubrica,
                         "HISTÓRICO": linha_up[:80],
-                        "DATA": data_linha if data_linha else "PENDENTE"
+                        "DATA": data_para_rubrica
                     })
                     
-                    # Se a rubrica já veio perfeitinha com a data e valor na própria linha, podemos despachar imediatamente
-                    if data_linha and cesto_acumulador[-1]["VALOR"] != "PENDENTE":
-                        resultados.append(cesto_acumulador.pop(-1))
-
-                # 6. Herança de Valor (Se a linha tiver valor solto logo abaixo da rubrica)
-                elif valor_linha and cesto_acumulador:
+                    if rubrica_detectada != "CESTA":
+                        last_known_date = None
+                        last_known_value = None
+                
+                # Associa o valor perdido à rubrica presa no cesto
+                elif current_match_valor and cesto_acumulador:
                     if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = valor_linha
-                        # Se já tinha data e agora pegou o valor, despacha.
-                        if cesto_acumulador[-1]["DATA"] != "PENDENTE":
-                            resultados.append(cesto_acumulador.pop(-1))
+                        cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
 
-    # Garantia final para itens órfãos na última linha do PDF
+                # 7. AUTO-SELAGEM DE DATA NA MESMA LINHA
+                # Se a linha atual tinha Rubrica E Data juntos, ela não precisa aguardar a linha inferior.
+                # Ela se auto-sela e vai direto para os resultados.
+                if current_match_data and cesto_acumulador:
+                    for item in cesto_acumulador:
+                        resultados.append(item)
+                    cesto_acumulador = []
+
+    # 8. CATCH FINAL DE SEGURANÇA
+    # Caso o extrato acabe sem uma última data, resgata o que ficou preso no cesto com a última data vista.
     for item in cesto_acumulador:
-        if item["DATA"] != "PENDENTE" and item["VALOR"] != "PENDENTE":
+        if item["VALOR"] != "PENDENTE":
+            if item["DATA"] == "PENDENTE" and last_known_date:
+                 item["DATA"] = last_known_date
             resultados.append(item)
 
     return resultados
@@ -127,22 +153,28 @@ def realizar_auditoria(arquivo, rubricas_alvo):
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
     def fix_date(d):
-        p = d.split('/')
-        if len(p[2]) == 2: p[2] = "20" + p[2]
+        if pd.isna(d) or d == "PENDENTE": return d
+        p = str(d).split('/')
+        if len(p) == 3 and len(p[2]) == 2: p[2] = "20" + p[2]
         return "/".join(p)
     
-    df['DT'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y')
-    df['ANO'] = df['DT'].dt.year
-    df['MES_NUM'] = df['DT'].dt.month
+    # Tratamento de segurança extra para erros de formato de data
+    df['DATA_FIX'] = df['DATA'].apply(fix_date)
+    df = df[df['DATA_FIX'] != "PENDENTE"] # Remove linhas vazias antes de agrupar
     
-    # Agrupar e somar valores do mesmo mês/ano (Exemplo 05/2021)
+    df['DT'] = pd.to_datetime(df['DATA_FIX'], format='%d/%m/%Y', errors='coerce')
+    df = df.dropna(subset=['DT']) # Remove datas inválidas
+    df['ANO'] = df['DT'].dt.year.astype(int)
+    df['MES_NUM'] = df['DT'].dt.month.astype(int)
+    
+    # Agrupar e somar valores do mesmo mês/ano
     agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
     
     wb = Workbook()
     ws = wb.active
     ws.title = "Tabela de Cálculos"
     
-    # Estilos
+    # Estilos com cores aRGB rigorosas
     font_header = Font(bold=True, size=11)
     font_title = Font(bold=True, size=12)
     fill_blue = PatternFill(start_color="FFABAAA9", end_color="FFABAAA9", fill_type="solid")
@@ -264,11 +296,13 @@ if upload:
             df = pd.DataFrame(dados)
             df['V_NUM'] = df['VALOR'].str.replace('.','', regex=False).str.replace(',','.', regex=False).astype(float)
             
-            # Ordenação Cronológica Real
+            # Ordenação Cronológica Real com filtragem de pendentes
             def fix_date(d):
-                p = d.split('/')
-                if len(p[2]) == 2: p[2] = "20" + p[2]
+                if pd.isna(d) or d == "PENDENTE": return "01/01/1900" # Fallback
+                p = str(d).split('/')
+                if len(p) == 3 and len(p[2]) == 2: p[2] = "20" + p[2]
                 return "/".join(p)
+                
             df['DT_O'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
             df = df.sort_values('DT_O', ascending=True)
             
@@ -292,8 +326,9 @@ if upload:
                 )
             
             st.markdown('<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>', unsafe_allow_html=True)
+            # Remove a coluna temporária DT_O para exibição limpa
             st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
         else:
-            st.info("Nenhum débito encontrado com as rubricas selecionadas.")
+            st.info("Nenhum débito encontrado com as rubricas selecionadas ou padrão de datas não suportado.")
 
 st.markdown("<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>", unsafe_allow_html=True)
