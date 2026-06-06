@@ -45,16 +45,14 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 2) ---
+# --- 3. MOTOR COM LÓGICA DE DATA INFERIOR (MODELO ANEXO 1) ---
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
     cesto_acumulador = []
-    last_known_date = None
-    last_known_value = None
     
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3) # Reverte a tolerância Y para o padrão original
+            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
             if not texto: continue
             
             linhas = texto.split('\n')
@@ -62,24 +60,33 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 linha_up = linha.upper().strip()
                 if not linha_up: continue
 
-                # 1. Identifica Data e Valor
+                # 1. Identifica Data e Valor na linha atual
                 current_match_data = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 current_match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
-
-                # Atualiza last_known_date e last_known_value para a próxima iteração, se encontrados na linha atual
-                if current_match_data:
-                    last_known_date = current_match_data.group(1)
-                if current_match_valor:
-                    last_known_value = current_match_valor.group(1)
                 
-                # 2. Reset por Termos de Exclusão
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [item for item in cesto_acumulador if item["VALOR"] != "PENDENTE"]
-                    last_known_date = None # Reseta a data conhecida ao encontrar um termo de exclusão
-                    last_known_value = None # Reseta o valor conhecido
-                    continue 
+                data_linha = current_match_data.group(1) if current_match_data else None
+                valor_linha = current_match_valor.group(1) if current_match_valor else None
 
-                # 3. Busca Rubrica
+                # 2. APLICAÇÃO DA REGRA "DATA INFERIOR" (Conforme Anexo 1)
+                # Se a linha atual contém uma data, essa data pertence às rubricas ACIMA que estavam sem data.
+                if data_linha and cesto_acumulador:
+                    for item in cesto_acumulador:
+                        if item["DATA"] == "PENDENTE":
+                            item["DATA"] = data_linha
+                        
+                        # Transfere para os resultados finais apenas se o valor já tiver sido capturado
+                        if item["VALOR"] != "PENDENTE":
+                            resultados.append(item)
+                    
+                    # Limpa o cesto após selar com a data inferior garantindo que não suje próximas linhas
+                    cesto_acumulador = []
+
+                # 3. Tratamento de Exclusão (Ignora Saldos e Transferências não desejadas)
+                # IMPORTANTE: Feito DEPOIS da leitura da data para não perdermos a data caso esteja nesta mesma linha
+                if re.search(TERMOS_EXCLUSAO, linha_up):
+                    continue
+
+                # 4. Identificação da Rubrica
                 rubrica_detectada = None
                 if "%" not in linha_up:
                     for nome in rubricas_alvo:
@@ -87,45 +94,32 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
                 
-                # 4. Lógica de Captura (Acúmulo)
+                # 5. Captura (Acúmulo)
                 if rubrica_detectada:
-                    if rubrica_detectada == "CESTA":
-                        # Lógica especial para CESTA: herda data e valor da linha anterior se não estiverem na linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else last_known_value if last_known_value else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else last_known_date if last_known_date else "PENDENTE"
-                    else:
-                        # Lógica padrão para outras rubricas: prioriza data/valor da linha atual
-                        valor_para_rubrica = current_match_valor.group(1) if current_match_valor else "PENDENTE"
-                        data_para_rubrica = current_match_data.group(1) if current_match_data else "PENDENTE"
-
+                    # Adiciona ao cesto. Ficará "PENDENTE" aguardando a Data Inferior, a menos que a data já esteja na linha
                     cesto_acumulador.append({
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_para_rubrica,
+                        "VALOR": valor_linha if valor_linha else "PENDENTE",
                         "HISTÓRICO": linha_up[:80],
-                        "DATA": data_para_rubrica
+                        "DATA": data_linha if data_linha else "PENDENTE"
                     })
-                    # Reseta last_known_date e last_known_value apenas se a rubrica encontrada não for CESTA
-                    # Para CESTA, eles são consumidos na atribuição, mas podem ser úteis para a próxima linha se houver outra CESTA
-                    if rubrica_detectada != "CESTA":
-                        last_known_date = None
-                        last_known_value = None
-                
-                elif current_match_valor and cesto_acumulador:
-                    # Associa o valor à última rubrica pendente no cesto
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = current_match_valor.group(1)
+                    
+                    # Se a rubrica já veio perfeitinha com a data e valor na própria linha, podemos despachar imediatamente
+                    if data_linha and cesto_acumulador[-1]["VALOR"] != "PENDENTE":
+                        resultados.append(cesto_acumulador.pop(-1))
 
-                # 5. SELAGEM POR DATA INFERIOR (ANEXO 2)
-                # Se uma data é encontrada, sela os itens acumulados com essa data.
-                if current_match_data:
-                    data_encontrada = current_match_data.group(1)
-                    if cesto_acumulador:
-                        for item in cesto_acumulador:
-                            if item["VALOR"] != "PENDENTE" and item["DATA"] == "PENDENTE":
-                                item["DATA"] = data_encontrada
-                            resultados.append(item)
-                        cesto_acumulador = []
-                    # last_known_date e last_known_value são resetados após a selagem para evitar herança indevida para o próximo bloco de transações.
+                # 6. Herança de Valor (Se a linha tiver valor solto logo abaixo da rubrica)
+                elif valor_linha and cesto_acumulador:
+                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
+                        cesto_acumulador[-1]["VALOR"] = valor_linha
+                        # Se já tinha data e agora pegou o valor, despacha.
+                        if cesto_acumulador[-1]["DATA"] != "PENDENTE":
+                            resultados.append(cesto_acumulador.pop(-1))
+
+    # Garantia final para itens órfãos na última linha do PDF
+    for item in cesto_acumulador:
+        if item["DATA"] != "PENDENTE" and item["VALOR"] != "PENDENTE":
+            resultados.append(item)
 
     return resultados
 
@@ -151,7 +145,6 @@ def gerar_excel_calculos(df, rubrica_nome):
     # Estilos
     font_header = Font(bold=True, size=11)
     font_title = Font(bold=True, size=12)
-    # CORREÇÃO APLICADA AQUI: Valores em aRGB em vez de Hex com #
     fill_blue = PatternFill(start_color="FFABAAA9", end_color="FFABAAA9", fill_type="solid")
     fill_peach = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
