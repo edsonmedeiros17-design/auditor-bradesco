@@ -16,11 +16,103 @@ st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+    /* ── Base ── */
     .stApp { background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif; }
+
+    /* ── Títulos principais ── */
     .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
-    .sub-title { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
+    .sub-title   { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
+
+    /* ── Cards de métricas ── */
     .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
+
+    /* ── Sidebar: fundo e borda ── */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #13161F 0%, #0E1117 100%);
+        border-right: 1px solid rgba(191,175,131,0.25);
+    }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 1.5rem; }
+
+    /* ── Título da sidebar ── */
+    .sidebar-header {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.05rem;
+        color: #BFAF83;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(191,175,131,0.3);
+        padding-bottom: 10px;
+        margin-bottom: 4px;
+    }
+
+    /* ── Contador de selecionadas ── */
+    .rubrica-count {
+        font-size: 0.72rem;
+        color: #64748B;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+
+    /* ── Botões Marcar / Desmarcar ── */
+    [data-testid="stSidebar"] .stButton > button {
+        width: 100%;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        border-radius: 6px;
+        padding: 5px 4px;
+        transition: all 0.2s ease;
+    }
+    /* Botão "Marcar Todas" — dourado */
+    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
+        background: rgba(191,175,131,0.12);
+        border: 1px solid rgba(191,175,131,0.5);
+        color: #BFAF83;
+    }
+    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
+        background: rgba(191,175,131,0.25);
+        border-color: #BFAF83;
+    }
+    /* Botão "Desmarcar Todas" — apagado */
+    [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #64748B;
+    }
+    [data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.25);
+        color: #FFFFFF;
+    }
+
+    /* ── Checkboxes: label compacto ── */
+    [data-testid="stSidebar"] .stCheckbox { margin: 0 !important; padding: 0 !important; }
+    [data-testid="stSidebar"] .stCheckbox label {
+        font-size: 0.80rem !important;
+        font-weight: 500;
+        color: #C8C4B8 !important;
+        letter-spacing: 0.3px;
+        padding: 3px 0 !important;
+        line-height: 1.35 !important;
+    }
+    [data-testid="stSidebar"] .stCheckbox label:hover { color: #BFAF83 !important; }
+
+    /* ── Checkbox tick dourado quando marcado ── */
+    [data-testid="stSidebar"] input[type="checkbox"]:checked + div {
+        background-color: #BFAF83 !important;
+        border-color: #BFAF83 !important;
+    }
+
+    /* ── Linha divisória entre seções da sidebar ── */
+    .sidebar-divider {
+        border: none;
+        border-top: 1px solid rgba(191,175,131,0.15);
+        margin: 10px 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -289,20 +381,52 @@ def gerar_excel_calculos(df, rubrica_nome):
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
 
-st.sidebar.markdown("### 🔍 RUBRICAS DE AUDITORIA")
+# ── SIDEBAR: painel de rubricas ──────────────────────────────────────────────
+
+# Estado inicial: todas marcadas
 if 'sel_all' not in st.session_state:
     st.session_state.sel_all = True
 
-col_b1, col_b2 = st.sidebar.columns(2)
-if col_b1.button("Marcar Todas"):
-    st.session_state.sel_all = True
-if col_b2.button("Desmarcar Todas"):
-    st.session_state.sel_all = False
+# Inicializa o estado individual de cada rubrica (na primeira execução)
+for r in RUBRICAS_MESTRE.keys():
+    key = f"check_{r}"
+    if key not in st.session_state:
+        st.session_state[key] = True
 
+# Cabeçalho
+st.sidebar.markdown('<div class="sidebar-header">⚖ Rubricas de Auditoria</div>', unsafe_allow_html=True)
+
+# Botões Marcar / Desmarcar — aplicam imediatamente o estado individual
+col_b1, col_b2 = st.sidebar.columns(2)
+
+if col_b1.button("✦ Marcar Todas", key="btn_marcar"):
+    for r in RUBRICAS_MESTRE.keys():
+        st.session_state[f"check_{r}"] = True
+
+if col_b2.button("✕ Desmarcar", key="btn_desmarcar"):
+    for r in RUBRICAS_MESTRE.keys():
+        st.session_state[f"check_{r}"] = False
+
+st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
+
+# Lista de checkboxes — cada um com seu estado individual no session_state
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
-    if st.sidebar.checkbox(r, value=st.session_state.sel_all, key=f"check_{r}"):
+    key = f"check_{r}"
+    marcado = st.sidebar.checkbox(r, value=st.session_state[key], key=key)
+    if marcado:
         selecionadas.append(r)
+
+# Contador de selecionadas
+st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
+total_r   = len(RUBRICAS_MESTRE)
+sel_count = len(selecionadas)
+cor_count = "#BFAF83" if sel_count == total_r else ("#E57373" if sel_count == 0 else "#81C784")
+st.sidebar.markdown(
+    f'<div class="rubrica-count" style="color:{cor_count};">'
+    f'● {sel_count} de {total_r} rubricas ativas</div>',
+    unsafe_allow_html=True
+)
 
 upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
 
