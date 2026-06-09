@@ -283,92 +283,151 @@ st.markdown("""
         color: rgba(197,165,102,0.8) !important;
     }
 
-    /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
+    /* ── SIDEBAR — BASE ───────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: #0D1014;
-        border-right: 1px solid rgba(197,165,102,0.18);
+        background: #0A0D10;
+        border-right: 1px solid rgba(197,165,102,0.14);
     }
-    [data-testid="stSidebar"] > div:first-child { padding-top: 1.8rem; }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 0; }
 
-    .sidebar-header {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #C5A566;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(197,165,102,0.2);
-        margin-bottom: 6px;
+    /* ── SIDEBAR HEADER ─────────────────────────────────────────────────────── */
+    .sb-header {
+        padding: 22px 16px 16px;
+        border-bottom: 1px solid rgba(197,165,102,0.12);
+        margin-bottom: 0;
     }
-    .rubrica-count {
-        font-size: 0.65rem;
+    .sb-eyebrow {
         font-family: 'Inter', sans-serif;
-        letter-spacing: 1.5px;
+        font-size: 0.55rem;
+        font-weight: 600;
+        letter-spacing: 3.5px;
         text-transform: uppercase;
-        margin-bottom: 12px;
+        color: rgba(197,165,102,0.5);
+        margin-bottom: 3px;
     }
+    .sb-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #E8DCC8;
+        letter-spacing: 0.5px;
+        margin: 0;
+        line-height: 1.2;
+    }
+    .sb-title span { color: #C5A566; }
 
-    /* Botão Marcar Todas */
-    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
-        width: 100%;
-        background: rgba(197,165,102,0.1) !important;
-        border: 1px solid rgba(197,165,102,0.45) !important;
+    /* ── CONTROLES MARCAR/DESMARCAR ─────────────────────────────────────────── */
+    .sb-controls {
+        display: flex;
+        gap: 0;
+        margin: 12px 16px 8px;
+        border: 1px solid rgba(197,165,102,0.18);
+    }
+    /* Os dois botões ficam escondidos; a lógica Python continua funcionando */
+    /* Reestilizamos os botões do Streamlit para parecerem um toggle segmentado */
+    [data-testid="stSidebar"] .stButton > button {
         border-radius: 0 !important;
-        color: #C5A566 !important;
-        font-size: 0.65rem !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.60rem !important;
         font-weight: 600 !important;
-        letter-spacing: 1.8px !important;
+        letter-spacing: 2px !important;
         text-transform: uppercase !important;
-        padding: 5px 4px !important;
-        transition: all 0.2s ease;
+        padding: 6px 0 !important;
+        width: 100% !important;
+        transition: all 0.2s ease !important;
+        border: none !important;
+    }
+    /* Marcar Todas — fundo dourado tênue */
+    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
+        background: rgba(197,165,102,0.1) !important;
+        color: #C5A566 !important;
+        border-right: 1px solid rgba(197,165,102,0.18) !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
         background: rgba(197,165,102,0.2) !important;
-        border-color: #C5A566 !important;
+        color: #D4B87A !important;
     }
-
-    /* Botão Desmarcar */
+    /* Desmarcar — apagado */
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
-        width: 100%;
         background: transparent !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 0 !important;
-        color: rgba(232,220,200,0.35) !important;
-        font-size: 0.65rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 1.8px !important;
-        text-transform: uppercase !important;
-        padding: 5px 4px !important;
-        transition: all 0.2s ease;
+        color: rgba(232,220,200,0.28) !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
-        color: rgba(232,220,200,0.7) !important;
-        border-color: rgba(255,255,255,0.25) !important;
+        background: rgba(255,255,255,0.04) !important;
+        color: rgba(232,220,200,0.55) !important;
     }
 
-    /* Checkboxes compactos */
-    [data-testid="stSidebar"] .stCheckbox { margin: 0 !important; padding: 0 !important; }
-    [data-testid="stSidebar"] .stCheckbox label {
+    /* ── LISTA DE RUBRICAS ───────────────────────────────────────────────────── */
+    /* Esconde completamente o checkbox nativo — fica invisível mas funcional */
+    [data-testid="stSidebar"] .stCheckbox {
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative !important;
+    }
+    /* Oculta o quadradinho nativo do checkbox */
+    [data-testid="stSidebar"] .stCheckbox > label > div:first-child {
+        display: none !important;
+    }
+    /* Toda a área do label vira o item clicável */
+    [data-testid="stSidebar"] .stCheckbox > label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0 !important;
+        width: 100% !important;
+        padding: 8px 16px !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        position: relative !important;
+        border-left: 2px solid transparent !important;
+        transition: all 0.18s ease !important;
+        background: transparent !important;
+    }
+    /* Hover: fundo leve */
+    [data-testid="stSidebar"] .stCheckbox > label:hover {
+        background: rgba(197,165,102,0.05) !important;
+        border-left-color: rgba(197,165,102,0.3) !important;
+    }
+    /* Texto da rubrica — estado DESMARCADO */
+    [data-testid="stSidebar"] .stCheckbox > label > div:last-child,
+    [data-testid="stSidebar"] .stCheckbox > label > span {
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.76rem !important;
+        font-size: 0.73rem !important;
         font-weight: 400 !important;
-        color: rgba(232,220,200,0.65) !important;
-        letter-spacing: 0.4px !important;
-        padding: 3px 0 !important;
-        line-height: 1.4 !important;
+        color: rgba(232,220,200,0.38) !important;
+        letter-spacing: 0.8px !important;
+        text-transform: uppercase !important;
+        line-height: 1 !important;
     }
-    [data-testid="stSidebar"] .stCheckbox label:hover { color: #C5A566 !important; }
-    [data-testid="stSidebar"] input[type="checkbox"]:checked + div {
-        background-color: #C5A566 !important;
-        border-color: #C5A566 !important;
+    /* Estado MARCADO: borda dourada + texto brilhante */
+    [data-testid="stSidebar"] input[type="checkbox"]:checked ~ div,
+    [data-testid="stSidebar"] input[type="checkbox"]:checked + div + div {
+        color: #C5A566 !important;
+    }
+    /* Forçar label inteira quando checked */
+    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label {
+        border-left-color: #C5A566 !important;
+        background: rgba(197,165,102,0.06) !important;
+    }
+    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > div:last-child,
+    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > span {
+        color: #C5A566 !important;
+        font-weight: 500 !important;
     }
 
-    /* Divisória */
+    /* ── SEPARADOR ANTES DO CONTADOR ─────────────────────────────────────────── */
     .sidebar-divider {
         border: none;
-        border-top: 1px solid rgba(197,165,102,0.12);
-        margin: 8px 0;
+        border-top: 1px solid rgba(197,165,102,0.10);
+        margin: 8px 0 0;
+    }
+
+    /* ── CONTADOR ────────────────────────────────────────────────────────────── */
+    .rubrica-count {
+        padding: 8px 16px 14px;
+        font-size: 0.58rem;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 2px;
+        text-transform: uppercase;
     }
 
     /* ── FOOTER DE CONTATO ────────────────────────────────────────────────────── */
@@ -912,7 +971,12 @@ for r in RUBRICAS_MESTRE.keys():
         st.session_state[key] = True
 
 # Cabeçalho
-st.sidebar.markdown('<div class="sidebar-header">⚖ Rubricas de Auditoria</div>', unsafe_allow_html=True)
+st.sidebar.markdown("""
+<div class="sb-header">
+    <div class="sb-eyebrow">Painel de Controle</div>
+    <div class="sb-title">Rubricas de <span>Auditoria</span></div>
+</div>
+""", unsafe_allow_html=True)
 
 # Botões Marcar / Desmarcar — aplicam imediatamente o estado individual
 col_b1, col_b2 = st.sidebar.columns(2)
@@ -924,8 +988,6 @@ if col_b1.button("✦ Marcar Todas", key="btn_marcar"):
 if col_b2.button("✕ Desmarcar", key="btn_desmarcar"):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state[f"check_{r}"] = False
-
-st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 
 # Lista de checkboxes — cada um com seu estado individual no session_state
 selecionadas = []
@@ -939,10 +1001,17 @@ for r in RUBRICAS_MESTRE.keys():
 st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 total_r   = len(RUBRICAS_MESTRE)
 sel_count = len(selecionadas)
-cor_count = "#BFAF83" if sel_count == total_r else ("#E57373" if sel_count == 0 else "#81C784")
+if sel_count == total_r:
+    cor_count  = "#C5A566"
+    status_txt = f"◆ &nbsp; Todas as {total_r} ativas"
+elif sel_count == 0:
+    cor_count  = "rgba(197,165,102,0.28)"
+    status_txt = f"◇ &nbsp; Nenhuma selecionada"
+else:
+    cor_count  = "rgba(197,165,102,0.7)"
+    status_txt = f"◈ &nbsp; {sel_count} de {total_r} ativas"
 st.sidebar.markdown(
-    f'<div class="rubrica-count" style="color:{cor_count};">'
-    f'● {sel_count} de {total_r} rubricas ativas</div>',
+    f'<div class="rubrica-count" style="color:{cor_count};">{status_txt}</div>',
     unsafe_allow_html=True
 )
 
