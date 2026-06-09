@@ -16,67 +16,127 @@ st.set_page_config(page_title="Edson Medeiros | Consultoria e Compliance", layou
 
 st.markdown("""
 <style>
-    /* ── TIPOGRAFIA ───────────────────────────────────────────────────────────── */
+    /* ── IMPORTS ──────────────────────────────────────────────────────────────── */
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
 
-    /* ── RESET E BASE ─────────────────────────────────────────────────────────── */
+    /* ── VARIÁVEIS ────────────────────────────────────────────────────────────── */
+    :root {
+        --p:  #060A0D;
+        --p2: #0D1117;
+        --p3: #141B22;
+        --g:  #C5A566;
+        --g2: #D4B87A;
+        --c:  #E8DCC8;
+        --cm: rgba(232,220,200,0.55);
+        --cl: rgba(232,220,200,0.22);
+        --gl: rgba(197,165,102,0.18);
+        --serif: 'Cormorant Garamond', Georgia, serif;
+        --sans:  'Inter', system-ui, sans-serif;
+    }
+
+    /* ── BASE ─────────────────────────────────────────────────────────────────── */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: var(--sans);
         -webkit-font-smoothing: antialiased;
     }
     .stApp {
-        background-color: #101418;
-        color: #E8DCC8;
+        background: var(--p);
+        color: var(--c);
+        /* Grade de pontos animada */
+        background-image: radial-gradient(circle, rgba(197,165,102,0.05) 1px, transparent 1px);
+        background-size: 32px 32px;
     }
 
-    /* ── HEADER PRINCIPAL ─────────────────────────────────────────────────────── */
+    /* ── ANIMAÇÕES GLOBAIS ────────────────────────────────────────────────────── */
+    @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(28px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    @keyframes borderGlow {
+        0%, 100% { opacity: 0.3; }
+        50%       { opacity: 1; }
+    }
+    @keyframes dashDraw {
+        from { stroke-dashoffset: 800; }
+        to   { stroke-dashoffset: 0; }
+    }
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.96); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulseGold {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(197,165,102,0); }
+        50%       { box-shadow: 0 0 20px 4px rgba(197,165,102,0.12); }
+    }
+
+    /* ── BLOCK CONTAINER ──────────────────────────────────────────────────────── */
+    .block-container {
+        max-width: 1080px !important;
+        padding: 0 48px 80px !important;
+        animation: fadeSlideUp 0.6s ease both;
+    }
+
+    /* ── HEADER / LOGOMARCA ───────────────────────────────────────────────────── */
     .em-header-wrap {
         text-align: center;
-        padding: 52px 0 36px;
+        padding: 64px 0 48px;
         position: relative;
+        animation: fadeSlideUp 0.7s ease both;
     }
-    .em-header-wrap::before,
-    .em-header-wrap::after {
+    .em-header-wrap::before, .em-header-wrap::after {
         content: '';
         position: absolute;
         top: 50%;
-        width: calc(50% - 220px);
+        width: calc(50% - 240px);
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.45));
+        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.35));
+        animation: borderGlow 3s ease-in-out infinite;
     }
     .em-header-wrap::before { left: 0; transform: translateY(-50%) scaleX(-1); }
     .em-header-wrap::after  { right: 0; transform: translateY(-50%); }
 
     .em-eyebrow {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.62rem;
-        font-weight: 500;
-        letter-spacing: 5px;
+        font-family: var(--sans);
+        font-size: 0.55rem;
+        font-weight: 600;
+        letter-spacing: 5.5px;
         text-transform: uppercase;
-        color: #C5A566;
-        margin-bottom: 8px;
-        opacity: 0.85;
+        color: rgba(197,165,102,0.45);
+        margin-bottom: 10px;
     }
     .em-name {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 3.6rem;
+        font-family: var(--serif);
+        font-size: clamp(2.8rem, 5vw, 4.2rem);
         font-weight: 600;
         line-height: 1.0;
-        color: #E8DCC8;
+        color: var(--c);
         letter-spacing: 0.5px;
         margin: 0;
-    }
-    .em-name span {
-        color: #C5A566;
+        /* Shimmer effect no hover */
+        background: linear-gradient(
+            110deg,
+            var(--c) 20%,
+            var(--g) 40%,
+            var(--c) 60%
+        );
+        background-size: 600px 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmer 4s linear infinite;
     }
     .em-subtitle {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.0rem;
+        font-family: var(--serif);
+        font-size: 0.92rem;
         font-weight: 400;
         font-style: italic;
-        color: rgba(197,165,102,0.7);
+        color: rgba(197,165,102,0.55);
         letter-spacing: 3px;
-        margin-top: 6px;
+        margin-top: 8px;
         text-transform: uppercase;
     }
     .em-ornament {
@@ -84,404 +144,463 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         gap: 14px;
-        margin-top: 22px;
+        margin-top: 24px;
     }
     .em-ornament-line {
-        width: 80px;
+        width: 90px;
         height: 1px;
-        background: linear-gradient(90deg, transparent, #C5A566);
+        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
+        animation: borderGlow 3s ease-in-out infinite;
     }
     .em-ornament-line.rev {
-        background: linear-gradient(90deg, #C5A566, transparent);
+        background: linear-gradient(90deg, rgba(197,165,102,0.5), transparent);
     }
     .em-ornament-diamond {
-        color: #C5A566;
+        color: rgba(197,165,102,0.7);
         font-size: 0.6rem;
-        opacity: 0.9;
     }
 
-    /* ── DIVISOR DE SEÇÃO ─────────────────────────────────────────────────────── */
+    /* ── DIVISORES DE SEÇÃO ───────────────────────────────────────────────────── */
     .em-divider {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin: 32px 0 24px;
+        gap: 16px;
+        margin: 40px 0 28px;
     }
     .em-divider-line {
         flex: 1;
         height: 1px;
-        background: rgba(197,165,102,0.2);
+        background: rgba(197,165,102,0.15);
     }
     .em-divider-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.58rem;
+        font-family: var(--sans);
+        font-size: 0.55rem;
         font-weight: 600;
         letter-spacing: 4px;
         text-transform: uppercase;
-        color: rgba(197,165,102,0.6);
+        color: rgba(197,165,102,0.45);
         white-space: nowrap;
+    }
+    .em-section-note {
+        font-family: var(--sans);
+        font-size: 0.76rem;
+        color: rgba(232,220,200,0.35);
+        text-align: center;
+        letter-spacing: 0.3px;
+        margin-top: 4px;
+        margin-bottom: 24px;
     }
 
     /* ── UPLOAD ZONE ──────────────────────────────────────────────────────────── */
     [data-testid="stFileUploader"] {
-        border: 1px solid rgba(197,165,102,0.3) !important;
+        border: 1px solid rgba(197,165,102,0.2) !important;
         border-radius: 0 !important;
-        background: rgba(197,165,102,0.03) !important;
-        padding: 4px !important;
-        transition: border-color 0.3s ease;
+        background: rgba(197,165,102,0.02) !important;
+        transition: all 0.3s ease;
+        animation: scaleIn 0.5s ease both;
     }
     [data-testid="stFileUploader"]:hover {
-        border-color: rgba(197,165,102,0.6) !important;
+        border-color: rgba(197,165,102,0.5) !important;
+        background: rgba(197,165,102,0.05) !important;
+        box-shadow: 0 0 40px rgba(197,165,102,0.06) !important;
     }
     [data-testid="stFileUploadDropzone"] {
         background: transparent !important;
-        border: 1px dashed rgba(197,165,102,0.35) !important;
+        border: 1px dashed rgba(197,165,102,0.28) !important;
         border-radius: 0 !important;
-        padding: 28px !important;
+        padding: 36px !important;
+        transition: all 0.3s ease;
+    }
+    [data-testid="stFileUploader"]:hover [data-testid="stFileUploadDropzone"] {
+        border-color: rgba(197,165,102,0.55) !important;
     }
     [data-testid="stFileUploaderDropzoneInstructions"] span,
     [data-testid="stFileUploaderDropzoneInstructions"] small {
-        color: rgba(197,165,102,0.7) !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.82rem !important;
+        color: rgba(197,165,102,0.6) !important;
+        font-family: var(--sans) !important;
+        font-size: 0.8rem !important;
         letter-spacing: 0.5px;
     }
     [data-testid="stFileUploadDropzone"] button {
         background: transparent !important;
-        border: 1px solid rgba(197,165,102,0.5) !important;
-        color: #C5A566 !important;
+        border: 1px solid rgba(197,165,102,0.4) !important;
+        color: var(--g) !important;
         border-radius: 0 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.75rem !important;
-        letter-spacing: 1.5px !important;
+        font-family: var(--sans) !important;
+        font-size: 0.68rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 2px !important;
         text-transform: uppercase !important;
-        padding: 6px 18px !important;
-        transition: all 0.2s ease;
+        padding: 8px 22px !important;
+        transition: all 0.25s ease;
     }
     [data-testid="stFileUploadDropzone"] button:hover {
         background: rgba(197,165,102,0.1) !important;
+        border-color: var(--g) !important;
     }
 
-    /* ── CARDS DE MÉTRICAS ────────────────────────────────────────────────────── */
+    /* ── METRIC CARDS ─────────────────────────────────────────────────────────── */
     .metric-card {
-        background: #1C2128;
-        border-top: 2px solid #C5A566;
-        border-left: 1px solid rgba(197,165,102,0.15);
-        border-right: 1px solid rgba(197,165,102,0.15);
-        border-bottom: 1px solid rgba(197,165,102,0.15);
+        background: var(--p2);
+        border: 1px solid rgba(197,165,102,0.12);
+        border-top: 2px solid rgba(197,165,102,0.5);
         border-radius: 0;
-        padding: 28px 24px;
+        padding: 36px 28px;
         text-align: center;
         position: relative;
         overflow: hidden;
+        transition: all 0.35s ease;
+        animation: scaleIn 0.5s ease both;
     }
     .metric-card::before {
         content: '';
         position: absolute;
-        top: 0; left: 0; right: 0;
+        top: 0; left: -100%; right: 100%;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #C5A566, transparent);
+        background: linear-gradient(90deg, transparent, var(--g), transparent);
+        transition: all 0.6s ease;
+    }
+    .metric-card:hover {
+        background: var(--p3);
+        border-top-color: var(--g);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px rgba(197,165,102,0.08);
+    }
+    .metric-card:hover::before {
+        left: 0;
+        right: 0;
     }
     .metric-card h4 {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.62rem;
+        font-family: var(--sans);
+        font-size: 0.58rem;
         font-weight: 600;
-        letter-spacing: 3.5px;
+        letter-spacing: 4px;
         text-transform: uppercase;
-        color: rgba(197,165,102,0.65);
-        margin: 0 0 12px 0;
+        color: rgba(197,165,102,0.5);
+        margin: 0 0 16px 0;
     }
     .metric-card h2 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.6rem;
+        font-family: var(--serif);
+        font-size: 2.8rem;
         font-weight: 600;
-        color: #C5A566;
+        color: var(--g);
         margin: 0;
         line-height: 1;
+        background: linear-gradient(135deg, var(--g), var(--g2));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-
-    /* ── SEÇÃO DE DOWNLOADS ───────────────────────────────────────────────────── */
-    .em-section-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.5rem;
-        font-weight: 500;
-        color: #E8DCC8;
+    .metric-card-sub {
+        font-size: 0.68rem;
+        color: rgba(197,165,102,0.35);
         letter-spacing: 1px;
-        text-align: center;
-        margin: 0;
-    }
-    .em-section-note {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.78rem;
-        color: rgba(232,220,200,0.45);
-        text-align: center;
-        letter-spacing: 0.3px;
-        margin-top: 4px;
-        margin-bottom: 20px;
+        margin-top: 8px;
     }
 
-    /* ── BOTÕES DE DOWNLOAD ───────────────────────────────────────────────────── */
+    /* ── DOWNLOAD BUTTONS ─────────────────────────────────────────────────────── */
     [data-testid="stDownloadButton"] > button {
-        background: transparent !important;
-        border: 1px solid rgba(197,165,102,0.4) !important;
-        color: rgba(197,165,102,0.85) !important;
+        background: var(--p2) !important;
+        border: 1px solid rgba(197,165,102,0.2) !important;
+        border-left: 3px solid rgba(197,165,102,0.4) !important;
+        color: rgba(197,165,102,0.75) !important;
         border-radius: 0 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.72rem !important;
+        font-family: var(--sans) !important;
+        font-size: 0.7rem !important;
         font-weight: 500 !important;
-        letter-spacing: 1.8px !important;
+        letter-spacing: 1.5px !important;
         text-transform: uppercase !important;
-        padding: 8px 20px !important;
-        transition: all 0.25s ease;
+        padding: 12px 20px !important;
+        transition: all 0.25s ease !important;
         width: 100% !important;
+        text-align: left !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    [data-testid="stDownloadButton"] > button::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: rgba(197,165,102,0.05);
+        transition: left 0.3s ease;
     }
     [data-testid="stDownloadButton"] > button:hover {
-        background: rgba(197,165,102,0.08) !important;
-        border-color: #C5A566 !important;
-        color: #C5A566 !important;
-        box-shadow: 0 0 18px rgba(197,165,102,0.08) !important;
+        background: var(--p3) !important;
+        border-color: rgba(197,165,102,0.5) !important;
+        border-left-color: var(--g) !important;
+        color: var(--g) !important;
+        transform: translateX(4px) !important;
+        box-shadow: 0 4px 20px rgba(197,165,102,0.08) !important;
+    }
+    [data-testid="stDownloadButton"] > button:hover::after {
+        left: 0;
     }
 
     /* ── DATAFRAME ────────────────────────────────────────────────────────────── */
     [data-testid="stDataFrame"] {
-        border: 1px solid rgba(197,165,102,0.2) !important;
+        border: 1px solid rgba(197,165,102,0.15) !important;
         border-radius: 0 !important;
+        animation: fadeSlideUp 0.4s ease both;
     }
     [data-testid="stDataFrame"] th {
-        background: #1C2128 !important;
-        color: rgba(197,165,102,0.8) !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.68rem !important;
+        background: var(--p2) !important;
+        color: rgba(197,165,102,0.7) !important;
+        font-family: var(--sans) !important;
+        font-size: 0.62rem !important;
         font-weight: 600 !important;
-        letter-spacing: 2.5px !important;
+        letter-spacing: 3px !important;
         text-transform: uppercase !important;
-        border-bottom: 1px solid rgba(197,165,102,0.25) !important;
+        border-bottom: 1px solid rgba(197,165,102,0.2) !important;
+        padding: 12px 16px !important;
     }
     [data-testid="stDataFrame"] td {
-        font-family: 'Inter', sans-serif !important;
+        font-family: var(--sans) !important;
         font-size: 0.8rem !important;
-        color: #E8DCC8 !important;
-        border-color: rgba(197,165,102,0.08) !important;
+        color: rgba(232,220,200,0.75) !important;
+        border-color: rgba(197,165,102,0.07) !important;
+        padding: 10px 16px !important;
+        transition: background 0.15s ease;
     }
+    [data-testid="stDataFrame"] tr:hover td {
+        background: rgba(197,165,102,0.04) !important;
+    }
+
+    /* ── INFO / ALERT ─────────────────────────────────────────────────────────── */
+    [data-testid="stAlert"] {
+        background: rgba(197,165,102,0.05) !important;
+        border: 1px solid rgba(197,165,102,0.2) !important;
+        border-radius: 0 !important;
+        color: rgba(197,165,102,0.7) !important;
+        font-size: 0.82rem !important;
+    }
+    [data-testid="stAlert"] svg { color: var(--g) !important; }
 
     /* ── SPINNER ──────────────────────────────────────────────────────────────── */
+    [data-testid="stSpinner"] > div {
+        border-top-color: var(--g) !important;
+    }
     [data-testid="stSpinner"] p {
-        color: rgba(197,165,102,0.7) !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.8rem !important;
-        letter-spacing: 1px;
+        color: rgba(197,165,102,0.6) !important;
+        font-family: var(--sans) !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 1.5px !important;
+        text-transform: uppercase !important;
     }
 
-    /* ── INFO BOX ─────────────────────────────────────────────────────────────── */
-    [data-testid="stAlert"] {
-        background: rgba(197,165,102,0.06) !important;
-        border: 1px solid rgba(197,165,102,0.3) !important;
-        border-radius: 0 !important;
-        color: rgba(197,165,102,0.8) !important;
-    }
-
-    /* ── SIDEBAR — BASE ───────────────────────────────────────────────────────── */
+    /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: #0A0D10;
-        border-right: 1px solid rgba(197,165,102,0.14);
+        background: #050810;
+        border-right: 1px solid rgba(197,165,102,0.12);
     }
     [data-testid="stSidebar"] > div:first-child { padding-top: 0; }
 
-    /* ── SIDEBAR HEADER ─────────────────────────────────────────────────────── */
     .sb-header {
-        padding: 22px 16px 16px;
-        border-bottom: 1px solid rgba(197,165,102,0.12);
-        margin-bottom: 0;
+        padding: 28px 16px 18px;
+        border-bottom: 1px solid rgba(197,165,102,0.1);
+        position: relative;
+    }
+    .sb-header::after {
+        content: '';
+        position: absolute;
+        bottom: -1px; left: 0;
+        width: 60px; height: 1px;
+        background: var(--g);
+        animation: borderGlow 2.5s ease-in-out infinite;
     }
     .sb-eyebrow {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.55rem;
+        font-family: var(--sans);
+        font-size: 0.5rem;
         font-weight: 600;
-        letter-spacing: 3.5px;
+        letter-spacing: 4px;
         text-transform: uppercase;
-        color: rgba(197,165,102,0.5);
-        margin-bottom: 3px;
+        color: rgba(197,165,102,0.38);
+        margin-bottom: 4px;
     }
     .sb-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.15rem;
+        font-family: var(--serif);
+        font-size: 1.2rem;
         font-weight: 600;
-        color: #E8DCC8;
+        color: var(--c);
         letter-spacing: 0.5px;
         margin: 0;
         line-height: 1.2;
     }
-    .sb-title span { color: #C5A566; }
+    .sb-title span { color: var(--g); }
 
-    /* ── CONTROLES MARCAR/DESMARCAR ─────────────────────────────────────────── */
-    .sb-controls {
-        display: flex;
-        gap: 0;
-        margin: 12px 16px 8px;
-        border: 1px solid rgba(197,165,102,0.18);
-    }
+    /* Botões do sidebar */
     [data-testid="stSidebar"] .stButton > button {
         border-radius: 0 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.60rem !important;
+        font-family: var(--sans) !important;
+        font-size: 0.58rem !important;
         font-weight: 600 !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
-        padding: 6px 0 !important;
+        padding: 7px 0 !important;
         width: 100% !important;
         transition: all 0.2s ease !important;
         border: none !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
         background: rgba(197,165,102,0.1) !important;
-        color: #C5A566 !important;
-        border-right: 1px solid rgba(197,165,102,0.18) !important;
+        color: var(--g) !important;
+        border-right: 1px solid rgba(197,165,102,0.15) !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
-        background: rgba(197,165,102,0.2) !important;
-        color: #D4B87A !important;
+        background: rgba(197,165,102,0.18) !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
         background: transparent !important;
-        color: rgba(232,220,200,0.28) !important;
+        color: rgba(232,220,200,0.25) !important;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
-        background: rgba(255,255,255,0.04) !important;
         color: rgba(232,220,200,0.55) !important;
+        background: rgba(255,255,255,0.03) !important;
     }
 
-    /* ── LISTA DE RUBRICAS ───────────────────────────────────────────────────── */
-    [data-testid="stSidebar"] .stCheckbox {
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative !important;
-    }
-    [data-testid="stSidebar"] .stCheckbox > label > div:first-child {
-        display: none !important;
-    }
+    /* Checkboxes */
+    [data-testid="stSidebar"] .stCheckbox { margin: 0 !important; padding: 0 !important; }
+    [data-testid="stSidebar"] .stCheckbox > label > div:first-child { display: none !important; }
     [data-testid="stSidebar"] .stCheckbox > label {
         display: flex !important;
         align-items: center !important;
-        gap: 0 !important;
         width: 100% !important;
-        padding: 8px 16px !important;
+        padding: 9px 16px !important;
         margin: 0 !important;
         cursor: pointer !important;
-        position: relative !important;
         border-left: 2px solid transparent !important;
         transition: all 0.18s ease !important;
         background: transparent !important;
     }
     [data-testid="stSidebar"] .stCheckbox > label:hover {
-        background: rgba(197,165,102,0.05) !important;
-        border-left-color: rgba(197,165,102,0.3) !important;
+        background: rgba(197,165,102,0.04) !important;
+        border-left-color: rgba(197,165,102,0.25) !important;
     }
     [data-testid="stSidebar"] .stCheckbox > label > div:last-child,
     [data-testid="stSidebar"] .stCheckbox > label > span {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.73rem !important;
+        font-family: var(--sans) !important;
+        font-size: 0.71rem !important;
         font-weight: 400 !important;
-        color: rgba(232,220,200,0.38) !important;
-        letter-spacing: 0.8px !important;
+        color: rgba(232,220,200,0.32) !important;
+        letter-spacing: 0.9px !important;
         text-transform: uppercase !important;
         line-height: 1 !important;
     }
-    [data-testid="stSidebar"] input[type="checkbox"]:checked ~ div,
-    [data-testid="stSidebar"] input[type="checkbox"]:checked + div + div {
-        color: #C5A566 !important;
-    }
     [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label {
-        border-left-color: #C5A566 !important;
+        border-left-color: var(--g) !important;
         background: rgba(197,165,102,0.06) !important;
     }
     [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > div:last-child,
     [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > span {
-        color: #C5A566 !important;
+        color: var(--g) !important;
         font-weight: 500 !important;
     }
 
-    /* ── SEPARADOR ANTES DO CONTADOR ─────────────────────────────────────────── */
     .sidebar-divider {
         border: none;
-        border-top: 1px solid rgba(197,165,102,0.10);
-        margin: 8px 0 0;
+        border-top: 1px solid rgba(197,165,102,0.08);
+        margin: 6px 0 0;
     }
-
-    /* ── CONTADOR ────────────────────────────────────────────────────────────── */
     .rubrica-count {
-        padding: 8px 16px 14px;
-        font-size: 0.58rem;
-        font-family: 'Inter', sans-serif;
+        padding: 8px 16px 16px;
+        font-size: 0.56rem;
+        font-family: var(--sans);
         letter-spacing: 2px;
         text-transform: uppercase;
     }
 
-    /* ── FOOTER DE CONTATO ────────────────────────────────────────────────────── */
+    /* ── FOOTER ───────────────────────────────────────────────────────────────── */
     .em-footer {
-        margin-top: 60px;
-        padding-top: 28px;
-        border-top: 1px solid rgba(197,165,102,0.18);
+        margin-top: 80px;
+        padding: 40px 0 20px;
+        border-top: 1px solid rgba(197,165,102,0.12);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 14px;
+        position: relative;
+    }
+    .em-footer::before {
+        content: '';
+        position: absolute;
+        top: -1px; left: 50%; transform: translateX(-50%);
+        width: 120px; height: 1px;
+        background: var(--g);
+        animation: borderGlow 3s ease-in-out infinite;
     }
     .em-footer-name {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.25rem;
+        font-family: var(--serif);
+        font-size: 1.4rem;
         font-weight: 600;
         font-style: italic;
-        color: #C5A566;
-        letter-spacing: 1px;
+        color: var(--g);
+        letter-spacing: 1.5px;
     }
     .em-footer-contacts {
         display: flex;
-        gap: 24px;
+        gap: 28px;
         flex-wrap: wrap;
         justify-content: center;
     }
     .em-footer-contact {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.72rem;
-        color: rgba(197,165,102,0.55);
+        font-family: var(--sans);
+        font-size: 0.7rem;
+        color: rgba(197,165,102,0.45);
         letter-spacing: 1px;
     }
     .em-footer-contact a {
-        color: rgba(197,165,102,0.55);
+        color: rgba(197,165,102,0.45);
         text-decoration: none;
         transition: color 0.2s;
     }
-    .em-footer-contact a:hover { color: #C5A566; }
+    .em-footer-contact a:hover { color: var(--g); }
     .em-whatsapp-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         background: transparent;
-        border: 1px solid rgba(197,165,102,0.45);
-        color: #C5A566;
-        font-family: 'Inter', sans-serif;
-        font-size: 0.70rem;
+        border: 1px solid rgba(197,165,102,0.35);
+        color: rgba(197,165,102,0.7);
+        font-family: var(--sans);
+        font-size: 0.65rem;
         font-weight: 600;
-        letter-spacing: 2px;
+        letter-spacing: 2.5px;
         text-transform: uppercase;
-        padding: 9px 22px;
+        padding: 10px 28px;
         text-decoration: none;
         transition: all 0.25s ease;
         cursor: pointer;
-        margin-top: 6px;
+        margin-top: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+    .em-whatsapp-btn::before {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: rgba(197,165,102,0.07);
+        transition: left 0.3s ease;
     }
     .em-whatsapp-btn:hover {
-        background: rgba(197,165,102,0.1);
-        border-color: #C5A566;
-        color: #C5A566;
+        border-color: var(--g);
+        color: var(--g);
         text-decoration: none;
     }
+    .em-whatsapp-btn:hover::before { left: 0; }
 
     /* ── SCROLLBAR ────────────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #101418; }
-    ::-webkit-scrollbar-thumb { background: rgba(197,165,102,0.3); border-radius: 0; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(197,165,102,0.55); }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: var(--p); }
+    ::-webkit-scrollbar-thumb { background: rgba(197,165,102,0.25); border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(197,165,102,0.5); }
+
+    /* ── HEADER NATIVO ────────────────────────────────────────────────────────── */
+    header[data-testid="stHeader"] {
+        background: rgba(6,10,13,0.95) !important;
+        border-bottom: 1px solid rgba(197,165,102,0.08) !important;
+        backdrop-filter: blur(12px) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -494,22 +613,26 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
+    # ── CSS: transforma o stApp inteiro na tela de login ──────────────────────
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
 
+    /* Esconde toda a UI padrão do Streamlit */
     header, footer,
     [data-testid="stSidebar"],
     [data-testid="stToolbar"],
     [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
+    /* Fundo da tela */
     .stApp {
         background: #060A0D !important;
         background-image:
             radial-gradient(circle, rgba(197,165,102,0.055) 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
+    /* Vinheta sobre a grade */
     .stApp::after {
         content: '';
         position: fixed;
@@ -520,15 +643,18 @@ if not st.session_state["autenticado"]:
         z-index: 0;
     }
 
+    /* Container principal: centraliza verticalmente */
     .block-container {
         max-width: 480px !important;
         padding: 0 24px !important;
         margin: 0 auto !important;
         position: relative;
         z-index: 1;
+        /* Centralização vertical aproximada */
         padding-top: max(60px, 10vh) !important;
     }
 
+    /* ── LOGOMARCA ────────────────────────────────────────────────────────── */
     .lx-logo {
         text-align: center;
         margin-bottom: 10px;
@@ -569,6 +695,7 @@ if not st.session_state["autenticado"]:
         margin-top: 5px;
     }
 
+    /* ── ORNAMENTO ───────────────────────────────────────────────────────── */
     .lx-ornament {
         display: flex;
         align-items: center;
@@ -587,6 +714,7 @@ if not st.session_state["autenticado"]:
     }
     .lx-diamond { font-size: 0.45rem; color: rgba(197,165,102,0.45); }
 
+    /* ── NOME DO ROBÔ ────────────────────────────────────────────────────── */
     .lx-robot {
         text-align: center;
         margin-bottom: 14px;
@@ -615,6 +743,7 @@ if not st.session_state["autenticado"]:
         letter-spacing: 0;
     }
 
+    /* ── BOAS-VINDAS ─────────────────────────────────────────────────────── */
     .lx-welcome {
         font-family: 'Cormorant Garamond', serif;
         font-size: 0.92rem;
@@ -626,12 +755,15 @@ if not st.session_state["autenticado"]:
         margin-bottom: 28px;
     }
 
+    /* ── FORMULÁRIO — inputs ─────────────────────────────────────────────── */
+    /* Wrapper do form sem bordas padrão */
     [data-testid="stForm"] {
         background: rgba(197,165,102,0.03) !important;
         border: 1px solid rgba(197,165,102,0.16) !important;
         border-radius: 0 !important;
         padding: 0 !important;
     }
+    /* Inputs: linha inferior apenas, sem caixa */
     [data-testid="stForm"] input {
         background: transparent !important;
         border: none !important;
@@ -651,6 +783,7 @@ if not st.session_state["autenticado"]:
         box-shadow: none !important;
         outline: none !important;
     }
+    /* Labels dos inputs */
     [data-testid="stForm"] label {
         font-family: 'Inter', sans-serif !important;
         font-size: 0.55rem !important;
@@ -662,8 +795,10 @@ if not st.session_state["autenticado"]:
         padding-top: 14px !important;
         padding-bottom: 2px !important;
     }
+    /* Esconde o asterisco de "required" */
     [data-testid="stForm"] label span { display: none !important; }
 
+    /* ── BOTÃO SUBMISSÃO ─────────────────────────────────────────────────── */
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
         background: transparent !important;
@@ -686,6 +821,7 @@ if not st.session_state["autenticado"]:
         border-top-color: rgba(197,165,102,0.35) !important;
     }
 
+    /* ── ALERTA DE ERRO ──────────────────────────────────────────────────── */
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
         border: 1px solid rgba(180,60,60,0.25) !important;
@@ -696,11 +832,15 @@ if not st.session_state["autenticado"]:
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
     }
+    /* Esconde ícone padrão do alerta */
     [data-testid="stAlert"] svg { display: none !important; }
+
+    /* ── SPINNER ─────────────────────────────────────────────────────────── */
     [data-testid="stSpinner"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
+    # ── CONTEÚDO VISUAL (logomarca + robô + boas-vindas) ──────────────────────
     st.markdown("""
     <div class="lx-logo">
         <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
@@ -726,6 +866,7 @@ if not st.session_state["autenticado"]:
     </p>
     """, unsafe_allow_html=True)
 
+    # ── FORMULÁRIO DE LOGIN ────────────────────────────────────────────────────
     with st.form("login_form", clear_on_submit=False):
         _email = st.text_input(
             "E-mail",
@@ -753,28 +894,91 @@ if not st.session_state["autenticado"]:
 
 # --- 2. RÚBRICAS ---
 RUBRICAS_MESTRE = {
+    # "TARIFA BANCARIA / CESTA B.EXPRESSO4" — o nome real no extrato está na sublinha
     "CESTA": r"\bCESTA\b",
+
+    # "PACOTE DE SERVICOS" ou "PACOTE SERVICOS"
     "PACOTE": r"\bPACOTE\b",
+
+    # "MORA DE OPERACAO" / "MORA OPERACAO"
     "MORA DE OPERAÇÃO": r"MORA\s+DE\s+OPERA[CÇ]AO|MORA\s+OPERA[CÇ]AO\b",
+
+    # "MORA CREDITO PESSOAL" / "MORA CRED PESS" / "MORA CP"
     "MORA CREDITO PESSOAL": r"MORA\s+CREDITO\s+PESSOAL|MORA\s+CRED\s+PESS|MORA\s+CP\b",
+
+    # "MORA OPERACAO DE CREDITO" / "MORA OPER CRED"
     "MORA OPERACAO DE CREDITO": r"MORA\s+OPERA[CÇ]AO\s+DE\s+CREDITO|MORA\s+OPER\s+CRED",
+
+    # "BX" isolado — word boundary para não pegar "BXA" ou "COBRA"
     "BX": r"\bBX\b",
+
+    # "PARCELA CREDITO PESSOAL" / "PARC CRED PESS" / "PARCELA CP"
     "PARCELA CREDITO PESSOAL": r"PARCELA\s+CREDITO\s+PESSOAL|PARC\s+CRED\s+PESS|PARCELA\s+CP\b",
+
+    # "GASTOS CARTAO DE CREDITO" / "CARTAO DE CREDITO" / "FATURA CARTAO"
+    # NÃO inclui "CARTAO CREDITO ANUIDADE" (já capturado em ANUIDADE)
     "GASTOS CARTAO DE CREDITO": r"GASTOS\s+CART[AÃ]O|FATURA\s+CART[AÃ]O|CART[AÃ]O\s+DE\s+CREDITO(?!\s+ANUIDADE)",
+
+    # "SEGURO" / "SEG " / "SEGURADORA" — word boundary para não pegar "SAQUE"
     "SEGURO": r"\bSEGURO\b|\bSEGURADORA\b|\bSEG\s",
+
+    # "ADIANT" / "ADIANTAMENTO"
     "ADIANT": r"\bADIANT|\bADIANTAMENTO\b",
+
+    # "APLICACAO" / "APLIC" isolado
     "APLIC": r"\bAPLICA[CÇ]AO\b|\bAPLIC\b",
+
+    # "ENCARGOS" / "ENCARGO" / "ENCARGOS LIMITE DE CRED" / "IOF" não — só encargo mesmo
     "ENCARGOS": r"\bENCARGOS?\b|\bENC\s+LIMITE\b|\bLIMITE\s+DE\s+CRED\b",
+
+    # "CARTAO CREDITO ANUIDADE" / "ANUIDADE" — verificado ANTES de GASTOS CARTAO
     "ANUIDADE": r"\bANUIDADE\b|CART[AÃ]O\s+CREDITO\s+ANUIDADE",
+
+    # "OPERACOES VENCIDAS" / "OPERAÇÕES VENCIDAS"
     "OPERACOES VENCIDAS": r"OPERA[CÇ][OÕ]ES\s+VENCIDAS",
+
+    # "BRADESCO VIDA E PREVIDENCIA" / "VIDA E PREVIDENCIA" / "APORTE VGBL" / "PAGTO BRADESCO VIDA"
     "BRADESCO VIDA E PREVIDENCIA": r"BRADESCO\s+VIDA|VIDA\s+E\s+PREVID[EÊ]NCIA|APORTE\s+VGBL|PAGTO.*VIDA",
+
+    # "TITULO DE CAPITALIZACAO" / variações com acento
     "TITULO DE CAPITALIZACAO": r"T[IÍ]TULO\s+DE\s+CAPITALIZ|\bCAPITALIZ[AÇ]",
+
+    # "AUTO RE" — seguro automóvel / renovação automática
     "AUTO RE": r"\bAUTO\s+RE\b|\bAUTORE\b",
 }
 
-TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO|EMPRESTIMO|EMPR\."
+TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR ---
+# --- 3. MOTOR — LÓGICA DATA INFERIOR ---
+#
+# COMO FUNCIONA O MODELO "DATA INFERIOR":
+#
+# No extrato Bradesco, existem dois formatos de linha:
+#
+#   FORMATO A — linha COM data ao lado da rubrica:
+#     "15/01/2020  TARIFA BANCARIA  CESTA B.EXPRESSO4  21,60"
+#     → rubrica e data estão juntas. A data pertence a esse lançamento.
+#
+#   FORMATO B — linha SEM data (rubrica "solta"):
+#     "MORA CREDITO PESSOAL  115,62"
+#     "ENCARGOS LIMITE DE CRED  19,31"
+#     "08/02/2017  SAQUE DIN CORBAN CARTAO  ..."   ← próxima linha datada
+#
+#   No formato B, as rubricas acima não têm data própria.
+#   A data que as referencia é a da PRÓXIMA linha que contiver uma data —
+#   chamada aqui de "data inferior" pois aparece abaixo no extrato.
+#
+# SOLUÇÃO IMPLEMENTADA — dois cestos separados:
+#
+#   cesto_com_data   → itens capturados em linhas QUE JÁ TÊM data (formato A)
+#                      são selados imediatamente com a data da própria linha.
+#
+#   cesto_sem_data   → itens capturados em linhas SEM data (formato B)
+#                      ficam aguardando. Quando a próxima linha com data aparece,
+#                      ela é usada para selar TODOS os itens pendentes do cesto_sem_data
+#                      ANTES de processar o lançamento novo dessa linha datada.
+#
+# Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
 def _extrair_debito(texto_up):
     """Penúltimo valor numérico = débito (último = saldo)."""
@@ -808,25 +1012,37 @@ def _agrupar_linhas_por_y(words, tolerancia_y=5):
             linhas.append([w])
     return linhas
 
-def _limpar_historico(txt):
-    """
-    Remove do texto da rubrica os artefatos que o pdfplumber concatena
-    na mesma linha: número de docto (sequência de 7+ dígitos), valores
-    monetários (ex: 69,86) e saldos (ex: 3.467,77).
-    Mantém apenas o texto descritivo da rubrica.
-    """
-    # Remove valores monetários: 1.234,56 ou 123,45
-    limpo = re.sub(r'\d{1,3}(?:\.\d{3})*,\d{2}', '', txt)
-    # Remove sequências longas de dígitos (nº docto, nº contrato, etc.)
-    limpo = re.sub(r'\b\d{5,}\b', '', limpo)
-    # Remove espaços múltiplos resultantes
-    limpo = re.sub(r'\s{2,}', ' ', limpo).strip()
-    return limpo[:80]
+# ── MOTOR POR COORDENADAS ─────────────────────────────────────────────────────
+#
+# PRINCÍPIO FUNDAMENTAL do extrato Bradesco:
+#
+# O extrato tem uma coluna "Data" à esquerda (X < 80px). Uma data nessa coluna
+# cobre TODOS os lançamentos abaixo até a próxima data na coluna Data.
+# Ou seja: lançamentos sem data na coluna Data pertencem ao mesmo dia da
+# última data que apareceu nessa coluna.
+#
+# Exemplo visual (pág7, jan/2021):
+#   Coluna Data    Coluna Histórico          Débito
+#   29/01/2021     TRANSF SALDO C/SAL P/CC
+#                  MORA CREDITO PESSOAL      289,14   ← sem data = 29/01/2021
+#                  ENCARGOS LIMITE DE CRED     6,81   ← sem data = 29/01/2021
+#                  TARIFA BANCARIA / CESTA    27,70   ← sem data = 29/01/2021
+#   01/02/2021     SAQUE DIN CORBAN           45,00
+#
+# O motor por texto tinha dificuldade em distinguir qual data pertencia a qual
+# lançamento. O motor por coordenadas resolve isso definitivamente ao usar
+# a posição X para identificar a coluna Data e a posição Y para agrupar linhas.
+#
+# Busca de valor (3 prioridades):
+#   1. Própria linha da rubrica
+#   2. Linha anterior (TIPO C — CESTA sublinha de TARIFA BANCARIA)
+#   3. Próximas linhas (TIPO B — ENCARGOS/PARCELA com dados abaixo)
 
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
 
     with pdfplumber.open(arquivo) as pdf:
+        # Variáveis compartilhadas entre páginas (pendentes podem atravessar fim de página)
         data_atual = None
         apos_excl  = False
         pendentes  = []
@@ -836,13 +1052,16 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             if not words:
                 continue
 
+            # Agrupar palavras em linhas por proximidade Y
             grupos = _agrupar_linhas_por_y(words, tolerancia_y=5)
 
+            # Construir lista de linhas com metadados
             linhas = []
             for grupo in grupos:
                 grupo_s = sorted(grupo, key=lambda w: w['x0'])
                 texto_up = ' '.join(w['text'] for w in grupo_s).upper().strip()
 
+                # Detecta data na coluna Data (X < 80px)
                 data_col = None
                 for w in grupo_s:
                     if w['x0'] < 80:
@@ -852,10 +1071,20 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             break
 
                 # ── EXTRAÇÃO DE DÉBITO POR POSIÇÃO X ──────────────────────────────
-                # Coluna Débito (R$): X entre 445 e 520
-                # Calibrado a partir do cabeçalho real do PDF Bradesco
-                X_DEBITO_MIN = 445
-                X_DEBITO_MAX = 520
+                # O extrato Bradesco tem 3 colunas numéricas:
+                #   Crédito (R$) → X ≈ 385–440  (valores AZUIS — entradas, estornos)
+                #   Débito  (R$) → X ≈ 451–515  (valores VERMELHOS — saídas indevidas)
+                #   Saldo   (R$) → X ≈ 516–570  (saldo acumulado)
+                #
+                # REGRA: só capturar valores na coluna Débito (X entre 445 e 520).
+                # Valores na coluna Crédito (X < 445) são entradas/estornos → ignorar.
+                # Isso evita capturar créditos (ex: "ENCARGOS LIMITE CREDITO 800,00")
+                # que o motor confundia como débito por serem o penúltimo valor da linha.
+                #
+                # Limites calibrados a partir do cabeçalho real do PDF:
+                #   "Crédito (R$)" X=385   "Débito (R$)" X=451   "Saldo (R$)" X=519
+                X_DEBITO_MIN = 445   # início da coluna Débito
+                X_DEBITO_MAX = 520   # fim da coluna Débito (antes do Saldo)
 
                 valor_debito = None
                 for w in grupo_s:
@@ -863,7 +1092,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         m = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)', w['text'])
                         if m:
                             valor_debito = m.group(1)
-                            break
+                            break  # pega o primeiro valor válido na coluna Débito
 
                 linhas.append({
                     'texto':    texto_up,
@@ -871,33 +1100,82 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     'valor':    valor_debito,
                 })
 
-            # ── CONTROLE DE LINHAS JÁ CONSUMIDAS COMO FONTE DE VALOR ─────────────
-            # Impede que o mesmo valor de uma linha seja usado por dois registros
-            # distintos (via Prioridade 2 e Prioridade 3 simultaneamente).
-            consumidas_como_fonte = set()
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA FUNDAMENTAL do extrato Bradesco:
+            # A coluna "Data" (X < 80px) só aparece quando muda o dia.
+            # Lançamentos sem data na coluna pertencem ao mesmo dia da última data vista.
+            #
+            # PORÉM: linhas de EXCLUSÃO (TRANSF/SALDO) com data na coluna NÃO transferem
+            # essa data para os lançamentos seguintes. Os lançamentos sem data que aparecem
+            # APÓS um bloco de exclusão pertencem ao grupo do dia seguinte (data inferior).
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO ...   ← exclusão, sua data é 29/01
+            #               MORA CREDITO       ← sem data na coluna → data inferior
+            #               ENCARGOS LIMITE    ← sem data na coluna → data inferior
+            #               TARIFA/CESTA       ← sem data na coluna → data inferior
+            #   01/02/2021  SAQUE DIN ...      ← ESTA é a data inferior que sela o grupo
+            #
+            # Solução: data_atual só é atualizada por linhas NÃO-exclusão.
+            # Quando a linha atual é de exclusão, sua data é registrada em
+            # data_excl_pendente mas NÃO altera data_atual.
+            # Rubricas que ficam "penduradas" (sem data_atual válida) recebem
+            # a data da próxima linha datada não-exclusão (buscada por lookahead).
+
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA DO EXTRATO BRADESCO:
+            # A coluna "Data" (X < 80px) aparece na linha do primeiro lançamento
+            # de cada dia. Todos os lançamentos abaixo SEM data na coluna pertencem
+            # ao mesmo dia — até aparecer uma nova data na coluna.
+            #
+            # EXCEÇÃO CRÍTICA — TRANSF SALDO (lançamento de exclusão):
+            # Quando TRANSF aparece com data na coluna, os lançamentos seguintes
+            # SEM data na coluna (MORA, ENCARGOS, CESTA, etc.) NÃO pertencem à
+            # data do TRANSF. Eles pertencem ao dia cujo lançamento aparece logo
+            # ABAIXO, na próxima linha COM data na coluna — a "data inferior".
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO → SUA data é 29/01 (exclusão, ignorada)
+            #               MORA CREDITO → sem data → aguarda data inferior
+            #               ENCARGOS     → sem data → aguarda data inferior
+            #               CESTA        → sem data → aguarda data inferior
+            #   01/02/2021  SAQUE DIN    → esta é a data inferior → sela as 3 acima
+            #
+            # IMPLEMENTAÇÃO:
+            # - data_atual: rastreia a data do grupo de lançamentos em andamento
+            # - apos_excl: True quando acabou de passar por uma exclusão COM DATA
+            #   (indica que os próximos sem data devem aguardar a data inferior)
+            # - pendentes: rubricas que aguardam data inferior
+            #
+            # Quando apos_excl=True e aparece nova linha com data na coluna (não exclusão),
+            # essa data é a "data inferior" → sela os pendentes E vira a nova data_atual.
+
+            # data_atual, apos_excl, pendentes são compartilhados entre páginas
 
             for idx, linha in enumerate(linhas):
                 txt = linha['texto']
+
                 eh_excl = bool(re.search(TERMOS_EXCLUSAO, txt))
 
                 if linha['data_col']:
                     if eh_excl:
-                        # ── EXCLUSÃO COM DATA (ex: TRANSF SALDO 21/01/2022) ───────────
-                        # REGRA CRÍTICA: se havia pendentes aguardando data inferior,
-                        # esta data de exclusão É a data inferior deles — sela agora.
-                        # Depois marca apos_excl=True para os lançamentos que vierem
-                        # abaixo desta exclusão (eles precisarão de uma nova data inferior).
+                        # Exclusão com data (ex: 21/01/2022 TRANSF SALDO):
+                        # 1. Sela os pendentes do grupo ANTERIOR com esta data —
+                        #    ela é a "data inferior" para o bloco que veio antes.
+                        #    Ex: MORA/ENCARGOS após o 14/01 TRANSF devem receber
+                        #        21/01/2022 (data do próximo TRANSF), não 24/01/2022.
+                        # 2. Mantém apos_excl=True para os próximos lançamentos
+                        #    sem data (eles pertencem ao novo grupo e aguardam
+                        #    a próxima data inferior — não herdam 21/01/2022).
                         if pendentes:
-                            data_excl = linha['data_col']
                             for p in pendentes:
-                                p['DATA'] = data_excl
+                                p['DATA'] = linha['data_col']
                                 resultados.append(p)
                             pendentes = []
-                            # data_atual recebe a data da exclusão para que lançamentos
-                            # sem data que não sejam rubricas-alvo não fiquem órfãos.
-                            data_atual = data_excl
                         apos_excl = True
+                        # data_atual NÃO é alterada — permanece do lançamento anterior
                     else:
+                        # Lançamento normal com data na coluna
                         data_atual = linha['data_col']
                         apos_excl  = False
                         # Sela pendentes que aguardavam esta data inferior
@@ -907,6 +1185,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                                 resultados.append(p)
                             pendentes = []
 
+                # Pula cabeçalhos, linhas vazias, subtítulos com %, exclusões
                 if not txt or _eh_cabecalho(txt):
                     continue
                 if "%" in txt and not linha['data_col']:
@@ -918,27 +1197,23 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not rubrica:
                     continue
 
+                # Busca de valor (3 prioridades)
                 valor_final = linha['valor']
 
-                # ── PRIORIDADE 2: linha anterior ───────────────────────────────────
-                # Caso TIPO C — rubrica é sublinha de um lançamento maior
-                # (ex: CESTA aparece abaixo de TARIFA BANCARIA que contém o valor)
-                # Só usa se a linha anterior não foi já consumida por outro registro
-                if not valor_final and idx > 0 and (idx - 1) not in consumidas_como_fonte:
+                # Prioridade 2: linha anterior (TIPO C — CESTA sublinha de TARIFA)
+                if not valor_final and idx > 0:
                     ant      = linhas[idx - 1]
                     rub_ant  = _detectar_rubrica(ant['texto'], rubricas_alvo)
                     excl_ant = bool(re.search(TERMOS_EXCLUSAO, ant['texto']))
                     if ant['valor'] and not rub_ant and not excl_ant:
                         valor_final = ant['valor']
-                        consumidas_como_fonte.add(idx - 1)
 
-                # ── PRIORIDADE 3: próximas linhas ──────────────────────────────────
-                # Caso TIPO B — valor aparece em linha(s) abaixo da rubrica
-                # (ex: ENCARGOS LIMITE DE CRED com valor na linha seguinte)
+                # Prioridade 3: próximas linhas (TIPO B — ENCARGOS, PARCELA)
+                # ATENÇÃO: só usar a próxima linha como fonte de valor se ela NÃO é
+                # um lançamento completo (data_col + valor + rubrica), pois nesse caso
+                # o loop principal já a capturará no Caso A — usar aqui geraria duplicata.
                 if not valor_final:
                     for k in range(idx + 1, min(len(linhas), idx + 4)):
-                        if k in consumidas_como_fonte:
-                            continue
                         prox = linhas[k]
                         if re.search(TERMOS_EXCLUSAO, prox['texto']): break
                         if _detectar_rubrica(prox['texto'], rubricas_alvo): break
@@ -946,31 +1221,36 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         if prox['valor']:
                             # Bloqueia se a próxima linha tem data_col + valor:
                             # ela é um lançamento completo → será capturada pelo Caso A.
+                            # Usar ela aqui duplicaria o registro.
                             if prox['data_col']:
                                 break
                             valor_final = prox['valor']
-                            consumidas_como_fonte.add(k)
                             break
 
                 if not valor_final:
                     continue
 
-                historico = _limpar_historico(txt)
-
+                # Determinar data do registro:
+                # Se apos_excl=True (viemos de um bloco TRANSF+data): pendentes
+                # Se apos_excl=False e data_atual disponível: usa data_atual direto
                 if apos_excl:
+                    # Aguarda a data inferior (próxima linha normal com data na coluna)
                     pendentes.append({
                         'DATA':      None,
                         'CATEGORIA': rubrica,
                         'VALOR':     valor_final,
-                        'HISTÓRICO': historico,
+                        'HISTÓRICO': txt[:80],
                     })
                 elif data_atual:
                     resultados.append({
                         'DATA':      data_atual,
                         'CATEGORIA': rubrica,
                         'VALOR':     valor_final,
-                        'HISTÓRICO': historico,
+                        'HISTÓRICO': txt[:80],
                     })
+
+            # Pendentes ao fim de página: mantém para a próxima página
+            # (a data inferior pode estar na primeira linha da página seguinte)
 
     # Flush final: pendentes que sobraram após todas as páginas
     if pendentes:
@@ -980,14 +1260,13 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             resultados.append(p)
 
     # ── DEDUPLICAÇÃO FINAL ────────────────────────────────────────────────────
-    # Chave: DATA + CATEGORIA + VALOR
-    # O extrato Bradesco não emite dois lançamentos idênticos (mesmo dia,
-    # mesma rubrica, mesmo valor) distintos. Esta deduplicação remove qualquer
-    # duplicata residual que escapou do controle por consumidas_como_fonte.
+    # Remove registros com DATA + CATEGORIA + VALOR + HISTÓRICO idênticos.
+    # Preserva lançamentos legítimos com mesma categoria e valor em datas
+    # diferentes (ex: ANUIDADE cobrada todo mês) ou mesmo dia mas doctos distintos.
     vistos = set()
     unicos = []
     for r in resultados:
-        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'])
+        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:40])
         if chave not in vistos:
             vistos.add(chave)
             unicos.append(r)
@@ -1115,8 +1394,8 @@ def gerar_excel_calculos(df, rubrica_nome):
 # --- 5. DASHBOARD ---
 st.markdown("""
 <div class="em-header-wrap">
-    <div class="em-eyebrow">Assessoria Jurídica &amp; Financeira</div>
-    <h1 class="em-name">Edson <span>Medeiros</span></h1>
+    <div class="em-eyebrow">Sistema de Auditoria Bancária &nbsp;·&nbsp; Assessoria Jurídica</div>
+    <h1 class="em-name">Edson Medeiros</h1>
     <div class="em-subtitle">Consultorias &amp; Compliance</div>
     <div class="em-ornament">
         <div class="em-ornament-line rev"></div>
@@ -1128,14 +1407,17 @@ st.markdown("""
 
 # ── SIDEBAR: painel de rubricas ──────────────────────────────────────────────
 
+# Estado inicial: todas marcadas
 if 'sel_all' not in st.session_state:
     st.session_state.sel_all = True
 
+# Inicializa o estado individual de cada rubrica (na primeira execução)
 for r in RUBRICAS_MESTRE.keys():
     key = f"check_{r}"
     if key not in st.session_state:
         st.session_state[key] = True
 
+# Cabeçalho
 st.sidebar.markdown("""
 <div class="sb-header">
     <div class="sb-eyebrow">Painel de Controle</div>
@@ -1143,6 +1425,7 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Botões Marcar / Desmarcar — aplicam imediatamente o estado individual
 col_b1, col_b2 = st.sidebar.columns(2)
 
 if col_b1.button("✦ Marcar Todas", key="btn_marcar"):
@@ -1153,6 +1436,7 @@ if col_b2.button("✕ Desmarcar", key="btn_desmarcar"):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state[f"check_{r}"] = False
 
+# Lista de checkboxes — cada um com seu estado individual no session_state
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
     key = f"check_{r}"
@@ -1160,6 +1444,7 @@ for r in RUBRICAS_MESTRE.keys():
     if marcado:
         selecionadas.append(r)
 
+# Contador de selecionadas
 st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 total_r   = len(RUBRICAS_MESTRE)
 sel_count = len(selecionadas)
@@ -1177,6 +1462,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
+# Divisor de seção
 st.markdown("""
 <div class="em-divider">
     <div class="em-divider-line"></div>
@@ -1207,17 +1493,34 @@ if upload:
             df = df.sort_values('DT_O', ascending=True)
 
             total_geral = df['V_NUM'].sum()
-            c1, c2 = st.columns(2)
+            total_dobro = total_geral * 2
+            cats_unicas = df['CATEGORIA'].nunique()
+            c1, c2, c3 = st.columns(3)
             with c1:
                 st.markdown(
-                    f'<div class="metric-card"><h4>TOTAL RECUPERÁVEL</h4>'
-                    f'<h2 style="color:#BFAF83;">R$ {total_geral:,.2f}</h2></div>',
+                    f'''<div class="metric-card">
+                        <h4>Total Recuperável</h4>
+                        <h2>R$ {total_geral:,.2f}</h2>
+                        <div class="metric-card-sub">Valor identificado</div>
+                    </div>''',
                     unsafe_allow_html=True
                 )
             with c2:
                 st.markdown(
-                    f'<div class="metric-card"><h4>LANÇAMENTOS</h4>'
-                    f'<h2 style="color:#BFAF83;">{len(df)}</h2></div>',
+                    f'''<div class="metric-card">
+                        <h4>Lançamentos</h4>
+                        <h2>{len(df)}</h2>
+                        <div class="metric-card-sub">Débitos indevidos</div>
+                    </div>''',
+                    unsafe_allow_html=True
+                )
+            with c3:
+                st.markdown(
+                    f'''<div class="metric-card">
+                        <h4>Rubricas</h4>
+                        <h2>{cats_unicas}</h2>
+                        <div class="metric-card-sub">Categorias encontradas</div>
+                    </div>''',
                     unsafe_allow_html=True
                 )
 
@@ -1231,15 +1534,19 @@ if upload:
 """, unsafe_allow_html=True)
 
             cats = df['CATEGORIA'].unique()
-            for cat in cats:
+            cols_dl = st.columns(2)
+            for idx_cat, cat in enumerate(cats):
                 df_cat     = df[df['CATEGORIA'] == cat]
                 excel_file = gerar_excel_calculos(df_cat, cat)
-                st.download_button(
-                    label=f"📊 Baixar Tabela: {cat}",
-                    data=excel_file,
-                    file_name=f"Tabela_Calculos_{cat.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+                total_cat  = df_cat['V_NUM'].sum()
+                with cols_dl[idx_cat % 2]:
+                    st.download_button(
+                        label=f"◆  {cat}  ·  R$ {total_cat:,.2f}",
+                        data=excel_file,
+                        file_name=f"Tabela_{cat.replace(' ', '_')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key=f"dl_{cat}"
+                    )
 
             st.markdown("""
 <div class="em-divider" style="margin-top:36px;">
