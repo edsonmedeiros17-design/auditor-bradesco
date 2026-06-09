@@ -16,591 +16,684 @@ st.set_page_config(page_title="Edson Medeiros | Consultoria e Compliance", layou
 
 st.markdown("""
 <style>
-    /* ── IMPORTS ──────────────────────────────────────────────────────────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
 
-    /* ── VARIÁVEIS ────────────────────────────────────────────────────────────── */
-    :root {
-        --p:  #060A0D;
-        --p2: #0D1117;
-        --p3: #141B22;
-        --g:  #C5A566;
-        --g2: #D4B87A;
-        --c:  #E8DCC8;
-        --cm: rgba(232,220,200,0.55);
-        --cl: rgba(232,220,200,0.22);
-        --gl: rgba(197,165,102,0.18);
-        --serif: 'Cormorant Garamond', Georgia, serif;
-        --sans:  'Inter', system-ui, sans-serif;
-    }
+/* ═══ VARIÁVEIS ════════════════════════════════════════════════════════════ */
+:root {
+    --p:     #050810;
+    --p2:    #0A0F18;
+    --p3:    #111823;
+    --p4:    #19222F;
+    --g:     #C5A566;
+    --g2:    #D4B87A;
+    --g3:    #A8883E;
+    --c:     #EDE5D4;
+    --cm:    rgba(237,229,212,0.55);
+    --cl:    rgba(237,229,212,0.20);
+    --gl:    rgba(197,165,102,0.15);
+    --gm:    rgba(197,165,102,0.08);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans:  'Inter', system-ui, sans-serif;
+    --r-sm:  10px;
+    --r-md:  16px;
+    --r-lg:  24px;
+    --r-xl:  32px;
+}
 
-    /* ── BASE ─────────────────────────────────────────────────────────────────── */
-    html, body, [class*="css"] {
-        font-family: var(--sans);
-        -webkit-font-smoothing: antialiased;
-    }
-    .stApp {
-        background: var(--p);
-        color: var(--c);
-        /* Grade de pontos animada */
-        background-image: radial-gradient(circle, rgba(197,165,102,0.05) 1px, transparent 1px);
-        background-size: 32px 32px;
-    }
+/* ═══ RESET BASE ══════════════════════════════════════════════════════════ */
+html, body, [class*="css"] {
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
 
-    /* ── ANIMAÇÕES GLOBAIS ────────────────────────────────────────────────────── */
-    @keyframes fadeSlideUp {
-        from { opacity: 0; transform: translateY(28px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes shimmer {
-        0%   { background-position: -400px 0; }
-        100% { background-position: 400px 0; }
-    }
-    @keyframes borderGlow {
-        0%, 100% { opacity: 0.3; }
-        50%       { opacity: 1; }
-    }
-    @keyframes dashDraw {
-        from { stroke-dashoffset: 800; }
-        to   { stroke-dashoffset: 0; }
-    }
-    @keyframes scaleIn {
-        from { opacity: 0; transform: scale(0.96); }
-        to   { opacity: 1; transform: scale(1); }
-    }
-    @keyframes pulseGold {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(197,165,102,0); }
-        50%       { box-shadow: 0 0 20px 4px rgba(197,165,102,0.12); }
-    }
+/* ═══ FUNDO EM CAMADAS ════════════════════════════════════════════════════ */
+.stApp {
+    background: var(--p);
+    color: var(--c);
+    /* Camada 1: grade de pontos */
+    background-image:
+        radial-gradient(circle, rgba(197,165,102,0.055) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+/* Camada 2: luz dourada central — injetada via pseudo-elemento no body */
+body::before {
+    content: '';
+    position: fixed;
+    top: -30vh; left: 50%;
+    transform: translateX(-50%);
+    width: 80vw; height: 80vh;
+    background: radial-gradient(ellipse,
+        rgba(197,165,102,0.055) 0%,
+        transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+}
 
-    /* ── BLOCK CONTAINER ──────────────────────────────────────────────────────── */
-    .block-container {
-        max-width: 1080px !important;
-        padding: 0 48px 80px !important;
-        animation: fadeSlideUp 0.6s ease both;
-    }
+/* ═══ ANIMAÇÕES ═══════════════════════════════════════════════════════════ */
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(32px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity:0; }
+    to   { opacity:1; }
+}
+@keyframes shimmerText {
+    0%   { background-position: -500px 0; }
+    100% { background-position: 500px 0; }
+}
+@keyframes pulseRing {
+    0%,100% { opacity:0.25; transform:scale(1); }
+    50%      { opacity:0.7;  transform:scale(1.05); }
+}
+@keyframes glow {
+    0%,100% { opacity:0.3; }
+    50%      { opacity:0.85; }
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+@keyframes barFill {
+    from { width: 0; }
+    to   { width: var(--bar-w, 60%); }
+}
+@keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+}
+@keyframes revealLine {
+    from { scaleX: 0; }
+    to   { scaleX: 1; }
+}
 
-    /* ── HEADER / LOGOMARCA ───────────────────────────────────────────────────── */
-    .em-header-wrap {
-        text-align: center;
-        padding: 64px 0 48px;
-        position: relative;
-        animation: fadeSlideUp 0.7s ease both;
-    }
-    .em-header-wrap::before, .em-header-wrap::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        width: calc(50% - 240px);
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.35));
-        animation: borderGlow 3s ease-in-out infinite;
-    }
-    .em-header-wrap::before { left: 0; transform: translateY(-50%) scaleX(-1); }
-    .em-header-wrap::after  { right: 0; transform: translateY(-50%); }
+/* ═══ CONTAINER ═══════════════════════════════════════════════════════════ */
+.block-container {
+    max-width: 1100px !important;
+    padding: 0 40px 100px !important;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.7s cubic-bezier(.22,1,.36,1) both;
+}
 
-    .em-eyebrow {
-        font-family: var(--sans);
-        font-size: 0.55rem;
-        font-weight: 600;
-        letter-spacing: 5.5px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.45);
-        margin-bottom: 10px;
-    }
-    .em-name {
-        font-family: var(--serif);
-        font-size: clamp(2.8rem, 5vw, 4.2rem);
-        font-weight: 600;
-        line-height: 1.0;
-        color: var(--c);
-        letter-spacing: 0.5px;
-        margin: 0;
-        /* Shimmer effect no hover */
-        background: linear-gradient(
-            110deg,
-            var(--c) 20%,
-            var(--g) 40%,
-            var(--c) 60%
-        );
-        background-size: 600px 100%;
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shimmer 4s linear infinite;
-    }
-    .em-subtitle {
-        font-family: var(--serif);
-        font-size: 0.92rem;
-        font-weight: 400;
-        font-style: italic;
-        color: rgba(197,165,102,0.55);
-        letter-spacing: 3px;
-        margin-top: 8px;
-        text-transform: uppercase;
-    }
-    .em-ornament {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
-        margin-top: 24px;
-    }
-    .em-ornament-line {
-        width: 90px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
-        animation: borderGlow 3s ease-in-out infinite;
-    }
-    .em-ornament-line.rev {
-        background: linear-gradient(90deg, rgba(197,165,102,0.5), transparent);
-    }
-    .em-ornament-diamond {
-        color: rgba(197,165,102,0.7);
-        font-size: 0.6rem;
-    }
+/* ═══ HEADER ═══════════════════════════════════════════════════════════════ */
+.em-header-wrap {
+    text-align: center;
+    padding: 72px 0 52px;
+    position: relative;
+    animation: fadeUp 0.8s cubic-bezier(.22,1,.36,1) both;
+}
+/* Linhas laterais com animação */
+.em-header-wrap::before, .em-header-wrap::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 260px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.4));
+    animation: glow 3.5s ease-in-out infinite;
+}
+.em-header-wrap::before { left: 0; transform: translateY(-50%) scaleX(-1); }
+.em-header-wrap::after  { right: 0; transform: translateY(-50%); }
 
-    /* ── DIVISORES DE SEÇÃO ───────────────────────────────────────────────────── */
-    .em-divider {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin: 40px 0 28px;
-    }
-    .em-divider-line {
-        flex: 1;
-        height: 1px;
-        background: rgba(197,165,102,0.15);
-    }
-    .em-divider-label {
-        font-family: var(--sans);
-        font-size: 0.55rem;
-        font-weight: 600;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.45);
-        white-space: nowrap;
-    }
-    .em-section-note {
-        font-family: var(--sans);
-        font-size: 0.76rem;
-        color: rgba(232,220,200,0.35);
-        text-align: center;
-        letter-spacing: 0.3px;
-        margin-top: 4px;
-        margin-bottom: 24px;
-    }
+/* Monograma — círculo dourado acima do nome */
+.em-monogram {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 1px solid rgba(197,165,102,0.35);
+    margin-bottom: 16px;
+    position: relative;
+    animation: floatY 4s ease-in-out infinite;
+}
+.em-monogram::before {
+    content: '';
+    position: absolute; inset: -5px;
+    border-radius: 50%;
+    border: 1px solid rgba(197,165,102,0.12);
+    animation: pulseRing 3s ease-in-out infinite;
+}
+.em-monogram-text {
+    font-family: var(--serif);
+    font-size: 1.1rem; font-weight: 600;
+    color: var(--g); letter-spacing: 3px;
+}
 
-    /* ── UPLOAD ZONE ──────────────────────────────────────────────────────────── */
-    [data-testid="stFileUploader"] {
-        border: 1px solid rgba(197,165,102,0.2) !important;
-        border-radius: 0 !important;
-        background: rgba(197,165,102,0.02) !important;
-        transition: all 0.3s ease;
-        animation: scaleIn 0.5s ease both;
-    }
-    [data-testid="stFileUploader"]:hover {
-        border-color: rgba(197,165,102,0.5) !important;
-        background: rgba(197,165,102,0.05) !important;
-        box-shadow: 0 0 40px rgba(197,165,102,0.06) !important;
-    }
-    [data-testid="stFileUploadDropzone"] {
-        background: transparent !important;
-        border: 1px dashed rgba(197,165,102,0.28) !important;
-        border-radius: 0 !important;
-        padding: 36px !important;
-        transition: all 0.3s ease;
-    }
-    [data-testid="stFileUploader"]:hover [data-testid="stFileUploadDropzone"] {
-        border-color: rgba(197,165,102,0.55) !important;
-    }
-    [data-testid="stFileUploaderDropzoneInstructions"] span,
-    [data-testid="stFileUploaderDropzoneInstructions"] small {
-        color: rgba(197,165,102,0.6) !important;
-        font-family: var(--sans) !important;
-        font-size: 0.8rem !important;
-        letter-spacing: 0.5px;
-    }
-    [data-testid="stFileUploadDropzone"] button {
-        background: transparent !important;
-        border: 1px solid rgba(197,165,102,0.4) !important;
-        color: var(--g) !important;
-        border-radius: 0 !important;
-        font-family: var(--sans) !important;
-        font-size: 0.68rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 2px !important;
-        text-transform: uppercase !important;
-        padding: 8px 22px !important;
-        transition: all 0.25s ease;
-    }
-    [data-testid="stFileUploadDropzone"] button:hover {
-        background: rgba(197,165,102,0.1) !important;
-        border-color: var(--g) !important;
-    }
+.em-eyebrow {
+    font-family: var(--sans);
+    font-size: 0.52rem; font-weight: 600;
+    letter-spacing: 5px; text-transform: uppercase;
+    color: rgba(197,165,102,0.42);
+    margin-bottom: 12px;
+}
+.em-name {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 5.5vw, 4.8rem);
+    font-weight: 600; line-height: 1.0;
+    letter-spacing: 1px; margin: 0;
+    background: linear-gradient(110deg,
+        #EDE5D4 15%, #C5A566 40%, #D4B87A 55%, #EDE5D4 75%);
+    background-size: 600px 100%;
+    background-clip: text; -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmerText 5s linear infinite;
+}
+.em-subtitle {
+    font-family: var(--serif);
+    font-size: 0.9rem; font-style: italic;
+    color: rgba(197,165,102,0.5);
+    letter-spacing: 3.5px; margin-top: 10px;
+    text-transform: uppercase;
+}
+.em-badge-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px; margin-top: 22px;
+}
+.em-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid rgba(197,165,102,0.18);
+    border-radius: 100px;
+    font-size: 0.58rem; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(197,165,102,0.5);
+}
+.em-badge-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--g); opacity: 0.6;
+    animation: glow 2s ease-in-out infinite;
+}
+.em-ornament {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; margin-top: 24px;
+}
+.em-ornament-line {
+    width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.45));
+    animation: glow 3s ease-in-out infinite;
+}
+.em-ornament-line.rev {
+    background: linear-gradient(90deg, rgba(197,165,102,0.45), transparent);
+}
+.em-ornament-diamond { color: rgba(197,165,102,0.65); font-size: 0.55rem; }
 
-    /* ── METRIC CARDS ─────────────────────────────────────────────────────────── */
-    .metric-card {
-        background: var(--p2);
-        border: 1px solid rgba(197,165,102,0.12);
-        border-top: 2px solid rgba(197,165,102,0.5);
-        border-radius: 0;
-        padding: 36px 28px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.35s ease;
-        animation: scaleIn 0.5s ease both;
-    }
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%; right: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--g), transparent);
-        transition: all 0.6s ease;
-    }
-    .metric-card:hover {
-        background: var(--p3);
-        border-top-color: var(--g);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(197,165,102,0.08);
-    }
-    .metric-card:hover::before {
-        left: 0;
-        right: 0;
-    }
-    .metric-card h4 {
-        font-family: var(--sans);
-        font-size: 0.58rem;
-        font-weight: 600;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.5);
-        margin: 0 0 16px 0;
-    }
-    .metric-card h2 {
-        font-family: var(--serif);
-        font-size: 2.8rem;
-        font-weight: 600;
-        color: var(--g);
-        margin: 0;
-        line-height: 1;
-        background: linear-gradient(135deg, var(--g), var(--g2));
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .metric-card-sub {
-        font-size: 0.68rem;
-        color: rgba(197,165,102,0.35);
-        letter-spacing: 1px;
-        margin-top: 8px;
-    }
+/* ═══ DIVISORES ═══════════════════════════════════════════════════════════ */
+.em-divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 44px 0 30px;
+}
+.em-divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg,
+        rgba(197,165,102,0.05), rgba(197,165,102,0.2), rgba(197,165,102,0.05));
+}
+.em-divider-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 16px;
+    border: 1px solid rgba(197,165,102,0.18);
+    border-radius: 100px;
+    background: rgba(197,165,102,0.04);
+}
+.em-divider-label {
+    font-size: 0.52rem; font-weight: 600;
+    letter-spacing: 3.5px; text-transform: uppercase;
+    color: rgba(197,165,102,0.45); white-space: nowrap;
+}
+.em-divider-num {
+    font-family: var(--serif);
+    font-size: 0.75rem; color: rgba(197,165,102,0.35);
+}
+.em-section-note {
+    font-size: 0.78rem; color: rgba(237,229,212,0.3);
+    text-align: center; letter-spacing: 0.3px;
+    margin: 4px 0 28px; line-height: 1.6;
+}
 
-    /* ── DOWNLOAD BUTTONS ─────────────────────────────────────────────────────── */
-    [data-testid="stDownloadButton"] > button {
-        background: var(--p2) !important;
-        border: 1px solid rgba(197,165,102,0.2) !important;
-        border-left: 3px solid rgba(197,165,102,0.4) !important;
-        color: rgba(197,165,102,0.75) !important;
-        border-radius: 0 !important;
-        font-family: var(--sans) !important;
-        font-size: 0.7rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 1.5px !important;
-        text-transform: uppercase !important;
-        padding: 12px 20px !important;
-        transition: all 0.25s ease !important;
-        width: 100% !important;
-        text-align: left !important;
-        position: relative !important;
-        overflow: hidden !important;
-    }
-    [data-testid="stDownloadButton"] > button::after {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: rgba(197,165,102,0.05);
-        transition: left 0.3s ease;
-    }
-    [data-testid="stDownloadButton"] > button:hover {
-        background: var(--p3) !important;
-        border-color: rgba(197,165,102,0.5) !important;
-        border-left-color: var(--g) !important;
-        color: var(--g) !important;
-        transform: translateX(4px) !important;
-        box-shadow: 0 4px 20px rgba(197,165,102,0.08) !important;
-    }
-    [data-testid="stDownloadButton"] > button:hover::after {
-        left: 0;
-    }
+/* ═══ UPLOAD ZONE ══════════════════════════════════════════════════════════ */
+.upload-wrap {
+    border-radius: var(--r-lg);
+    border: 1px solid rgba(197,165,102,0.18);
+    background: linear-gradient(145deg,
+        rgba(197,165,102,0.04) 0%,
+        rgba(10,15,24,0.8) 100%);
+    padding: 4px;
+    transition: all 0.4s cubic-bezier(.22,1,.36,1);
+    animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both;
+}
+.upload-wrap:hover {
+    border-color: rgba(197,165,102,0.45);
+    box-shadow: 0 0 60px rgba(197,165,102,0.07),
+                inset 0 1px 0 rgba(197,165,102,0.08);
+}
+[data-testid="stFileUploader"] {
+    border-radius: var(--r-md) !important;
+    border: none !important;
+    background: transparent !important;
+}
+[data-testid="stFileUploadDropzone"] {
+    background: transparent !important;
+    border: 1px dashed rgba(197,165,102,0.25) !important;
+    border-radius: var(--r-md) !important;
+    padding: 44px !important;
+    transition: all 0.3s ease;
+}
+[data-testid="stFileUploader"]:hover [data-testid="stFileUploadDropzone"] {
+    border-color: rgba(197,165,102,0.5) !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+    color: rgba(197,165,102,0.55) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.82rem !important; letter-spacing: 0.5px;
+}
+[data-testid="stFileUploadDropzone"] button {
+    background: rgba(197,165,102,0.07) !important;
+    border: 1px solid rgba(197,165,102,0.35) !important;
+    color: var(--g) !important;
+    border-radius: var(--r-sm) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.66rem !important; font-weight: 600 !important;
+    letter-spacing: 2px !important; text-transform: uppercase !important;
+    padding: 9px 24px !important;
+    transition: all 0.25s ease;
+}
+[data-testid="stFileUploadDropzone"] button:hover {
+    background: rgba(197,165,102,0.14) !important;
+    border-color: var(--g) !important;
+    transform: translateY(-1px) !important;
+}
 
-    /* ── DATAFRAME ────────────────────────────────────────────────────────────── */
-    [data-testid="stDataFrame"] {
-        border: 1px solid rgba(197,165,102,0.15) !important;
-        border-radius: 0 !important;
-        animation: fadeSlideUp 0.4s ease both;
-    }
-    [data-testid="stDataFrame"] th {
-        background: var(--p2) !important;
-        color: rgba(197,165,102,0.7) !important;
-        font-family: var(--sans) !important;
-        font-size: 0.62rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 3px !important;
-        text-transform: uppercase !important;
-        border-bottom: 1px solid rgba(197,165,102,0.2) !important;
-        padding: 12px 16px !important;
-    }
-    [data-testid="stDataFrame"] td {
-        font-family: var(--sans) !important;
-        font-size: 0.8rem !important;
-        color: rgba(232,220,200,0.75) !important;
-        border-color: rgba(197,165,102,0.07) !important;
-        padding: 10px 16px !important;
-        transition: background 0.15s ease;
-    }
-    [data-testid="stDataFrame"] tr:hover td {
-        background: rgba(197,165,102,0.04) !important;
-    }
+/* Tutorial de upload */
+.upload-tutorial {
+    display: flex; gap: 24px; justify-content: center;
+    flex-wrap: wrap;
+    padding: 20px 0 4px;
+}
+.upload-step {
+    display: flex; align-items: center; gap: 8px;
+}
+.upload-step-n {
+    width: 22px; height: 22px;
+    border-radius: 50%; border: 1px solid rgba(197,165,102,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 600; color: rgba(197,165,102,0.55);
+    flex-shrink: 0;
+}
+.upload-step-t {
+    font-size: 0.7rem; color: rgba(237,229,212,0.35); letter-spacing: 0.3px;
+}
+.upload-step-arrow {
+    font-size: 0.6rem; color: rgba(197,165,102,0.2);
+    margin: 0 -12px; align-self: center;
+}
 
-    /* ── INFO / ALERT ─────────────────────────────────────────────────────────── */
-    [data-testid="stAlert"] {
-        background: rgba(197,165,102,0.05) !important;
-        border: 1px solid rgba(197,165,102,0.2) !important;
-        border-radius: 0 !important;
-        color: rgba(197,165,102,0.7) !important;
-        font-size: 0.82rem !important;
-    }
-    [data-testid="stAlert"] svg { color: var(--g) !important; }
+/* ═══ METRIC CARDS ═════════════════════════════════════════════════════════ */
+.metric-card {
+    background: linear-gradient(145deg, var(--p3) 0%, var(--p2) 100%);
+    border: 1px solid rgba(197,165,102,0.12);
+    border-top: none;
+    border-radius: var(--r-md);
+    padding: 28px 24px 24px;
+    text-align: left;
+    position: relative; overflow: hidden;
+    transition: all 0.35s cubic-bezier(.22,1,.36,1);
+    animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both;
+}
+/* Linha superior colorida */
+.metric-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--g), transparent);
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+/* Reflexo de luz interno */
+.metric-card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 50%;
+    background: linear-gradient(180deg,
+        rgba(197,165,102,0.04) 0%, transparent 100%);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    pointer-events: none;
+}
+.metric-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    border-color: rgba(197,165,102,0.28);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4),
+                0 0 30px rgba(197,165,102,0.07);
+}
+.metric-card:hover::before { opacity: 1; }
 
-    /* ── SPINNER ──────────────────────────────────────────────────────────────── */
-    [data-testid="stSpinner"] > div {
-        border-top-color: var(--g) !important;
-    }
-    [data-testid="stSpinner"] p {
-        color: rgba(197,165,102,0.6) !important;
-        font-family: var(--sans) !important;
-        font-size: 0.75rem !important;
-        letter-spacing: 1.5px !important;
-        text-transform: uppercase !important;
-    }
+.metric-icon {
+    width: 36px; height: 36px;
+    border-radius: var(--r-sm);
+    border: 1px solid rgba(197,165,102,0.2);
+    background: rgba(197,165,102,0.07);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    transition: all 0.3s ease;
+}
+.metric-card:hover .metric-icon {
+    background: rgba(197,165,102,0.13);
+    border-color: rgba(197,165,102,0.4);
+}
+.metric-icon svg {
+    width: 18px; height: 18px;
+    stroke: var(--g); fill: none; stroke-width: 1.5;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.metric-card h4 {
+    font-family: var(--sans);
+    font-size: 0.6rem; font-weight: 600;
+    letter-spacing: 3.5px; text-transform: uppercase;
+    color: rgba(197,165,102,0.45); margin: 0 0 8px 0;
+}
+.metric-card h2 {
+    font-family: var(--serif);
+    font-size: 2.6rem; font-weight: 600;
+    line-height: 1; margin: 0;
+    background: linear-gradient(135deg, var(--g2) 0%, var(--g) 100%);
+    background-clip: text; -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.metric-card-sub {
+    font-size: 0.68rem; color: rgba(197,165,102,0.3);
+    letter-spacing: 0.8px; margin-top: 6px;
+    font-style: italic;
+}
 
-    /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
-    [data-testid="stSidebar"] {
-        background: #050810;
-        border-right: 1px solid rgba(197,165,102,0.12);
-    }
-    [data-testid="stSidebar"] > div:first-child { padding-top: 0; }
+/* ═══ DOWNLOAD SECTION ═════════════════════════════════════════════════════ */
+.dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    .sb-header {
-        padding: 28px 16px 18px;
-        border-bottom: 1px solid rgba(197,165,102,0.1);
-        position: relative;
-    }
-    .sb-header::after {
-        content: '';
-        position: absolute;
-        bottom: -1px; left: 0;
-        width: 60px; height: 1px;
-        background: var(--g);
-        animation: borderGlow 2.5s ease-in-out infinite;
-    }
-    .sb-eyebrow {
-        font-family: var(--sans);
-        font-size: 0.5rem;
-        font-weight: 600;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.38);
-        margin-bottom: 4px;
-    }
-    .sb-title {
-        font-family: var(--serif);
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--c);
-        letter-spacing: 0.5px;
-        margin: 0;
-        line-height: 1.2;
-    }
-    .sb-title span { color: var(--g); }
+[data-testid="stDownloadButton"] > button {
+    background: var(--p3) !important;
+    border: 1px solid rgba(197,165,102,0.14) !important;
+    color: rgba(197,165,102,0.8) !important;
+    border-radius: var(--r-md) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.68rem !important; font-weight: 500 !important;
+    letter-spacing: 1.2px !important; text-transform: uppercase !important;
+    padding: 14px 18px !important;
+    transition: all 0.3s cubic-bezier(.22,1,.36,1) !important;
+    width: 100% !important; text-align: left !important;
+    position: relative !important; overflow: hidden !important;
+}
+/* Linha lateral de acento */
+[data-testid="stDownloadButton"] > button::before {
+    content: '';
+    position: absolute; top: 12%; left: 0;
+    width: 3px; height: 76%;
+    background: linear-gradient(180deg, transparent, var(--g), transparent);
+    border-radius: 0 2px 2px 0; opacity: 0.4;
+    transition: opacity 0.25s ease;
+}
+/* Reflexo de entrada */
+[data-testid="stDownloadButton"] > button::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.06), transparent);
+    transition: left 0.45s ease;
+    transform: skewX(-15deg);
+}
+[data-testid="stDownloadButton"] > button:hover {
+    background: var(--p4) !important;
+    border-color: rgba(197,165,102,0.35) !important;
+    color: var(--g) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35), 0 0 16px rgba(197,165,102,0.06) !important;
+}
+[data-testid="stDownloadButton"] > button:hover::before { opacity: 1; }
+[data-testid="stDownloadButton"] > button:hover::after  { left: 100%; }
 
-    /* Botões do sidebar */
-    [data-testid="stSidebar"] .stButton > button {
-        border-radius: 0 !important;
-        font-family: var(--sans) !important;
-        font-size: 0.58rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 2px !important;
-        text-transform: uppercase !important;
-        padding: 7px 0 !important;
-        width: 100% !important;
-        transition: all 0.2s ease !important;
-        border: none !important;
-    }
-    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
-        background: rgba(197,165,102,0.1) !important;
-        color: var(--g) !important;
-        border-right: 1px solid rgba(197,165,102,0.15) !important;
-    }
-    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
-        background: rgba(197,165,102,0.18) !important;
-    }
-    [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
-        background: transparent !important;
-        color: rgba(232,220,200,0.25) !important;
-    }
-    [data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
-        color: rgba(232,220,200,0.55) !important;
-        background: rgba(255,255,255,0.03) !important;
-    }
+/* ═══ DATAFRAME ════════════════════════════════════════════════════════════ */
+[data-testid="stDataFrame"] {
+    border: 1px solid rgba(197,165,102,0.12) !important;
+    border-radius: var(--r-md) !important;
+    overflow: hidden !important;
+    animation: fadeUp 0.4s ease both;
+}
+[data-testid="stDataFrame"] th {
+    background: var(--p3) !important;
+    color: rgba(197,165,102,0.65) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.6rem !important; font-weight: 600 !important;
+    letter-spacing: 3px !important; text-transform: uppercase !important;
+    border-bottom: 1px solid rgba(197,165,102,0.15) !important;
+    padding: 14px 16px !important;
+}
+[data-testid="stDataFrame"] td {
+    font-family: var(--sans) !important;
+    font-size: 0.8rem !important;
+    color: rgba(237,229,212,0.7) !important;
+    border-color: rgba(197,165,102,0.06) !important;
+    padding: 11px 16px !important;
+}
+[data-testid="stDataFrame"] tr:hover td {
+    background: rgba(197,165,102,0.04) !important;
+}
 
-    /* Checkboxes */
-    [data-testid="stSidebar"] .stCheckbox { margin: 0 !important; padding: 0 !important; }
-    [data-testid="stSidebar"] .stCheckbox > label > div:first-child { display: none !important; }
-    [data-testid="stSidebar"] .stCheckbox > label {
-        display: flex !important;
-        align-items: center !important;
-        width: 100% !important;
-        padding: 9px 16px !important;
-        margin: 0 !important;
-        cursor: pointer !important;
-        border-left: 2px solid transparent !important;
-        transition: all 0.18s ease !important;
-        background: transparent !important;
-    }
-    [data-testid="stSidebar"] .stCheckbox > label:hover {
-        background: rgba(197,165,102,0.04) !important;
-        border-left-color: rgba(197,165,102,0.25) !important;
-    }
-    [data-testid="stSidebar"] .stCheckbox > label > div:last-child,
-    [data-testid="stSidebar"] .stCheckbox > label > span {
-        font-family: var(--sans) !important;
-        font-size: 0.71rem !important;
-        font-weight: 400 !important;
-        color: rgba(232,220,200,0.32) !important;
-        letter-spacing: 0.9px !important;
-        text-transform: uppercase !important;
-        line-height: 1 !important;
-    }
-    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label {
-        border-left-color: var(--g) !important;
-        background: rgba(197,165,102,0.06) !important;
-    }
-    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > div:last-child,
-    [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > span {
-        color: var(--g) !important;
-        font-weight: 500 !important;
-    }
+/* ═══ ALERT / INFO ═════════════════════════════════════════════════════════ */
+[data-testid="stAlert"] {
+    background: rgba(197,165,102,0.05) !important;
+    border: 1px solid rgba(197,165,102,0.18) !important;
+    border-radius: var(--r-md) !important;
+    color: rgba(197,165,102,0.7) !important;
+    font-size: 0.82rem !important;
+}
 
-    .sidebar-divider {
-        border: none;
-        border-top: 1px solid rgba(197,165,102,0.08);
-        margin: 6px 0 0;
-    }
-    .rubrica-count {
-        padding: 8px 16px 16px;
-        font-size: 0.56rem;
-        font-family: var(--sans);
-        letter-spacing: 2px;
-        text-transform: uppercase;
-    }
+/* ═══ SPINNER ══════════════════════════════════════════════════════════════ */
+[data-testid="stSpinner"] > div {
+    border-color: rgba(197,165,102,0.15) !important;
+    border-top-color: var(--g) !important;
+    border-radius: 50%;
+}
+[data-testid="stSpinner"] p {
+    color: rgba(197,165,102,0.5) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.72rem !important; letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+}
 
-    /* ── FOOTER ───────────────────────────────────────────────────────────────── */
-    .em-footer {
-        margin-top: 80px;
-        padding: 40px 0 20px;
-        border-top: 1px solid rgba(197,165,102,0.12);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
-        position: relative;
-    }
-    .em-footer::before {
-        content: '';
-        position: absolute;
-        top: -1px; left: 50%; transform: translateX(-50%);
-        width: 120px; height: 1px;
-        background: var(--g);
-        animation: borderGlow 3s ease-in-out infinite;
-    }
-    .em-footer-name {
-        font-family: var(--serif);
-        font-size: 1.4rem;
-        font-weight: 600;
-        font-style: italic;
-        color: var(--g);
-        letter-spacing: 1.5px;
-    }
-    .em-footer-contacts {
-        display: flex;
-        gap: 28px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .em-footer-contact {
-        font-family: var(--sans);
-        font-size: 0.7rem;
-        color: rgba(197,165,102,0.45);
-        letter-spacing: 1px;
-    }
-    .em-footer-contact a {
-        color: rgba(197,165,102,0.45);
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .em-footer-contact a:hover { color: var(--g); }
-    .em-whatsapp-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: transparent;
-        border: 1px solid rgba(197,165,102,0.35);
-        color: rgba(197,165,102,0.7);
-        font-family: var(--sans);
-        font-size: 0.65rem;
-        font-weight: 600;
-        letter-spacing: 2.5px;
-        text-transform: uppercase;
-        padding: 10px 28px;
-        text-decoration: none;
-        transition: all 0.25s ease;
-        cursor: pointer;
-        margin-top: 4px;
-        position: relative;
-        overflow: hidden;
-    }
-    .em-whatsapp-btn::before {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: rgba(197,165,102,0.07);
-        transition: left 0.3s ease;
-    }
-    .em-whatsapp-btn:hover {
-        border-color: var(--g);
-        color: var(--g);
-        text-decoration: none;
-    }
-    .em-whatsapp-btn:hover::before { left: 0; }
+/* ═══ SIDEBAR ══════════════════════════════════════════════════════════════ */
+[data-testid="stSidebar"] {
+    background: #04060C;
+    border-right: 1px solid rgba(197,165,102,0.1);
+}
+[data-testid="stSidebar"] > div:first-child { padding-top: 0; }
 
-    /* ── SCROLLBAR ────────────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
-    ::-webkit-scrollbar-track { background: var(--p); }
-    ::-webkit-scrollbar-thumb { background: rgba(197,165,102,0.25); border-radius: 0; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(197,165,102,0.5); }
+.sb-header {
+    padding: 28px 18px 18px;
+    border-bottom: 1px solid rgba(197,165,102,0.08);
+    position: relative;
+    background: linear-gradient(180deg,
+        rgba(197,165,102,0.04) 0%, transparent 100%);
+}
+.sb-header::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0;
+    width: 50px; height: 1px;
+    background: var(--g);
+    animation: glow 2.5s ease-in-out infinite;
+}
+.sb-eyebrow {
+    font-size: 0.48rem; font-weight: 600;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(197,165,102,0.32); margin-bottom: 4px;
+}
+.sb-title {
+    font-family: var(--serif);
+    font-size: 1.15rem; font-weight: 600;
+    color: var(--c); letter-spacing: 0.5px; margin: 0;
+}
+.sb-title span { color: var(--g); }
 
-    /* ── HEADER NATIVO ────────────────────────────────────────────────────────── */
-    header[data-testid="stHeader"] {
-        background: rgba(6,10,13,0.95) !important;
-        border-bottom: 1px solid rgba(197,165,102,0.08) !important;
-        backdrop-filter: blur(12px) !important;
-    }
+/* Tutorial na sidebar */
+.sb-tutorial {
+    margin: 12px 14px;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    background: rgba(197,165,102,0.04);
+    border: 1px solid rgba(197,165,102,0.1);
+}
+.sb-tutorial-title {
+    font-size: 0.55rem; font-weight: 600;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: rgba(197,165,102,0.4); margin-bottom: 7px;
+}
+.sb-tutorial-text {
+    font-size: 0.72rem; color: rgba(237,229,212,0.28);
+    line-height: 1.6; letter-spacing: 0.2px;
+}
+
+/* Botões marcar/desmarcar */
+[data-testid="stSidebar"] .stButton > button {
+    border-radius: var(--r-sm) !important;
+    font-family: var(--sans) !important;
+    font-size: 0.57rem !important; font-weight: 600 !important;
+    letter-spacing: 1.8px !important; text-transform: uppercase !important;
+    padding: 7px 0 !important; width: 100% !important;
+    transition: all 0.2s ease !important; border: none !important;
+}
+[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
+    background: rgba(197,165,102,0.1) !important;
+    color: var(--g) !important;
+    border-right: 1px solid rgba(197,165,102,0.12) !important;
+}
+[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
+    background: rgba(197,165,102,0.18) !important;
+    transform: none !important;
+}
+[data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
+    background: transparent !important;
+    color: rgba(237,229,212,0.22) !important;
+}
+[data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
+    color: rgba(237,229,212,0.5) !important;
+    background: rgba(255,255,255,0.025) !important;
+}
+
+/* Checkboxes como items de lista */
+[data-testid="stSidebar"] .stCheckbox { margin:0 !important; padding:0 !important; }
+[data-testid="stSidebar"] .stCheckbox > label > div:first-child { display:none !important; }
+[data-testid="stSidebar"] .stCheckbox > label {
+    display: flex !important; align-items: center !important;
+    gap: 8px !important; width: 100% !important;
+    padding: 8px 14px 8px 16px !important;
+    margin: 0 !important; cursor: pointer !important;
+    border-left: 2px solid transparent !important;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0 !important;
+    transition: all 0.18s ease !important;
+    background: transparent !important;
+}
+[data-testid="stSidebar"] .stCheckbox > label:hover {
+    background: rgba(197,165,102,0.04) !important;
+    border-left-color: rgba(197,165,102,0.22) !important;
+}
+[data-testid="stSidebar"] .stCheckbox > label > div:last-child,
+[data-testid="stSidebar"] .stCheckbox > label > span {
+    font-family: var(--sans) !important;
+    font-size: 0.7rem !important; font-weight: 400 !important;
+    color: rgba(237,229,212,0.28) !important;
+    letter-spacing: 0.8px !important; text-transform: uppercase !important;
+    line-height: 1 !important;
+}
+[data-testid="stSidebar"] .stCheckbox:has(input:checked) > label {
+    border-left-color: var(--g) !important;
+    background: rgba(197,165,102,0.06) !important;
+}
+[data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > div:last-child,
+[data-testid="stSidebar"] .stCheckbox:has(input:checked) > label > span {
+    color: rgba(197,165,102,0.85) !important; font-weight: 500 !important;
+}
+
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(197,165,102,0.07);
+    margin: 4px 0 0;
+}
+.rubrica-count {
+    padding: 7px 16px 14px;
+    font-size: 0.54rem; font-family: var(--sans);
+    letter-spacing: 2px; text-transform: uppercase;
+}
+
+/* ═══ FOOTER ═══════════════════════════════════════════════════════════════ */
+.em-footer {
+    margin-top: 100px;
+    padding: 48px 0 24px;
+    border-top: 1px solid rgba(197,165,102,0.1);
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+    position: relative;
+}
+.em-footer::before {
+    content: '';
+    position: absolute; top: -1px; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--g), transparent);
+    animation: glow 3s ease-in-out infinite;
+}
+.em-footer-name {
+    font-family: var(--serif);
+    font-size: 1.5rem; font-weight: 600; font-style: italic;
+    color: var(--g); letter-spacing: 2px;
+}
+.em-footer-contacts {
+    display: flex; gap: 28px; flex-wrap: wrap; justify-content: center;
+}
+.em-footer-contact {
+    font-size: 0.7rem; color: rgba(197,165,102,0.4); letter-spacing: 1px;
+}
+.em-footer-contact a {
+    color: rgba(197,165,102,0.4); text-decoration: none;
+    transition: color 0.2s;
+}
+.em-footer-contact a:hover { color: var(--g); }
+.em-whatsapp-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(197,165,102,0.05);
+    border: 1px solid rgba(197,165,102,0.3);
+    border-radius: var(--r-sm);
+    color: rgba(197,165,102,0.7);
+    font-family: var(--sans); font-size: 0.64rem;
+    font-weight: 600; letter-spacing: 2.5px;
+    text-transform: uppercase; padding: 11px 28px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(.22,1,.36,1);
+    cursor: pointer; margin-top: 6px; position: relative; overflow: hidden;
+}
+.em-whatsapp-btn::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.08), transparent);
+    transform: skewX(-15deg);
+    transition: left 0.5s ease;
+}
+.em-whatsapp-btn:hover {
+    border-color: var(--g); color: var(--g); text-decoration: none;
+    background: rgba(197,165,102,0.1);
+    box-shadow: 0 8px 30px rgba(197,165,102,0.1);
+    transform: translateY(-2px);
+}
+.em-whatsapp-btn:hover::after { left: 120%; }
+
+/* ═══ SCROLLBAR ════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: var(--p); }
+::-webkit-scrollbar-thumb {
+    background: rgba(197,165,102,0.22);
+    border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(197,165,102,0.5); }
+
+/* ═══ HEADER NATIVO ════════════════════════════════════════════════════════ */
+header[data-testid="stHeader"] {
+    background: rgba(4,6,12,0.9) !important;
+    border-bottom: 1px solid rgba(197,165,102,0.07) !important;
+    backdrop-filter: blur(16px) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1394,9 +1487,20 @@ def gerar_excel_calculos(df, rubrica_nome):
 # --- 5. DASHBOARD ---
 st.markdown("""
 <div class="em-header-wrap">
-    <div class="em-eyebrow">Sistema de Auditoria Bancária &nbsp;·&nbsp; Assessoria Jurídica</div>
+    <div class="em-monogram">
+        <span class="em-monogram-text">EM</span>
+    </div>
+    <div class="em-eyebrow">Assessoria Jurídica &nbsp;·&nbsp; Auditoria Bancária Inteligente</div>
     <h1 class="em-name">Edson Medeiros</h1>
     <div class="em-subtitle">Consultorias &amp; Compliance</div>
+    <div class="em-badge-row">
+        <div class="em-badge">
+            <div class="em-badge-dot"></div>
+            Sistema Online
+        </div>
+        <div class="em-badge">ExtratoX v2.0</div>
+        <div class="em-badge">Bradesco · Extrato PDF</div>
+    </div>
     <div class="em-ornament">
         <div class="em-ornament-line rev"></div>
         <div class="em-ornament-diamond">◆</div>
@@ -1422,6 +1526,12 @@ st.sidebar.markdown("""
 <div class="sb-header">
     <div class="sb-eyebrow">Painel de Controle</div>
     <div class="sb-title">Rubricas de <span>Auditoria</span></div>
+</div>
+<div class="sb-tutorial">
+    <div class="sb-tutorial-title">Como usar</div>
+    <div class="sb-tutorial-text">
+        Selecione as rubricas que deseja auditar. Cada rubrica representa um tipo de cobrança bancária. O sistema identificará automaticamente os valores cobrados no extrato.
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1466,15 +1576,34 @@ st.sidebar.markdown(
 st.markdown("""
 <div class="em-divider">
     <div class="em-divider-line"></div>
-    <div class="em-divider-label">Análise de Extrato</div>
+    <div class="em-divider-pill">
+        <span class="em-divider-label">Análise de Extrato</span>
+    </div>
     <div class="em-divider-line"></div>
+</div>
+
+<div class="upload-tutorial">
+    <div class="upload-step">
+        <div class="upload-step-n">1</div>
+        <div class="upload-step-t">Selecione as rubricas na barra lateral</div>
+    </div>
+    <div class="upload-step-arrow">→</div>
+    <div class="upload-step">
+        <div class="upload-step-n">2</div>
+        <div class="upload-step-t">Faça upload do extrato PDF</div>
+    </div>
+    <div class="upload-step-arrow">→</div>
+    <div class="upload-step">
+        <div class="upload-step-n">3</div>
+        <div class="upload-step-t">Baixe as planilhas de cálculo geradas</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 upload = st.file_uploader(
     "Arraste o extrato bancário em PDF ou clique para selecionar",
     type=["pdf"],
-    help="Formatos suportados: PDF de extratos Bradesco"
+    help="Suporta extratos Bradesco em PDF. Múltiplas páginas aceitas."
 )
 
 if upload:
@@ -1497,41 +1626,52 @@ if upload:
             cats_unicas = df['CATEGORIA'].nunique()
             c1, c2, c3 = st.columns(3)
             with c1:
-                st.markdown(
-                    f'''<div class="metric-card">
-                        <h4>Total Recuperável</h4>
-                        <h2>R$ {total_geral:,.2f}</h2>
-                        <div class="metric-card-sub">Valor identificado</div>
-                    </div>''',
-                    unsafe_allow_html=True
-                )
+                st.markdown(f'''
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h4>Total Recuperável</h4>
+                    <h2>R$ {total_geral:,.2f}</h2>
+                    <div class="metric-card-sub">Soma de todos os débitos indevidos identificados</div>
+                </div>
+                ''', unsafe_allow_html=True)
             with c2:
-                st.markdown(
-                    f'''<div class="metric-card">
-                        <h4>Lançamentos</h4>
-                        <h2>{len(df)}</h2>
-                        <div class="metric-card-sub">Débitos indevidos</div>
-                    </div>''',
-                    unsafe_allow_html=True
-                )
+                st.markdown(f'''
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <h4>Lançamentos</h4>
+                    <h2>{len(df)}</h2>
+                    <div class="metric-card-sub">Registros de cobranças identificadas no extrato</div>
+                </div>
+                ''', unsafe_allow_html=True)
             with c3:
-                st.markdown(
-                    f'''<div class="metric-card">
-                        <h4>Rubricas</h4>
-                        <h2>{cats_unicas}</h2>
-                        <div class="metric-card-sub">Categorias encontradas</div>
-                    </div>''',
-                    unsafe_allow_html=True
-                )
+                st.markdown(f'''
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    </div>
+                    <h4>Categorias</h4>
+                    <h2>{cats_unicas}</h2>
+                    <div class="metric-card-sub">Tipos de rubrica distintas encontradas no período</div>
+                </div>
+                ''', unsafe_allow_html=True)
 
-            st.markdown("""
-<div class="em-divider" style="margin-top:36px;">
+            st.markdown(f'''
+<div class="em-divider" style="margin-top:40px;">
     <div class="em-divider-line"></div>
-    <div class="em-divider-label">Tabelas de Cálculo</div>
+    <div class="em-divider-pill">
+        <span class="em-divider-label">Planilhas de Cálculo</span>
+        <span class="em-divider-num">{len(cats_unicas_list) if False else ""}</span>
+    </div>
     <div class="em-divider-line"></div>
 </div>
-<div class="em-section-note">Selecione a rubrica para baixar a planilha com fórmulas automáticas</div>
-""", unsafe_allow_html=True)
+<div class="em-section-note">
+    Cada planilha inclui tabela mensal, total anual e valor em dobro (Art. 42 CDC) — prontas para uso jurídico
+</div>
+''', unsafe_allow_html=True)
 
             cats = df['CATEGORIA'].unique()
             cols_dl = st.columns(2)
@@ -1548,13 +1688,19 @@ if upload:
                         key=f"dl_{cat}"
                     )
 
-            st.markdown("""
-<div class="em-divider" style="margin-top:36px;">
+            st.markdown(f'''
+<div class="em-divider" style="margin-top:40px;">
     <div class="em-divider-line"></div>
-    <div class="em-divider-label">Lançamentos Identificados</div>
+    <div class="em-divider-pill">
+        <span class="em-divider-label">Lançamentos Identificados</span>
+        <span class="em-divider-num">— {len(df)} registros</span>
+    </div>
     <div class="em-divider-line"></div>
 </div>
-""", unsafe_allow_html=True)
+<div class="em-section-note">
+    Ordenados cronologicamente · Somente débitos · Valores confirmados por posição de coluna no PDF
+</div>
+''', unsafe_allow_html=True)
             st.dataframe(
                 df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']],
                 use_container_width=True
