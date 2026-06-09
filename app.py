@@ -12,107 +12,431 @@ except ImportError:
     st.error("Erro: A biblioteca 'openpyxl' não está instalada. Certifique-se de incluir 'openpyxl' no seu arquivo requirements.txt.")
 
 # --- 1. CONFIGURAÇÃO E ESTILO ---
-st.set_page_config(page_title="Edson Medeiros | Consultoria de Ativos", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="Edson Medeiros | Consultoria e Compliance", layout="wide", page_icon="⚖️")
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+    /* ── TIPOGRAFIA ───────────────────────────────────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
 
-    /* ── Base ── */
-    .stApp { background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif; }
-
-    /* ── Títulos principais ── */
-    .main-title { font-family: 'Playfair Display', serif; font-size: 3rem; color: #BFAF83; text-align: center; margin-bottom: 0; }
-    .sub-title   { text-align: center; color: #64748B; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 40px; }
-
-    /* ── Cards de métricas ── */
-    .metric-card { background: rgba(255,255,255,0.05); border: 1px solid #BFAF83; border-radius: 10px; padding: 20px; text-align: center; }
-
-    /* ── Sidebar: fundo e borda ── */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #13161F 0%, #0E1117 100%);
-        border-right: 1px solid rgba(191,175,131,0.25);
+    /* ── RESET E BASE ─────────────────────────────────────────────────────────── */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
     }
-    [data-testid="stSidebar"] > div:first-child { padding-top: 1.5rem; }
+    .stApp {
+        background-color: #101418;
+        color: #E8DCC8;
+    }
 
-    /* ── Título da sidebar ── */
-    .sidebar-header {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.05rem;
-        color: #BFAF83;
-        letter-spacing: 1.5px;
+    /* ── HEADER PRINCIPAL ─────────────────────────────────────────────────────── */
+    /* Logomarca tipográfica — dois níveis, não um simples h1 */
+    .em-header-wrap {
+        text-align: center;
+        padding: 52px 0 36px;
+        position: relative;
+    }
+    /* Ornamento vertical esquerdo e direito */
+    .em-header-wrap::before,
+    .em-header-wrap::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: calc(50% - 220px);
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.45));
+    }
+    .em-header-wrap::before { left: 0; transform: translateY(-50%) scaleX(-1); }
+    .em-header-wrap::after  { right: 0; transform: translateY(-50%); }
+
+    .em-eyebrow {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 5px;
         text-transform: uppercase;
-        border-bottom: 1px solid rgba(191,175,131,0.3);
-        padding-bottom: 10px;
-        margin-bottom: 4px;
+        color: #C5A566;
+        margin-bottom: 8px;
+        opacity: 0.85;
+    }
+    .em-name {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 3.6rem;
+        font-weight: 600;
+        line-height: 1.0;
+        color: #E8DCC8;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+    .em-name span {
+        color: #C5A566;
+    }
+    .em-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.0rem;
+        font-weight: 400;
+        font-style: italic;
+        color: rgba(197,165,102,0.7);
+        letter-spacing: 3px;
+        margin-top: 6px;
+        text-transform: uppercase;
+    }
+    .em-ornament {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 22px;
+    }
+    .em-ornament-line {
+        width: 80px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #C5A566);
+    }
+    .em-ornament-line.rev {
+        background: linear-gradient(90deg, #C5A566, transparent);
+    }
+    .em-ornament-diamond {
+        color: #C5A566;
+        font-size: 0.6rem;
+        opacity: 0.9;
     }
 
-    /* ── Contador de selecionadas ── */
-    .rubrica-count {
-        font-size: 0.72rem;
-        color: #64748B;
+    /* ── DIVISOR DE SEÇÃO ─────────────────────────────────────────────────────── */
+    .em-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 32px 0 24px;
+    }
+    .em-divider-line {
+        flex: 1;
+        height: 1px;
+        background: rgba(197,165,102,0.2);
+    }
+    .em-divider-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: rgba(197,165,102,0.6);
+        white-space: nowrap;
+    }
+
+    /* ── UPLOAD ZONE ──────────────────────────────────────────────────────────── */
+    /* Caixa de upload com estilo premium */
+    [data-testid="stFileUploader"] {
+        border: 1px solid rgba(197,165,102,0.3) !important;
+        border-radius: 0 !important;
+        background: rgba(197,165,102,0.03) !important;
+        padding: 4px !important;
+        transition: border-color 0.3s ease;
+    }
+    [data-testid="stFileUploader"]:hover {
+        border-color: rgba(197,165,102,0.6) !important;
+    }
+    [data-testid="stFileUploadDropzone"] {
+        background: transparent !important;
+        border: 1px dashed rgba(197,165,102,0.35) !important;
+        border-radius: 0 !important;
+        padding: 28px !important;
+    }
+    [data-testid="stFileUploaderDropzoneInstructions"] span,
+    [data-testid="stFileUploaderDropzoneInstructions"] small {
+        color: rgba(197,165,102,0.7) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.82rem !important;
+        letter-spacing: 0.5px;
+    }
+    [data-testid="stFileUploadDropzone"] button {
+        background: transparent !important;
+        border: 1px solid rgba(197,165,102,0.5) !important;
+        color: #C5A566 !important;
+        border-radius: 0 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 1.5px !important;
+        text-transform: uppercase !important;
+        padding: 6px 18px !important;
+        transition: all 0.2s ease;
+    }
+    [data-testid="stFileUploadDropzone"] button:hover {
+        background: rgba(197,165,102,0.1) !important;
+    }
+
+    /* ── CARDS DE MÉTRICAS ────────────────────────────────────────────────────── */
+    .metric-card {
+        background: #1C2128;
+        border-top: 2px solid #C5A566;
+        border-left: 1px solid rgba(197,165,102,0.15);
+        border-right: 1px solid rgba(197,165,102,0.15);
+        border-bottom: 1px solid rgba(197,165,102,0.15);
+        border-radius: 0;
+        padding: 28px 24px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #C5A566, transparent);
+    }
+    .metric-card h4 {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 3.5px;
+        text-transform: uppercase;
+        color: rgba(197,165,102,0.65);
+        margin: 0 0 12px 0;
+    }
+    .metric-card h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.6rem;
+        font-weight: 600;
+        color: #C5A566;
+        margin: 0;
+        line-height: 1;
+    }
+
+    /* ── SEÇÃO DE DOWNLOADS ───────────────────────────────────────────────────── */
+    .em-section-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: #E8DCC8;
         letter-spacing: 1px;
+        text-align: center;
+        margin: 0;
+    }
+    .em-section-note {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        color: rgba(232,220,200,0.45);
+        text-align: center;
+        letter-spacing: 0.3px;
+        margin-top: 4px;
+        margin-bottom: 20px;
+    }
+
+    /* ── BOTÕES DE DOWNLOAD ───────────────────────────────────────────────────── */
+    [data-testid="stDownloadButton"] > button {
+        background: transparent !important;
+        border: 1px solid rgba(197,165,102,0.4) !important;
+        color: rgba(197,165,102,0.85) !important;
+        border-radius: 0 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 1.8px !important;
+        text-transform: uppercase !important;
+        padding: 8px 20px !important;
+        transition: all 0.25s ease;
+        width: 100% !important;
+    }
+    [data-testid="stDownloadButton"] > button:hover {
+        background: rgba(197,165,102,0.08) !important;
+        border-color: #C5A566 !important;
+        color: #C5A566 !important;
+        box-shadow: 0 0 18px rgba(197,165,102,0.08) !important;
+    }
+
+    /* ── DATAFRAME ────────────────────────────────────────────────────────────── */
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(197,165,102,0.2) !important;
+        border-radius: 0 !important;
+    }
+    [data-testid="stDataFrame"] th {
+        background: #1C2128 !important;
+        color: rgba(197,165,102,0.8) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.68rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 2.5px !important;
+        text-transform: uppercase !important;
+        border-bottom: 1px solid rgba(197,165,102,0.25) !important;
+    }
+    [data-testid="stDataFrame"] td {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.8rem !important;
+        color: #E8DCC8 !important;
+        border-color: rgba(197,165,102,0.08) !important;
+    }
+
+    /* ── SPINNER ──────────────────────────────────────────────────────────────── */
+    [data-testid="stSpinner"] p {
+        color: rgba(197,165,102,0.7) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.8rem !important;
+        letter-spacing: 1px;
+    }
+
+    /* ── INFO BOX ─────────────────────────────────────────────────────────────── */
+    [data-testid="stAlert"] {
+        background: rgba(197,165,102,0.06) !important;
+        border: 1px solid rgba(197,165,102,0.3) !important;
+        border-radius: 0 !important;
+        color: rgba(197,165,102,0.8) !important;
+    }
+
+    /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
+    [data-testid="stSidebar"] {
+        background: #0D1014;
+        border-right: 1px solid rgba(197,165,102,0.18);
+    }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 1.8rem; }
+
+    .sidebar-header {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #C5A566;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(197,165,102,0.2);
+        margin-bottom: 6px;
+    }
+    .rubrica-count {
+        font-size: 0.65rem;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 1.5px;
         text-transform: uppercase;
         margin-bottom: 12px;
     }
 
-    /* ── Botões Marcar / Desmarcar ── */
-    [data-testid="stSidebar"] .stButton > button {
+    /* Botão Marcar Todas */
+    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
         width: 100%;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        border-radius: 6px;
-        padding: 5px 4px;
+        background: rgba(197,165,102,0.1) !important;
+        border: 1px solid rgba(197,165,102,0.45) !important;
+        border-radius: 0 !important;
+        color: #C5A566 !important;
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 1.8px !important;
+        text-transform: uppercase !important;
+        padding: 5px 4px !important;
         transition: all 0.2s ease;
     }
-    /* Botão "Marcar Todas" — dourado */
-    [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
-        background: rgba(191,175,131,0.12);
-        border: 1px solid rgba(191,175,131,0.5);
-        color: #BFAF83;
-    }
     [data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
-        background: rgba(191,175,131,0.25);
-        border-color: #BFAF83;
+        background: rgba(197,165,102,0.2) !important;
+        border-color: #C5A566 !important;
     }
-    /* Botão "Desmarcar Todas" — apagado */
+
+    /* Botão Desmarcar */
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #64748B;
+        width: 100%;
+        background: transparent !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 0 !important;
+        color: rgba(232,220,200,0.35) !important;
+        font-size: 0.65rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 1.8px !important;
+        text-transform: uppercase !important;
+        padding: 5px 4px !important;
+        transition: all 0.2s ease;
     }
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button:hover {
-        background: rgba(255,255,255,0.08);
-        border-color: rgba(255,255,255,0.25);
-        color: #FFFFFF;
+        color: rgba(232,220,200,0.7) !important;
+        border-color: rgba(255,255,255,0.25) !important;
     }
 
-    /* ── Checkboxes: label compacto ── */
+    /* Checkboxes compactos */
     [data-testid="stSidebar"] .stCheckbox { margin: 0 !important; padding: 0 !important; }
     [data-testid="stSidebar"] .stCheckbox label {
-        font-size: 0.80rem !important;
-        font-weight: 500;
-        color: #C8C4B8 !important;
-        letter-spacing: 0.3px;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.76rem !important;
+        font-weight: 400 !important;
+        color: rgba(232,220,200,0.65) !important;
+        letter-spacing: 0.4px !important;
         padding: 3px 0 !important;
-        line-height: 1.35 !important;
+        line-height: 1.4 !important;
     }
-    [data-testid="stSidebar"] .stCheckbox label:hover { color: #BFAF83 !important; }
-
-    /* ── Checkbox tick dourado quando marcado ── */
+    [data-testid="stSidebar"] .stCheckbox label:hover { color: #C5A566 !important; }
     [data-testid="stSidebar"] input[type="checkbox"]:checked + div {
-        background-color: #BFAF83 !important;
-        border-color: #BFAF83 !important;
+        background-color: #C5A566 !important;
+        border-color: #C5A566 !important;
     }
 
-    /* ── Linha divisória entre seções da sidebar ── */
+    /* Divisória */
     .sidebar-divider {
         border: none;
-        border-top: 1px solid rgba(191,175,131,0.15);
-        margin: 10px 0;
+        border-top: 1px solid rgba(197,165,102,0.12);
+        margin: 8px 0;
     }
+
+    /* ── FOOTER DE CONTATO ────────────────────────────────────────────────────── */
+    .em-footer {
+        margin-top: 60px;
+        padding-top: 28px;
+        border-top: 1px solid rgba(197,165,102,0.18);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    .em-footer-name {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        font-style: italic;
+        color: #C5A566;
+        letter-spacing: 1px;
+    }
+    .em-footer-contacts {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .em-footer-contact {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.72rem;
+        color: rgba(197,165,102,0.55);
+        letter-spacing: 1px;
+    }
+    .em-footer-contact a {
+        color: rgba(197,165,102,0.55);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .em-footer-contact a:hover { color: #C5A566; }
+    .em-whatsapp-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        border: 1px solid rgba(197,165,102,0.45);
+        color: #C5A566;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.70rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 9px 22px;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+    .em-whatsapp-btn:hover {
+        background: rgba(197,165,102,0.1);
+        border-color: #C5A566;
+        color: #C5A566;
+        text-decoration: none;
+    }
+
+    /* ── SCROLLBAR ────────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #101418; }
+    ::-webkit-scrollbar-thumb { background: rgba(197,165,102,0.3); border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(197,165,102,0.55); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -562,8 +886,18 @@ def gerar_excel_calculos(df, rubrica_nome):
 
 
 # --- 5. DASHBOARD ---
-st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Auditoria Técnica Especializada - Edson Medeiros</p>', unsafe_allow_html=True)
+st.markdown("""
+<div class="em-header-wrap">
+    <div class="em-eyebrow">Assessoria Jurídica &amp; Financeira</div>
+    <h1 class="em-name">Edson <span>Medeiros</span></h1>
+    <div class="em-subtitle">Consultorias &amp; Compliance</div>
+    <div class="em-ornament">
+        <div class="em-ornament-line rev"></div>
+        <div class="em-ornament-diamond">◆</div>
+        <div class="em-ornament-line"></div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ── SIDEBAR: painel de rubricas ──────────────────────────────────────────────
 
@@ -612,7 +946,20 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-upload = st.file_uploader("📂 ARRASTE O EXTRATO BANCÁRIO (PDF)", type=["pdf"])
+# Divisor de seção
+st.markdown("""
+<div class="em-divider">
+    <div class="em-divider-line"></div>
+    <div class="em-divider-label">Análise de Extrato</div>
+    <div class="em-divider-line"></div>
+</div>
+""", unsafe_allow_html=True)
+
+upload = st.file_uploader(
+    "Arraste o extrato bancário em PDF ou clique para selecionar",
+    type=["pdf"],
+    help="Formatos suportados: PDF de extratos Bradesco"
+)
 
 if upload:
     with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
@@ -644,11 +991,14 @@ if upload:
                     unsafe_allow_html=True
                 )
 
-            st.markdown(
-                '<h2 style="color:#BFAF83; text-align:center; margin-top:30px;">📥 Baixar Tabelas de Cálculos</h2>',
-                unsafe_allow_html=True
-            )
-            st.write("Clique nos botões abaixo para baixar a planilha de cada rubrica com fórmulas automáticas.")
+            st.markdown("""
+<div class="em-divider" style="margin-top:36px;">
+    <div class="em-divider-line"></div>
+    <div class="em-divider-label">Tabelas de Cálculo</div>
+    <div class="em-divider-line"></div>
+</div>
+<div class="em-section-note">Selecione a rubrica para baixar a planilha com fórmulas automáticas</div>
+""", unsafe_allow_html=True)
 
             cats = df['CATEGORIA'].unique()
             for cat in cats:
@@ -661,10 +1011,13 @@ if upload:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-            st.markdown(
-                '<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>',
-                unsafe_allow_html=True
-            )
+            st.markdown("""
+<div class="em-divider" style="margin-top:36px;">
+    <div class="em-divider-line"></div>
+    <div class="em-divider-label">Lançamentos Identificados</div>
+    <div class="em-divider-line"></div>
+</div>
+""", unsafe_allow_html=True)
             st.dataframe(
                 df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']],
                 use_container_width=True
@@ -672,7 +1025,27 @@ if upload:
         else:
             st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
-st.markdown(
-    "<br><br><p style='text-align:right; font-family:serif; font-style:italic; color:#BFAF83;'>Edson Medeiros</p>",
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div class="em-footer">
+    <div class="em-ornament">
+        <div class="em-ornament-line rev"></div>
+        <div class="em-ornament-diamond">◆</div>
+        <div class="em-ornament-line"></div>
+    </div>
+    <div class="em-footer-name">Edson Medeiros</div>
+    <div class="em-footer-contacts">
+        <span class="em-footer-contact">
+            <a href="https://wa.me/5592995087379" target="_blank">☎ (92) 99508-7379</a>
+        </span>
+        <span class="em-footer-contact" style="color:rgba(197,165,102,0.2);">|</span>
+        <span class="em-footer-contact">
+            <a href="mailto:edson.senabr@gmail.com">✉ edson.senabr@gmail.com</a>
+        </span>
+    </div>
+    <a class="em-whatsapp-btn"
+       href="https://wa.me/5592995087379?text=Olá%2C%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20Edson%20Medeiros."
+       target="_blank">
+        ◆ &nbsp; Agendar Consulta via WhatsApp
+    </a>
+</div>
+""", unsafe_allow_html=True)
