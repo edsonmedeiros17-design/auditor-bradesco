@@ -198,120 +198,52 @@ TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 #
 # Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
-def _extrair_valor_debito(linha_up):
-    """Extrai o valor de débito/crédito da linha, ignorando o saldo.
+def _extrair_debito(linha_up):
+    """Penúltimo valor numérico da linha = débito (último = saldo)."""
+    vals = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', linha_up)
+    if not vals: return None
+    return vals[-2] if len(vals) >= 2 else vals[0]
 
-    O extrato Bradesco tem sempre duas colunas numéricas no final:
-      ...  DÉBITO  SALDO
-    Pegamos o penúltimo valor (débito). Se houver apenas um, é o débito.
-    Valores seguidos de % são ignorados (taxas de juros, não montantes).
-    """
-    todos = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', linha_up)
-    if not todos:
+def _extrair_data(linha_up):
+    m = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
+    return m.group(1) if m else None
+
+def _detectar_rubrica(linha_up, rubricas_alvo):
+    """Retorna o nome da rubrica detectada na linha, ou None."""
+    if "%" in linha_up:
         return None
-    return todos[-2] if len(todos) >= 2 else todos[0]
+    for nome in rubricas_alvo:
+        if re.search(RUBRICAS_MESTRE[nome], linha_up):
+            return nome
+    return None
 
+def _tem_apenas_dados(linha_up):
+    """Linha com pouquíssimo texto descritivo — basicamente data + números.
+    Usado para distinguir a linha de data/valor de uma linha de histórico."""
+    sem_numeros = re.sub(r'\d', '', linha_up)
+    sem_numeros = re.sub(r'[/,\.\s]', '', sem_numeros)
+    return len(sem_numeros) < 8
 
-def _extrair_perto_da_rubrica(linha_up, pos_rubrica):
-    """Extrai a DATA e o VALOR pertencentes à rubrica em linhas FUNDIDAS.
-
-    PROBLEMA QUE RESOLVE:
-    Às vezes o pdfplumber junta dois lançamentos numa única linha de texto:
-      "03/01/2020 IOF S/ UTILIZACAO LIMITE 8118726 0,11 11,38
-       08/01/2020 ENCARGOS LIMITE DE CRED 8118726 0,95 12,33"
-    Pegar a PRIMEIRA data/valor da linha daria 03/01/2020 e 0,11 (do IOF),
-    associando-os erroneamente ao ENCARGOS.
-
-    SOLUÇÃO:
-    A data e o valor corretos do lançamento da rubrica são os que aparecem
-    PRÓXIMOS à posição da rubrica no texto:
-      - DATA  → a última data que aparece ANTES (à esquerda) do nome da rubrica.
-                No exemplo, 08/01/2020 vem logo antes de "ENCARGOS".
-      - VALOR → o primeiro par de valores que aparece DEPOIS (à direita) da rubrica.
-                No exemplo, 0,95 / 12,33 vêm depois de "ENCARGOS LIMITE DE CRED";
-                pega-se o penúltimo (débito) = 0,95.
-
-    Retorna (data, valor). Cada um pode ser None se não houver candidato no lado certo.
-    """
-    # ── DATA: última ocorrência à ESQUERDA da rubrica ───────────────────────
-    data_final = None
-    for m in re.finditer(r"\d{2}/\d{2}/\d{2,4}", linha_up):
-        if m.start() < pos_rubrica:
-            data_final = m.group(0)   # continua atualizando → fica com a mais próxima à esquerda
-        else:
-            break
-
-    # ── VALOR: valores à DIREITA da rubrica ─────────────────────────────────
-    trecho_dir = linha_up[pos_rubrica:]
-    vals_dir = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', trecho_dir)
-    if vals_dir:
-        # penúltimo = débito (último é saldo); se só houver um, é o débito
-        valor_final = vals_dir[-2] if len(vals_dir) >= 2 else vals_dir[0]
-    else:
-        valor_final = None
-
-    return data_final, valor_final
-
+# ── MOTOR v3 — lógica de lookahead baseada na estrutura REAL do PDF ──────────
+#
+# O pdfplumber divide cada lançamento do extrato Bradesco em linhas separadas:
+#
+#   TIPO A — linha única (rubrica + data + valor juntos):
+#     'CARTAO CREDITO ANUIDADE 4740002 13,50 11,27'  (data na própria linha)
+#
+#   TIPO B — rubrica ACIMA da linha de dados (padrão dominante):
+#     Linha i:   'ENCARGOS LIMITE DE CRED'         ← rubrica, sem dados
+#     Linha i+1: '08/01/2020 8118726 0,95 12,33'   ← data + valor
+#     Linha i+2: 'ENCARGO - 08,00%'                ← subtítulo, ignorado
+#
+#   TIPO C — rubrica ABAIXO da linha de dados (sublinha de descrição):
+#     Linha i-1: '15/01/2020 0130120 21,60 16,40'  ← data + valor
+#     Linha i:   'CESTA B.EXPRESSO4'               ← rubrica, sem dados
+#
+# Estratégia: processar com índice explícito para lookahead/lookbehind.
 
 def realizar_auditoria(arquivo, rubricas_alvo):
-    resultados    = []
-    cesto_sem_data = []
-
-    # ── Memória de contexto ────────────────────────────────────────────────────
-    # Mantém informações das últimas linhas para lidar com os vários formatos
-    # de quebra de linha que o pdfplumber produz:
-    #
-    #   CENÁRIO 1 — data isolada / rubrica+valor / subtítulo(%)
-    #     "08/01/2020"
-    #     "ENCARGOS LIMITE DE CRED  0,95"
-    #     "ENCARGO - 08,00%"
-    #     → rubrica herda data da linha anterior
-    #
-    #   CENÁRIO 2 — tudo junto / subtítulo(%)           [já funcionava]
-    #     "08/01/2020  ENCARGOS LIMITE DE CRED  0,95"
-    #     "ENCARGO - 08,00%"
-    #
-    #   CENÁRIO 3 — data+rubrica / valor separado / subtítulo(%)
-    #     "08/01/2020  ENCARGOS LIMITE DE CRED"
-    #     "0,95  12,33"
-    #     "ENCARGO - 08,00%"
-    #     → rubrica fica PENDENTE; valor da linha seguinte (sem data, sem rubrica) a preenche
-    #       antes que o subtítulo(%) seja descartado
-    #
-    #   CENÁRIO 4 — rubrica+valor sem data / subtítulo / data inferior [já funcionava]
-    #     "ENCARGOS LIMITE DE CRED  19,31"
-    #     "ENCARGO - 14,31%"
-    #     "08/02/2017  SAQUE..."
-    #
-    #   CENÁRIO 5 — rubrica sem data/valor / subtítulo / valor / data inferior
-    #     "ENCARGOS LIMITE DE CRED"
-    #     "ENCARGO - 14,31%"
-    #     "19,31  132,13"
-    #     "08/02/2017  SAQUE..."
-    #     → subtítulo(%) é ignorado mas NÃO zera o contexto da rubrica pendente;
-    #       valor da linha seguinte ainda preenche o último item do cesto
-    #
-    #   CENÁRIO 6 — CESTA como sublinha (herda data+valor da linha acima) [já funcionava]
-    #     "15/01/2020  TARIFA BANCARIA  21,60"
-    #     "CESTA B.EXPRESSO4"
-    #
-    #   CENÁRIO 7 — rubrica+data+valor / subtítulo de texto (sem %)   [já funcionava]
-    #     "20/01/2020  PARCELA CREDITO PESSOAL  385,50"
-    #     "CONTR 381101278 PARC 004/005"
-    #
-    # Campos do contexto:
-    #   data_ctx        → última data vista (None se ainda não apareceu)
-    #   valor_ctx       → último valor visto em linha SEM rubrica capturada
-    #   rubrica_pendente→ True se a última rubrica ainda não tem valor confirmado
-    #   era_exclusao    → True se a última linha relevante era termo de exclusão
-    ctx = {
-        "data_ctx":          None,
-        "valor_ctx":         None,
-        "rubrica_pendente":  False,
-        "era_exclusao":      False,
-        "dist_data":         999,   # linhas processadas desde a última data vista
-        "dist_valor":        999,   # linhas processadas desde o último valor visto
-    }
+    resultados = []
 
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
@@ -319,166 +251,101 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             if not texto:
                 continue
 
-            for linha in texto.split('\n'):
-                linha_up = linha.upper().strip()
-                if not linha_up:
+            # Filtra cabeçalhos fixos de cada página
+            linhas = []
+            for l in texto.split('\n'):
+                lu = l.upper().strip()
+                if not lu:
+                    continue
+                if any(lu.startswith(p) for p in [
+                    'BRADESCO CELULAR', 'DATA: ', 'NOME: ',
+                    'EXTRATO DE:', 'DATA HISTÓRICO', 'DATA HISTORICO', 'FOLHA:'
+                ]):
+                    continue
+                linhas.append(lu)
+
+            i = 0
+            while i < len(linhas):
+                linha = linhas[i]
+
+                # Ignora subtítulos com % (sem data)
+                if "%" in linha and not _extrair_data(linha):
+                    i += 1
                     continue
 
-                # ── 1. Detectar componentes da linha ─────────────────────────
-                match_data  = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
-                valor_linha = _extrair_valor_debito(linha_up)   # penúltimo valor = débito (não saldo)
-                tem_data    = match_data   is not None
-                tem_valor   = valor_linha  is not None
-                tem_pct     = "%" in linha_up
-
-                # ── 2. Linha de subtítulo com % ───────────────────────────────
-                # Descarta a linha mas PRESERVA o contexto intacto.
-                # Isso permite que o valor da linha seguinte ainda alcance
-                # uma rubrica pendente (Cenário 5).
-                if tem_pct and not tem_data:
+                # Ignora termos de exclusão
+                if re.search(TERMOS_EXCLUSAO, linha):
+                    i += 1
                     continue
 
-                # ── 3. Termos de exclusão ────────────────────────────────────
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_sem_data = [i for i in cesto_sem_data if i["VALOR"] != "PENDENTE"]
-                    ctx = {"data_ctx": None, "valor_ctx": None,
-                           "rubrica_pendente": False, "era_exclusao": True,
-                           "dist_data": 999, "dist_valor": 999}
-                    continue
+                rubrica = _detectar_rubrica(linha, rubricas_alvo)
 
-                # ── 4. Identificar rubrica (linhas sem %) ────────────────────
-                rubrica_detectada = None
-                pos_rubrica       = None
-                for nome in rubricas_alvo:
-                    m_rub = re.search(RUBRICAS_MESTRE[nome], linha_up)
-                    if m_rub:
-                        rubrica_detectada = nome
-                        pos_rubrica       = m_rub.start()
-                        break
+                if rubrica:
+                    data_final  = None
+                    valor_final = None
 
-                # ── 5. Selar cesto_sem_data com data inferior ─────────────────
-                # A data desta linha é a referência para tudo que veio antes sem data.
-                # Selamos ANTES de processar o lançamento atual.
-                if tem_data:
-                    data_inferior = match_data.group(1)
-                    prontos = [i for i in cesto_sem_data if i["VALOR"] != "PENDENTE"]
-                    for item in prontos:
-                        item["DATA"] = data_inferior
-                    resultados.extend(prontos)
-                    # Mantém apenas os ainda pendentes (aguardam valor)
-                    cesto_sem_data = [i for i in cesto_sem_data if i["VALOR"] == "PENDENTE"]
+                    # CASO A: data e valor na própria linha (linha completa)
+                    d = _extrair_data(linha)
+                    v = _extrair_debito(linha)
+                    if d and v:
+                        data_final  = d
+                        valor_final = v
 
-                # ── 6. Processar rubrica encontrada ──────────────────────────
-                if rubrica_detectada:
+                    # CASO B: dados na linha SEGUINTE (rubrica acima da linha de dados)
+                    # Ex: 'ENCARGOS LIMITE DE CRED' → '08/01/2020 8118726 0,95 12,33'
+                    if not data_final:
+                        j = i + 1
+                        # Pula eventuais linhas de % entre rubrica e dados
+                        while j < len(linhas) and "%" in linhas[j] and not _extrair_data(linhas[j]):
+                            j += 1
+                        if j < len(linhas):
+                            prox = linhas[j]
+                            d = _extrair_data(prox)
+                            v = _extrair_debito(prox)
+                            rub_prox = _detectar_rubrica(prox, rubricas_alvo)
+                            if (d and v
+                                    and not rub_prox
+                                    and not re.search(TERMOS_EXCLUSAO, prox)
+                                    and _tem_apenas_dados(prox)):
+                                data_final  = d
+                                valor_final = v
 
-                    # EXTRACAO POSICIONAL (linhas fundidas):
-                    # Pega a data a esquerda da rubrica e o valor a direita dela,
-                    # evitando capturar a data/valor de um lancamento vizinho que
-                    # o pdfplumber juntou na mesma linha (ex.: IOF + ENCARGOS).
-                    data_perto, valor_perto = _extrair_perto_da_rubrica(linha_up, pos_rubrica)
+                    # CASO C: dados na linha ANTERIOR (rubrica abaixo da linha de dados)
+                    # Ex: '15/01/2020 0130120 21,60 16,40' → 'CESTA B.EXPRESSO4'
+                    # Só herda se a linha anterior é "apenas dados" e não é outra rubrica.
+                    # Verifica também que a linha i-2 NÃO é outra linha de dados
+                    # (evita herdar de lançamento anterior completamente diferente).
+                    if not data_final and i >= 1:
+                        ant = linhas[i - 1]
+                        d = _extrair_data(ant)
+                        v = _extrair_debito(ant)
+                        rub_ant = _detectar_rubrica(ant, rubricas_alvo)
+                        if (d and v
+                                and not rub_ant
+                                and not re.search(TERMOS_EXCLUSAO, ant)
+                                and _tem_apenas_dados(ant)):
+                            # Confirma que não é lançamento isolado sem texto acima
+                            contexto_ok = True
+                            if i >= 2:
+                                ant2 = linhas[i - 2]
+                                if (_extrair_data(ant2) and _extrair_debito(ant2)
+                                        and _tem_apenas_dados(ant2)):
+                                    contexto_ok = False
+                            if contexto_ok:
+                                data_final  = d
+                                valor_final = v
 
-                    # Valor: posicional (a direita da rubrica) -> valor da linha -> contexto
-                    if valor_perto is not None:
-                        valor_final = valor_perto
-                    elif tem_valor:
-                        valor_final = valor_linha
-                    elif ctx["valor_ctx"] is not None and not ctx["rubrica_pendente"] and not ctx["era_exclusao"]:
-                        valor_final = ctx["valor_ctx"]
-                    else:
-                        valor_final = "PENDENTE"
+                    if data_final and valor_final:
+                        resultados.append({
+                            "DATA":      data_final,
+                            "CATEGORIA": rubrica,
+                            "VALOR":     valor_final,
+                            "HISTÓRICO": linha[:80],
+                        })
 
-                    # Data: regras em ordem de prioridade.
-                    #  (a) linha fundida (2+ datas): usa a data a esquerda da rubrica.
-                    #  (b) linha com uma data propria: usa essa data.
-                    #  (c) sublinha de descricao (ex.: CESTA): herda data E valor da
-                    #      linha imediatamente acima. So vale quando a rubrica NAO tem
-                    #      valor proprio (valor tambem foi herdado) — sinal de sublinha.
-                    #  (d) caso contrario: sem data -> vai ao cesto e recebe a data inferior
-                    #      (ex.: MORA/ENCARGOS soltos com valor proprio mas sem data).
-                    n_datas       = len(re.findall(r"\d{2}/\d{2}/\d{2,4}", linha_up))
-                    valor_herdado = (valor_perto is None) and (not tem_valor)
-                    if tem_data and n_datas > 1 and data_perto is not None:
-                        data_final = data_perto                       # (a)
-                    elif tem_data:
-                        data_final = match_data.group(1)              # (b)
-                    elif (valor_herdado and ctx["data_ctx"] is not None
-                          and ctx["dist_data"] == 0 and not ctx["era_exclusao"]):
-                        data_final = ctx["data_ctx"]                  # (c) sublinha
-                    else:
-                        data_final = None                             # (d) data inferior
-
-                    novo_item = {
-                        "CATEGORIA": rubrica_detectada,
-                        "VALOR":     valor_final,
-                        "HISTÓRICO": linha_up[:80],
-                    }
-
-                    if data_final:
-                        novo_item["DATA"] = data_final
-                        if valor_final == "PENDENTE":
-                            # C3: tem data mas valor ainda não chegou.
-                            # Guarda no cesto para receber valor da próxima linha.
-                            # O bloco 7a detecta que já tem DATA e promove para resultados.
-                            cesto_sem_data.append(novo_item)
-                        else:
-                            resultados.append(novo_item)
-                    else:
-                        cesto_sem_data.append(novo_item)
-
-                    # Atualiza contexto: rubrica consumida, marca se ficou pendente.
-                    # dist_data/dist_valor sobem para 999 pois o dado foi consumido
-                    # pela rubrica e nao deve ser herdado pela proxima linha por adjacencia.
-                    ctx = {
-                        "data_ctx":         match_data.group(1)  if tem_data  else ctx["data_ctx"],
-                        "valor_ctx":        None,   # valor foi consumido pela rubrica
-                        "rubrica_pendente": valor_final == "PENDENTE",
-                        "era_exclusao":     False,
-                        "dist_data":        0 if tem_data else 999,
-                        "dist_valor":       999,
-                    }
-
-                else:
-                    # ── 7. Linha sem rubrica ──────────────────────────────────
-
-                    # 7a. Valor complementar: preenche o último item PENDENTE do cesto,
-                    #     seja ele sem data (C2/C4) ou com data já definida (C3).
-                    #     Quando o item já tem DATA, move-o direto para resultados.
-                    if tem_valor and not tem_data:
-                        for item in reversed(cesto_sem_data):
-                            if item["VALOR"] == "PENDENTE":
-                                item["VALOR"] = valor_linha
-                                if "DATA" in item:
-                                    # C3: rubrica já tinha data → promove agora
-                                    cesto_sem_data.remove(item)
-                                    resultados.append(item)
-                                break
-                        ctx["rubrica_pendente"] = False
-
-                    # 7b. Atualiza contexto com data/valor desta linha.
-                    # dist_data/dist_valor contam linhas processadas desde o último
-                    # dado visto — usados para limitar herança a linhas adjacentes.
-                    if tem_data:
-                        ctx["data_ctx"]    = match_data.group(1)
-                        ctx["dist_data"]   = 0
-                        ctx["era_exclusao"] = False
-                    else:
-                        ctx["dist_data"] = ctx["dist_data"] + 1
-                    if tem_valor:
-                        ctx["valor_ctx"]   = valor_linha
-                        ctx["dist_valor"]  = 0
-                        ctx["era_exclusao"] = False
-                    else:
-                        ctx["dist_valor"] = ctx["dist_valor"] + 1
-                    # Linha só de texto (sem data, sem valor, sem rubrica): preserva contexto
-
-    # ── 8. Flush final ───────────────────────────────────────────────────────
-    for item in cesto_sem_data:
-        if item["VALOR"] != "PENDENTE":
-            item.setdefault("DATA", "00/00/0000")
-            resultados.append(item)
+                i += 1
 
     return resultados
-
 
 # --- 4. GERAÇÃO DE PLANILHA ---
 def fix_date(d):
