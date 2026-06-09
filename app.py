@@ -706,176 +706,142 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
+    # CSS da tela de login
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
-    /* ── Oculta UI padrão ──────────────────────────────────────────────────── */
     header, footer, [data-testid="stSidebar"],
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* ── Fundo ─────────────────────────────────────────────────────────────── */
     .stApp {
         background: #04060C !important;
-        background-image:
-            radial-gradient(circle, rgba(197,165,102,0.04) 1px, transparent 1px) !important;
+        background-image: radial-gradient(circle, rgba(197,165,102,0.045) 1px, transparent 1px) !important;
         background-size: 28px 28px !important;
     }
-    .stApp::before {
-        content: '';
-        position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-        width: 100vw; height: 100vh;
-        background: radial-gradient(ellipse at 25% 50%,
-            rgba(197,165,102,0.06) 0%, transparent 60%);
-        pointer-events: none; z-index: 0;
-    }
 
-    /* ── Container: split-screen desktop ──────────────────────────────────── */
+    /* Centraliza o container verticalmente */
     .block-container {
-        max-width: 960px !important;
-        padding: 0 !important;
-        margin: 0 auto !important;
+        max-width: 1000px !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
         min-height: 100vh !important;
         display: flex !important;
-        align-items: center !important;
+        flex-direction: column !important;
         justify-content: center !important;
-        position: relative; z-index: 1;
     }
 
-    /* ── Painel esquerdo: identidade ───────────────────────────────────────── */
-    .lx-split {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        min-height: 580px;
-        border: 1px solid rgba(197,165,102,0.12);
-        background: rgba(6,10,15,0.8);
-        overflow: hidden;
-        box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+    /* Remove gaps entre colunas do Streamlit */
+    [data-testid="stHorizontalBlock"] {
+        gap: 0 !important;
+        border: 1px solid rgba(197,165,102,0.12) !important;
+        border-radius: 0 !important;
+        overflow: hidden !important;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.7) !important;
     }
+    [data-testid="stHorizontalBlock"] > div {
+        padding: 0 !important;
+    }
+
+    /* Painel esquerdo */
     .lx-left {
-        padding: 64px 52px;
+        padding: 60px 48px;
+        background: linear-gradient(145deg,
+            rgba(197,165,102,0.06) 0%,
+            rgba(6,10,16,0.95) 50%,
+            rgba(10,16,24,0.98) 100%);
         border-right: 1px solid rgba(197,165,102,0.1);
-        background: linear-gradient(135deg,
-            rgba(197,165,102,0.05) 0%,
-            rgba(4,6,12,0.9) 60%,
-            rgba(10,18,28,0.95) 100%);
+        min-height: 560px;
         display: flex; flex-direction: column; justify-content: center;
         position: relative; overflow: hidden;
     }
-    /* Assinatura SVG de fundo no painel esquerdo */
-    .lx-left::before {
-        content: '';
-        position: absolute; bottom: -40px; right: -20px;
-        width: 340px; height: 200px;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 200'%3E%3Cpath d='M20 120 C 40 80, 80 60, 120 90 S 180 130, 220 100 C 250 78, 280 85, 310 95' stroke='rgba(197,165,102,0.12)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M10 140 C 50 110, 100 95, 150 120 S 230 155, 280 130 C 300 122, 318 128, 330 135' stroke='rgba(197,165,102,0.08)' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3Cpath d='M60 160 C 100 148, 160 152, 200 145 C 230 140, 255 148, 280 155' stroke='rgba(197,165,102,0.06)' stroke-width='0.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
-        background-size: contain;
-        pointer-events: none;
-        opacity: 0.8;
-    }
-    /* Círculo decorativo de fundo */
     .lx-left::after {
         content: '';
-        position: absolute; top: -80px; left: -80px;
-        width: 300px; height: 300px;
-        border-radius: 50%;
-        border: 1px solid rgba(197,165,102,0.07);
+        position: absolute; top: -60px; left: -60px;
+        width: 260px; height: 260px; border-radius: 50%;
+        border: 1px solid rgba(197,165,102,0.06);
         pointer-events: none;
     }
-
-    .lx-left-eyebrow {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.65rem; font-weight: 600;
-        letter-spacing: 5px; text-transform: uppercase;
-        color: rgba(197,165,102,0.45);
-        margin-bottom: 20px;
-    }
-    .lx-left-name {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 3rem; font-weight: 600; line-height: 1.1;
-        color: #EDE5D4; letter-spacing: 1px;
-        margin-bottom: 8px;
-    }
-    .lx-left-name em {
-        color: #C5A566; font-style: normal;
-    }
-    .lx-left-role {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.1rem; font-style: italic;
-        color: rgba(197,165,102,0.55); letter-spacing: 2px;
-        margin-bottom: 36px;
-    }
-    /* Assinatura cursiva "E. Medeiros" */
-    .lx-signature {
-        font-family: 'Great Vibes', cursive;
-        font-size: 3.2rem;
-        color: rgba(197,165,102,0.35);
-        line-height: 1;
-        margin-bottom: 36px;
-        letter-spacing: 1px;
-    }
-    /* Linha separadora */
-    .lx-left-sep {
-        width: 48px; height: 1px;
-        background: linear-gradient(90deg, var(--g, #C5A566), transparent);
-        margin-bottom: 28px;
-    }
-    .lx-left-desc {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.82rem; font-weight: 300;
-        color: rgba(237,229,212,0.35);
-        line-height: 1.75; letter-spacing: 0.3px;
-        max-width: 320px;
-        margin-bottom: 40px;
-    }
-    /* Badges de features */
-    .lx-features {
-        display: flex; flex-direction: column; gap: 12px;
-    }
-    .lx-feature {
-        display: flex; align-items: center; gap: 12px;
-    }
-    .lx-feature-dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: #C5A566; opacity: 0.5; flex-shrink: 0;
-    }
-    .lx-feature-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.78rem; font-weight: 400;
-        color: rgba(237,229,212,0.38); letter-spacing: 0.3px;
-    }
-
-    /* ── Painel direito: formulário ────────────────────────────────────────── */
-    .lx-right {
-        padding: 64px 48px;
-        display: flex; flex-direction: column; justify-content: center;
-        background: rgba(8,12,20,0.7);
-    }
-    .lx-form-eyebrow {
+    .lx-eyebrow {
         font-family: 'Inter', sans-serif;
         font-size: 0.62rem; font-weight: 600;
+        letter-spacing: 5px; text-transform: uppercase;
+        color: rgba(197,165,102,0.4);
+        margin-bottom: 18px;
+    }
+    .lx-name {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.8rem; font-weight: 600; line-height: 1.1;
+        color: #EDE5D4; letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+    .lx-name em { color: #C5A566; font-style: normal; }
+    .lx-role {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.05rem; font-style: italic;
+        color: rgba(197,165,102,0.5); letter-spacing: 2px;
+        margin-bottom: 28px;
+    }
+    .lx-sig {
+        font-family: 'Great Vibes', cursive;
+        font-size: 2.8rem; color: rgba(197,165,102,0.32);
+        line-height: 1; margin-bottom: 28px;
+    }
+    .lx-sep {
+        width: 44px; height: 1px;
+        background: linear-gradient(90deg, #C5A566, transparent);
+        margin-bottom: 24px;
+    }
+    .lx-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem; font-weight: 300;
+        color: rgba(237,229,212,0.32); line-height: 1.75;
+        margin-bottom: 32px;
+    }
+    .lx-feat { display: flex; flex-direction: column; gap: 10px; }
+    .lx-feat-row { display: flex; align-items: center; gap: 10px; }
+    .lx-dot {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: #C5A566; opacity: 0.45; flex-shrink: 0;
+    }
+    .lx-feat-t {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem; color: rgba(237,229,212,0.35);
+    }
+
+    /* Painel direito */
+    .lx-right {
+        padding: 60px 44px;
+        background: rgba(6,10,16,0.85);
+        min-height: 560px;
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    .lx-form-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6rem; font-weight: 600;
         letter-spacing: 4px; text-transform: uppercase;
-        color: rgba(197,165,102,0.38); margin-bottom: 10px;
+        color: rgba(197,165,102,0.36); margin-bottom: 8px;
     }
     .lx-form-title {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 2.1rem; font-weight: 600; line-height: 1.1;
-        color: #EDE5D4; margin-bottom: 8px;
+        font-size: 2.2rem; font-weight: 600; color: #EDE5D4;
+        margin-bottom: 6px; line-height: 1.1;
     }
     .lx-form-title span { color: #C5A566; }
     .lx-form-sub {
         font-family: 'Cormorant Garamond', serif;
         font-size: 0.95rem; font-style: italic;
-        color: rgba(197,165,102,0.42); margin-bottom: 36px;
-        letter-spacing: 0.5px;
+        color: rgba(197,165,102,0.4); margin-bottom: 32px;
     }
-    .lx-form-ornament {
-        display: flex; align-items: center; gap: 10px; margin-bottom: 32px;
+    .lx-orn {
+        display: flex; align-items: center;
+        gap: 10px; margin-bottom: 28px;
     }
-    .lx-orn-line { flex:1; height:1px; background: rgba(197,165,102,0.15); }
-    .lx-orn-d { font-size:0.4rem; color:rgba(197,165,102,0.3); }
+    .lx-orn-l { flex: 1; height: 1px; background: rgba(197,165,102,0.14); }
+    .lx-orn-d { font-size: 0.38rem; color: rgba(197,165,102,0.28); }
 
-    /* ── Inputs ────────────────────────────────────────────────────────────── */
+    /* Inputs */
     [data-testid="stForm"] {
         background: transparent !important;
         border: none !important; padding: 0 !important;
@@ -884,8 +850,7 @@ if not st.session_state["autenticado"]:
         font-family: 'Inter', sans-serif !important;
         font-size: 0.62rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        color: rgba(197,165,102,0.42) !important;
-        margin-bottom: 2px !important;
+        color: rgba(197,165,102,0.4) !important;
     }
     [data-testid="stForm"] label span { display: none !important; }
     [data-testid="stForm"] input {
@@ -895,146 +860,119 @@ if not st.session_state["autenticado"]:
         color: #EDE5D4 !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 0.9rem !important; font-weight: 300 !important;
-        letter-spacing: 0.5px !important;
-        padding: 12px 16px !important;
+        padding: 13px 16px !important;
         caret-color: #C5A566 !important;
         outline: none !important; box-shadow: none !important;
-        transition: border-color 0.25s ease !important;
+        transition: all 0.25s ease !important;
     }
     [data-testid="stForm"] input:focus {
-        border-color: rgba(197,165,102,0.45) !important;
+        border-color: rgba(197,165,102,0.5) !important;
         background: rgba(197,165,102,0.07) !important;
         box-shadow: 0 0 0 3px rgba(197,165,102,0.07) !important;
     }
-
-    /* ── Botão ─────────────────────────────────────────────────────────────── */
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
-        background: rgba(197,165,102,0.1) !important;
-        border: 1px solid rgba(197,165,102,0.35) !important;
+        background: rgba(197,165,102,0.09) !important;
+        border: 1px solid rgba(197,165,102,0.32) !important;
         border-radius: 10px !important;
         color: #C5A566 !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 0.72rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        padding: 14px 20px !important; margin-top: 8px !important;
+        padding: 14px !important; margin-top: 8px !important;
         transition: all 0.3s ease !important;
     }
     [data-testid="stFormSubmitButton"] > button:hover {
-        background: rgba(197,165,102,0.18) !important;
+        background: rgba(197,165,102,0.16) !important;
         border-color: #C5A566 !important;
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 24px rgba(197,165,102,0.12) !important;
     }
-
-    /* ── Alerta de erro ────────────────────────────────────────────────────── */
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
         border: 1px solid rgba(180,60,60,0.22) !important;
         border-radius: 10px !important;
         color: rgba(220,110,110,0.8) !important;
         font-size: 0.75rem !important;
-        letter-spacing: 1px !important;
     }
     [data-testid="stAlert"] svg { display: none !important; }
 
-    /* ── Rodapé da página ──────────────────────────────────────────────────── */
+    /* Rodapé fixo */
     .lx-footer {
-        position: fixed; bottom: 24px; left: 50%;
-        transform: translateX(-50%);
+        text-align: center;
         font-family: 'Inter', sans-serif;
-        font-size: 0.62rem; font-weight: 500;
-        letter-spacing: 2px; text-transform: uppercase;
-        color: rgba(197,165,102,0.22);
-        display: flex; align-items: center; gap: 20px;
-        white-space: nowrap;
-        z-index: 10;
+        font-size: 0.62rem; letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(197,165,102,0.2);
+        margin-top: 20px;
     }
-    .lx-footer-sep { opacity: 0.3; }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── LAYOUT SPLIT-SCREEN ───────────────────────────────────────────────────
-    st.markdown("""
-    <div class="lx-split">
+    # LAYOUT: st.columns para split real
+    col_esq, col_dir = st.columns([1.15, 0.85])
 
-        <!-- PAINEL ESQUERDO: IDENTIDADE -->
+    with col_esq:
+        st.markdown("""
         <div class="lx-left">
-            <div class="lx-left-eyebrow">Escritório de Assessoria Jurídica</div>
-            <div class="lx-left-name">Edson<br><em>Medeiros</em></div>
-            <div class="lx-left-role">Consultorias &amp; Compliance</div>
-            <div class="lx-signature">E. Medeiros</div>
-            <div class="lx-left-sep"></div>
-            <p class="lx-left-desc">
+            <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
+            <div class="lx-name">Edson<br><em>Medeiros</em></div>
+            <div class="lx-role">Consultorias &amp; Compliance</div>
+            <div class="lx-sig">E. Medeiros</div>
+            <div class="lx-sep"></div>
+            <p class="lx-desc">
                 Sistema especializado em auditoria bancária inteligente.
                 Identificamos cobranças indevidas com precisão e geramos
                 relatórios prontos para uso jurídico.
             </p>
-            <div class="lx-features">
-                <div class="lx-feature">
-                    <div class="lx-feature-dot"></div>
-                    <div class="lx-feature-text">Extrai débitos indevidos do extrato PDF</div>
+            <div class="lx-feat">
+                <div class="lx-feat-row">
+                    <div class="lx-dot"></div>
+                    <div class="lx-feat-t">Extrai débitos indevidos do extrato PDF</div>
                 </div>
-                <div class="lx-feature">
-                    <div class="lx-feature-dot"></div>
-                    <div class="lx-feature-text">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div>
+                <div class="lx-feat-row">
+                    <div class="lx-dot"></div>
+                    <div class="lx-feat-t">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div>
                 </div>
-                <div class="lx-feature">
-                    <div class="lx-feature-dot"></div>
-                    <div class="lx-feature-text">Suporta extratos Bradesco · múltiplas páginas</div>
+                <div class="lx-feat-row">
+                    <div class="lx-dot"></div>
+                    <div class="lx-feat-t">Suporta extratos Bradesco · múltiplas páginas</div>
                 </div>
             </div>
         </div>
+        """, unsafe_allow_html=True)
 
-        <!-- PAINEL DIREITO: FORMULÁRIO -->
+    with col_dir:
+        st.markdown("""
         <div class="lx-right">
-            <div class="lx-form-eyebrow">Sistema de Auditoria</div>
+            <div class="lx-form-label">Sistema de Auditoria</div>
             <div class="lx-form-title">Extrato<span>X</span></div>
             <div class="lx-form-sub">Acesse sua conta para continuar</div>
-            <div class="lx-form-ornament">
-                <div class="lx-orn-line"></div>
+            <div class="lx-orn">
+                <div class="lx-orn-l"></div>
                 <div class="lx-orn-d">◆</div>
-                <div class="lx-orn-line"></div>
+                <div class="lx-orn-l"></div>
             </div>
         </div>
+        """, unsafe_allow_html=True)
 
-    </div>
+        with st.form("login_form", clear_on_submit=False):
+            _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
+            _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
+            _submitted = st.form_submit_button("◆  Acessar o Sistema")
 
-    <div class="lx-footer">
-        <span>Edson Medeiros Consultorias</span>
-        <span class="lx-footer-sep">·</span>
-        <span>(92) 99508-7379</span>
-        <span class="lx-footer-sep">·</span>
-        <span>edson.senabr@gmail.com</span>
-    </div>
-    """, unsafe_allow_html=True)
+        if _submitted:
+            if _check_login(_email, _senha):
+                st.session_state["autenticado"] = True
+                st.rerun()
+            else:
+                st.error("Credenciais inválidas — verifique e-mail e senha")
 
-    # ── FORMULÁRIO STREAMLIT (renderiza dentro do painel direito via CSS overlay) ──
-    # Posicionar o form sobre o painel direito com CSS
     st.markdown("""
-    <style>
-    /* Posiciona o stForm sobre o painel direito do split */
-    [data-testid="stVerticalBlock"] > div:last-of-type {
-        position: relative;
-        margin-top: -320px;
-        padding: 0 24px;
-        max-width: 480px;
-        margin-left: auto;
-    }
-    </style>
+    <div class="lx-footer">
+        Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com
+    </div>
     """, unsafe_allow_html=True)
-
-    with st.form("login_form", clear_on_submit=False):
-        _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
-        _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
-        _submitted = st.form_submit_button("◆  Acessar o Sistema")
-
-    if _submitted:
-        if _check_login(_email, _senha):
-            st.session_state["autenticado"] = True
-            st.rerun()
-        else:
-            st.error("Credenciais inválidas — verifique e-mail e senha")
 
     st.stop()
 
