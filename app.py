@@ -808,6 +808,21 @@ def _agrupar_linhas_por_y(words, tolerancia_y=5):
             linhas.append([w])
     return linhas
 
+def _limpar_historico(txt):
+    """
+    Remove do texto da rubrica os artefatos que o pdfplumber concatena
+    na mesma linha: número de docto (sequência de 7+ dígitos), valores
+    monetários (ex: 69,86) e saldos (ex: 3.467,77).
+    Mantém apenas o texto descritivo da rubrica.
+    """
+    # Remove valores monetários: 1.234,56 ou 123,45
+    limpo = re.sub(r'\d{1,3}(?:\.\d{3})*,\d{2}', '', txt)
+    # Remove sequências longas de dígitos (nº docto, nº contrato, etc.)
+    limpo = re.sub(r'\b\d{5,}\b', '', limpo)
+    # Remove espaços múltiplos resultantes
+    limpo = re.sub(r'\s{2,}', ' ', limpo).strip()
+    return limpo[:80]
+
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
 
@@ -940,19 +955,21 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not valor_final:
                     continue
 
+                historico = _limpar_historico(txt)
+
                 if apos_excl:
                     pendentes.append({
                         'DATA':      None,
                         'CATEGORIA': rubrica,
                         'VALOR':     valor_final,
-                        'HISTÓRICO': txt[:80],
+                        'HISTÓRICO': historico,
                     })
                 elif data_atual:
                     resultados.append({
                         'DATA':      data_atual,
                         'CATEGORIA': rubrica,
                         'VALOR':     valor_final,
-                        'HISTÓRICO': txt[:80],
+                        'HISTÓRICO': historico,
                     })
 
     # Flush final: pendentes que sobraram após todas as páginas
