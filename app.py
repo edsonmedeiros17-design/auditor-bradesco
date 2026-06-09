@@ -24,7 +24,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. RÚBRICAS ATUALIZADAS ---
+# --- 2. RÚBRICAS ---
 RUBRICAS_MESTRE = {
     "CESTA": r"CESTA",
     "PACOTE": r"PACOTE",
@@ -45,26 +45,42 @@ RUBRICAS_MESTRE = {
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR CORRIGIDO ---
+# --- 3. MOTOR — LÓGICA DATA INFERIOR ---
 #
-# BUG ORIGINAL: quando data e rubrica estavam na mesma linha (ex: "15/01/2020 TARIFA BANCARIA CESTA B.EXPRESSO4 21,60"),
-# o código selava e descarregava o cesto ANTES de adicionar o item da linha atual —
-# fazendo o lançamento ser perdido ou associado à data errada.
+# COMO FUNCIONA O MODELO "DATA INFERIOR":
 #
-# CORREÇÃO: a ordem de operações por linha é agora:
-#   1. Detectar data, valor e rubrica presentes na linha
-#   2. Se há termo de exclusão → limpar pendentes e pular
-#   3. Se rubrica encontrada → adicionar ao cesto (já com valor se disponível na mesma linha)
-#   4. Senão, se há valor → associar ao último pendente do cesto
-#   5. Por último: se a linha tem data → selar o cesto INTEIRO (já inclui o item recém-adicionado)
-#      e mover para resultados
+# No extrato Bradesco, existem dois formatos de linha:
 #
-# Assim, um lançamento em linha única "DATA RUBRICA VALOR" é corretamente capturado
-# antes de o cesto ser selado pela data da mesma linha.
+#   FORMATO A — linha COM data ao lado da rubrica:
+#     "15/01/2020  TARIFA BANCARIA  CESTA B.EXPRESSO4  21,60"
+#     → rubrica e data estão juntas. A data pertence a esse lançamento.
+#
+#   FORMATO B — linha SEM data (rubrica "solta"):
+#     "MORA CREDITO PESSOAL  115,62"
+#     "ENCARGOS LIMITE DE CRED  19,31"
+#     "08/02/2017  SAQUE DIN CORBAN CARTAO  ..."   ← próxima linha datada
+#
+#   No formato B, as rubricas acima não têm data própria.
+#   A data que as referencia é a da PRÓXIMA linha que contiver uma data —
+#   chamada aqui de "data inferior" pois aparece abaixo no extrato.
+#
+# SOLUÇÃO IMPLEMENTADA — dois cestos separados:
+#
+#   cesto_com_data   → itens capturados em linhas QUE JÁ TÊM data (formato A)
+#                      são selados imediatamente com a data da própria linha.
+#
+#   cesto_sem_data   → itens capturados em linhas SEM data (formato B)
+#                      ficam aguardando. Quando a próxima linha com data aparece,
+#                      ela é usada para selar TODOS os itens pendentes do cesto_sem_data
+#                      ANTES de processar o lançamento novo dessa linha datada.
+#
+# Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
-    cesto_acumulador = []
+
+    # Cesto para rubricas SEM data na linha (esperam a próxima data que aparecer)
+    cesto_sem_data = []
 
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
@@ -78,14 +94,16 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not linha_up:
                     continue
 
-                # PASSO 1 — Detectar data, valor e rubrica presentes na linha
+                # PASSO 1 — Detectar componentes da linha
                 match_data  = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
+                tem_data    = match_data is not None
+                tem_valor   = match_valor is not None
 
-                # PASSO 2 — Termos de exclusão: descartar pendentes e pular esta linha
+                # PASSO 2 — Termos de exclusão: descartar pendentes sem data e pular
                 if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_acumulador = [
-                        item for item in cesto_acumulador
+                    cesto_sem_data = [
+                        item for item in cesto_sem_data
                         if item["VALOR"] != "PENDENTE"
                     ]
                     continue
@@ -98,61 +116,67 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             rubrica_detectada = nome
                             break
 
-                # PASSO 4 — Adicionar ao cesto ou associar valor pendente
-                if rubrica_detectada:
-                    # Rubrica encontrada: empilha já com valor se disponível na linha
-                    valor_na_linha = match_valor.group(1) if match_valor else "PENDENTE"
-                    cesto_acumulador.append({
-                        "CATEGORIA": rubrica_detectada,
-                        "VALOR": valor_na_linha,
-                        "HISTÓRICO": linha_up[:80]
-                    })
-
-                elif match_valor and cesto_acumulador:
-                    # Sem rubrica, mas há valor: associa ao último item pendente
-                    if cesto_acumulador[-1]["VALOR"] == "PENDENTE":
-                        cesto_acumulador[-1]["VALOR"] = match_valor.group(1)
-
-                # PASSO 5 — Selagem por data (executada DEPOIS de processar rubrica/valor)
-                # Garante que o item adicionado nesta linha já está no cesto
-                # antes de ele ser selado e descarregado.
-                if match_data:
-                    data_encontrada = match_data.group(1)
-                    itens_prontos = []
-                    itens_pendentes = []
-
-                    for item in cesto_acumulador:
+                # PASSO 4 — SELAGEM DOS PENDENTES SEM DATA
+                #
+                # Se esta linha tem uma data, ela é a "data inferior" para todos
+                # os itens do cesto_sem_data acumulados antes dela.
+                # Selamos esses itens AGORA, antes de processar o lançamento atual.
+                #
+                # Isso garante que:
+                #   - MORA e ENCARGOS (sem data) recebem a data do SAQUE logo abaixo (08/02/2017)
+                #   - O próprio SAQUE (se for rubrica) ainda não entrou no cesto, então
+                #     não recebe erroneamente a mesma data que os anteriores.
+                if tem_data:
+                    data_inferior = match_data.group(1)
+                    for item in cesto_sem_data:
                         if item["VALOR"] != "PENDENTE":
-                            item["DATA"] = data_encontrada
-                            itens_prontos.append(item)
-                        else:
-                            # Mantém no cesto para receber valor nas próximas linhas
-                            itens_pendentes.append(item)
+                            item["DATA"] = data_inferior
+                            resultados.append(item)
+                    # Descarta pendentes sem valor que ficaram órfãos
+                    cesto_sem_data = []
 
-                    resultados.extend(itens_prontos)
-                    cesto_acumulador = itens_pendentes
+                # PASSO 5 — Processar o lançamento da linha atual
+                if rubrica_detectada:
+                    valor_na_linha = match_valor.group(1) if tem_valor else "PENDENTE"
+                    novo_item = {
+                        "CATEGORIA": rubrica_detectada,
+                        "VALOR":     valor_na_linha,
+                        "HISTÓRICO": linha_up[:80]
+                    }
 
-    # PASSO 6 — Flush final: ao término do PDF, descarrega o que restar no cesto
-    # (lançamentos na última página sem data posterior não eram perdidos antes — agora garantido)
-    for item in cesto_acumulador:
-        if item["VALOR"] != "PENDENTE" and "DATA" not in item:
-            item["DATA"] = "00/00/0000"  # data sentinela para indicar sem data detectada
+                    if tem_data:
+                        # FORMATO A: data e rubrica na mesma linha → sela imediatamente
+                        novo_item["DATA"] = match_data.group(1)
+                        resultados.append(novo_item)
+                    else:
+                        # FORMATO B: sem data → acumula no cesto para receber data inferior
+                        cesto_sem_data.append(novo_item)
+
+                elif tem_valor and not tem_data and cesto_sem_data:
+                    # Linha de complemento (valor na linha seguinte à rubrica sem data)
+                    if cesto_sem_data[-1]["VALOR"] == "PENDENTE":
+                        cesto_sem_data[-1]["VALOR"] = match_valor.group(1)
+
+    # PASSO 6 — Flush final: itens que sobraram no cesto sem data ao fim do PDF
+    for item in cesto_sem_data:
+        if item["VALOR"] != "PENDENTE":
+            item.setdefault("DATA", "00/00/0000")
             resultados.append(item)
 
     return resultados
 
-# --- 4. FUNÇÃO PARA GERAR PLANILHA DE CÁLCULOS ---
+
+# --- 4. GERAÇÃO DE PLANILHA ---
+def fix_date(d):
+    p = d.split('/')
+    if len(p) == 3 and len(p[2]) == 2:
+        p[2] = "20" + p[2]
+    return "/".join(p)
+
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
-
-    def fix_date(d):
-        p = d.split('/')
-        if len(p) == 3 and len(p[2]) == 2:
-            p[2] = "20" + p[2]
-        return "/".join(p)
-
-    df['DT'] = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
-    df['ANO'] = df['DT'].dt.year
+    df['DT']      = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
+    df['ANO']     = df['DT'].dt.year
     df['MES_NUM'] = df['DT'].dt.month
 
     agrupado = df.groupby(['ANO', 'MES_NUM'])['V_NUM'].sum().reset_index()
@@ -161,25 +185,25 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws = wb.active
     ws.title = "Tabela de Cálculos"
 
-    font_header = Font(bold=True, size=11)
-    font_title  = Font(bold=True, size=12)
-    fill_blue   = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
-    fill_peach  = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
-    border      = Border(left=Side(style='thin'), right=Side(style='thin'),
-                         top=Side(style='thin'), bottom=Side(style='thin'))
+    font_header  = Font(bold=True, size=11)
+    font_title   = Font(bold=True, size=12)
+    fill_blue    = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
+    fill_peach   = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+    border       = Border(left=Side(style='thin'), right=Side(style='thin'),
+                          top=Side(style='thin'),  bottom=Side(style='thin'))
     align_center = Alignment(horizontal='center', vertical='center')
 
     ws.merge_cells('A1:E1')
-    ws['A1'] = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
-    ws['A1'].font = font_title
-    ws['A1'].fill = fill_blue
+    ws['A1']           = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
+    ws['A1'].font      = font_title
+    ws['A1'].fill      = fill_blue
     ws['A1'].alignment = align_center
 
     meses_nomes = ["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO",
                    "JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"]
 
-    ws['A2'] = "MESES"
-    ws['A2'].font = font_header
+    ws['A2']           = "MESES"
+    ws['A2'].font      = font_header
     ws['A2'].alignment = align_center
 
     anos = sorted(agrupado['ANO'].dropna().astype(int).unique())
@@ -188,14 +212,14 @@ def gerar_excel_calculos(df, rubrica_nome):
 
     for idx, ano in enumerate(anos):
         col = idx + 2
-        ws.cell(row=2, column=col, value=ano).font = font_header
-        ws.cell(row=2, column=col).alignment = align_center
-        ws.cell(row=2, column=col).fill = fill_blue
+        ws.cell(row=2, column=col, value=ano).font      = font_header
+        ws.cell(row=2, column=col).alignment             = align_center
+        ws.cell(row=2, column=col).fill                  = fill_blue
 
     for m_idx, mes in enumerate(meses_nomes):
         row = m_idx + 3
         ws.cell(row=row, column=1, value=mes).font = font_header
-        ws.cell(row=row, column=1).fill = fill_blue
+        ws.cell(row=row, column=1).fill            = fill_blue
 
         for a_idx, ano in enumerate(anos):
             col = a_idx + 2
@@ -205,7 +229,7 @@ def gerar_excel_calculos(df, rubrica_nome):
             if val > 0:
                 cell = ws.cell(row=row, column=col, value=val)
                 cell.number_format = '"R$ " #,##0.00'
-            ws.cell(row=row, column=col).fill = fill_peach
+            ws.cell(row=row, column=col).fill   = fill_peach
             ws.cell(row=row, column=col).border = border
 
     row_anual = 15
@@ -213,13 +237,13 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws.cell(row=row_anual, column=1).fill = fill_blue
 
     for idx, ano in enumerate(anos):
-        col = idx + 2
+        col        = idx + 2
         col_letter = get_column_letter(col)
-        formula = f"=SUM({col_letter}3:{col_letter}14)"
-        cell = ws.cell(row=row_anual, column=col, value=formula)
+        formula    = f"=SUM({col_letter}3:{col_letter}14)"
+        cell       = ws.cell(row=row_anual, column=col, value=formula)
         cell.number_format = '"R$ " #,##0.00'
-        cell.font = font_header
-        cell.fill = fill_peach
+        cell.font   = font_header
+        cell.fill   = fill_peach
         cell.border = border
 
     row_total = 16
@@ -227,31 +251,30 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws.cell(row=row_total, column=1).fill = fill_blue
 
     last_col_letter = get_column_letter(len(anos) + 1)
-    formula_total = f"=SUM(B{row_anual}:{last_col_letter}{row_anual})"
+    formula_total   = f"=SUM(B{row_anual}:{last_col_letter}{row_anual})"
     ws.merge_cells(start_row=row_total, start_column=2,
                    end_row=row_total, end_column=len(anos)+1)
-    cell_total = ws.cell(row=row_total, column=2, value=formula_total)
-    cell_total.number_format = '"R$ " #,##0.00'
-    cell_total.font = font_header
-    cell_total.alignment = Alignment(horizontal='right')
+    cell_total                = ws.cell(row=row_total, column=2, value=formula_total)
+    cell_total.number_format  = '"R$ " #,##0.00'
+    cell_total.font           = font_header
+    cell_total.alignment      = Alignment(horizontal='right')
 
     row_dobro = 17
     ws.merge_cells(start_row=row_dobro, start_column=1,
                    end_row=row_dobro+1, end_column=1)
-    ws.cell(row=row_dobro, column=1,
-            value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
+    ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
     ws.cell(row=row_dobro, column=1).alignment = Alignment(
         wrap_text=True, horizontal='center', vertical='center')
     ws.cell(row=row_dobro, column=1).fill = fill_blue
 
     ws.merge_cells(start_row=row_dobro, start_column=2,
                    end_row=row_dobro+1, end_column=len(anos)+1)
-    formula_dobro = f"=B{row_total}*2"
-    cell_dobro = ws.cell(row=row_dobro, column=2, value=formula_dobro)
-    cell_dobro.number_format = '"R$ " #,##0.00'
-    cell_dobro.font = font_header
-    cell_dobro.alignment = Alignment(horizontal='right', vertical='center')
-    cell_dobro.fill = fill_peach
+    formula_dobro              = f"=B{row_total}*2"
+    cell_dobro                 = ws.cell(row=row_dobro, column=2, value=formula_dobro)
+    cell_dobro.number_format   = '"R$ " #,##0.00'
+    cell_dobro.font            = font_header
+    cell_dobro.alignment       = Alignment(horizontal='right', vertical='center')
+    cell_dobro.fill            = fill_peach
 
     ws.column_dimensions['A'].width = 25
     for i in range(2, len(anos) + 2):
@@ -260,6 +283,7 @@ def gerar_excel_calculos(df, rubrica_nome):
     output = io.BytesIO()
     wb.save(output)
     return output.getvalue()
+
 
 # --- 5. DASHBOARD ---
 st.markdown('<h1 class="main-title">Consultoria de Ativos</h1>', unsafe_allow_html=True)
@@ -292,12 +316,6 @@ if upload:
                            .str.replace(',', '.', regex=False)
                            .astype(float))
 
-            def fix_date(d):
-                p = d.split('/')
-                if len(p) == 3 and len(p[2]) == 2:
-                    p[2] = "20" + p[2]
-                return "/".join(p)
-
             df['DT_O'] = pd.to_datetime(
                 df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce'
             )
@@ -326,7 +344,7 @@ if upload:
 
             cats = df['CATEGORIA'].unique()
             for cat in cats:
-                df_cat = df[df['CATEGORIA'] == cat]
+                df_cat     = df[df['CATEGORIA'] == cat]
                 excel_file = gerar_excel_calculos(df_cat, cat)
                 st.download_button(
                     label=f"📊 Baixar Tabela: {cat}",
@@ -339,7 +357,10 @@ if upload:
                 '<h3 style="color:#BFAF83; text-align:center; margin-top:30px;">📋 Lista Detalhada</h3>',
                 unsafe_allow_html=True
             )
-            st.dataframe(df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']], use_container_width=True)
+            st.dataframe(
+                df[['DATA', 'CATEGORIA', 'VALOR', 'HISTÓRICO']],
+                use_container_width=True
+            )
         else:
             st.info("Nenhum débito encontrado com as rubricas selecionadas.")
 
