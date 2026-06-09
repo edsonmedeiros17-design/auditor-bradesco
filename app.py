@@ -30,11 +30,13 @@ st.markdown("""
     }
 
     /* ── HEADER PRINCIPAL ─────────────────────────────────────────────────────── */
+    /* Logomarca tipográfica — dois níveis, não um simples h1 */
     .em-header-wrap {
         text-align: center;
         padding: 52px 0 36px;
         position: relative;
     }
+    /* Ornamento vertical esquerdo e direito */
     .em-header-wrap::before,
     .em-header-wrap::after {
         content: '';
@@ -123,6 +125,7 @@ st.markdown("""
     }
 
     /* ── UPLOAD ZONE ──────────────────────────────────────────────────────────── */
+    /* Caixa de upload com estilo premium */
     [data-testid="stFileUploader"] {
         border: 1px solid rgba(197,165,102,0.3) !important;
         border-radius: 0 !important;
@@ -320,6 +323,8 @@ st.markdown("""
         margin: 12px 16px 8px;
         border: 1px solid rgba(197,165,102,0.18);
     }
+    /* Os dois botões ficam escondidos; a lógica Python continua funcionando */
+    /* Reestilizamos os botões do Streamlit para parecerem um toggle segmentado */
     [data-testid="stSidebar"] .stButton > button {
         border-radius: 0 !important;
         font-family: 'Inter', sans-serif !important;
@@ -332,6 +337,7 @@ st.markdown("""
         transition: all 0.2s ease !important;
         border: none !important;
     }
+    /* Marcar Todas — fundo dourado tênue */
     [data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
         background: rgba(197,165,102,0.1) !important;
         color: #C5A566 !important;
@@ -341,6 +347,7 @@ st.markdown("""
         background: rgba(197,165,102,0.2) !important;
         color: #D4B87A !important;
     }
+    /* Desmarcar — apagado */
     [data-testid="stSidebar"] .stButton:nth-of-type(2) > button {
         background: transparent !important;
         color: rgba(232,220,200,0.28) !important;
@@ -351,14 +358,17 @@ st.markdown("""
     }
 
     /* ── LISTA DE RUBRICAS ───────────────────────────────────────────────────── */
+    /* Esconde completamente o checkbox nativo — fica invisível mas funcional */
     [data-testid="stSidebar"] .stCheckbox {
         margin: 0 !important;
         padding: 0 !important;
         position: relative !important;
     }
+    /* Oculta o quadradinho nativo do checkbox */
     [data-testid="stSidebar"] .stCheckbox > label > div:first-child {
         display: none !important;
     }
+    /* Toda a área do label vira o item clicável */
     [data-testid="stSidebar"] .stCheckbox > label {
         display: flex !important;
         align-items: center !important;
@@ -372,10 +382,12 @@ st.markdown("""
         transition: all 0.18s ease !important;
         background: transparent !important;
     }
+    /* Hover: fundo leve */
     [data-testid="stSidebar"] .stCheckbox > label:hover {
         background: rgba(197,165,102,0.05) !important;
         border-left-color: rgba(197,165,102,0.3) !important;
     }
+    /* Texto da rubrica — estado DESMARCADO */
     [data-testid="stSidebar"] .stCheckbox > label > div:last-child,
     [data-testid="stSidebar"] .stCheckbox > label > span {
         font-family: 'Inter', sans-serif !important;
@@ -386,10 +398,12 @@ st.markdown("""
         text-transform: uppercase !important;
         line-height: 1 !important;
     }
+    /* Estado MARCADO: borda dourada + texto brilhante */
     [data-testid="stSidebar"] input[type="checkbox"]:checked ~ div,
     [data-testid="stSidebar"] input[type="checkbox"]:checked + div + div {
         color: #C5A566 !important;
     }
+    /* Forçar label inteira quando checked */
     [data-testid="stSidebar"] .stCheckbox:has(input:checked) > label {
         border-left-color: #C5A566 !important;
         background: rgba(197,165,102,0.06) !important;
@@ -494,22 +508,26 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
+    # ── CSS: transforma o stApp inteiro na tela de login ──────────────────────
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
 
+    /* Esconde toda a UI padrão do Streamlit */
     header, footer,
     [data-testid="stSidebar"],
     [data-testid="stToolbar"],
     [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
+    /* Fundo da tela */
     .stApp {
         background: #060A0D !important;
         background-image:
             radial-gradient(circle, rgba(197,165,102,0.055) 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
+    /* Vinheta sobre a grade */
     .stApp::after {
         content: '';
         position: fixed;
@@ -520,15 +538,18 @@ if not st.session_state["autenticado"]:
         z-index: 0;
     }
 
+    /* Container principal: centraliza verticalmente */
     .block-container {
         max-width: 480px !important;
         padding: 0 24px !important;
         margin: 0 auto !important;
         position: relative;
         z-index: 1;
+        /* Centralização vertical aproximada */
         padding-top: max(60px, 10vh) !important;
     }
 
+    /* ── LOGOMARCA ────────────────────────────────────────────────────────── */
     .lx-logo {
         text-align: center;
         margin-bottom: 10px;
@@ -569,6 +590,7 @@ if not st.session_state["autenticado"]:
         margin-top: 5px;
     }
 
+    /* ── ORNAMENTO ───────────────────────────────────────────────────────── */
     .lx-ornament {
         display: flex;
         align-items: center;
@@ -587,6 +609,7 @@ if not st.session_state["autenticado"]:
     }
     .lx-diamond { font-size: 0.45rem; color: rgba(197,165,102,0.45); }
 
+    /* ── NOME DO ROBÔ ────────────────────────────────────────────────────── */
     .lx-robot {
         text-align: center;
         margin-bottom: 14px;
@@ -615,6 +638,7 @@ if not st.session_state["autenticado"]:
         letter-spacing: 0;
     }
 
+    /* ── BOAS-VINDAS ─────────────────────────────────────────────────────── */
     .lx-welcome {
         font-family: 'Cormorant Garamond', serif;
         font-size: 0.92rem;
@@ -626,12 +650,15 @@ if not st.session_state["autenticado"]:
         margin-bottom: 28px;
     }
 
+    /* ── FORMULÁRIO — inputs ─────────────────────────────────────────────── */
+    /* Wrapper do form sem bordas padrão */
     [data-testid="stForm"] {
         background: rgba(197,165,102,0.03) !important;
         border: 1px solid rgba(197,165,102,0.16) !important;
         border-radius: 0 !important;
         padding: 0 !important;
     }
+    /* Inputs: linha inferior apenas, sem caixa */
     [data-testid="stForm"] input {
         background: transparent !important;
         border: none !important;
@@ -651,6 +678,7 @@ if not st.session_state["autenticado"]:
         box-shadow: none !important;
         outline: none !important;
     }
+    /* Labels dos inputs */
     [data-testid="stForm"] label {
         font-family: 'Inter', sans-serif !important;
         font-size: 0.55rem !important;
@@ -662,8 +690,10 @@ if not st.session_state["autenticado"]:
         padding-top: 14px !important;
         padding-bottom: 2px !important;
     }
+    /* Esconde o asterisco de "required" */
     [data-testid="stForm"] label span { display: none !important; }
 
+    /* ── BOTÃO SUBMISSÃO ─────────────────────────────────────────────────── */
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
         background: transparent !important;
@@ -686,6 +716,7 @@ if not st.session_state["autenticado"]:
         border-top-color: rgba(197,165,102,0.35) !important;
     }
 
+    /* ── ALERTA DE ERRO ──────────────────────────────────────────────────── */
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
         border: 1px solid rgba(180,60,60,0.25) !important;
@@ -696,11 +727,15 @@ if not st.session_state["autenticado"]:
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
     }
+    /* Esconde ícone padrão do alerta */
     [data-testid="stAlert"] svg { display: none !important; }
+
+    /* ── SPINNER ─────────────────────────────────────────────────────────── */
     [data-testid="stSpinner"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
+    # ── CONTEÚDO VISUAL (logomarca + robô + boas-vindas) ──────────────────────
     st.markdown("""
     <div class="lx-logo">
         <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
@@ -726,6 +761,7 @@ if not st.session_state["autenticado"]:
     </p>
     """, unsafe_allow_html=True)
 
+    # ── FORMULÁRIO DE LOGIN ────────────────────────────────────────────────────
     with st.form("login_form", clear_on_submit=False):
         _email = st.text_input(
             "E-mail",
@@ -753,28 +789,91 @@ if not st.session_state["autenticado"]:
 
 # --- 2. RÚBRICAS ---
 RUBRICAS_MESTRE = {
+    # "TARIFA BANCARIA / CESTA B.EXPRESSO4" — o nome real no extrato está na sublinha
     "CESTA": r"\bCESTA\b",
+
+    # "PACOTE DE SERVICOS" ou "PACOTE SERVICOS"
     "PACOTE": r"\bPACOTE\b",
+
+    # "MORA DE OPERACAO" / "MORA OPERACAO"
     "MORA DE OPERAÇÃO": r"MORA\s+DE\s+OPERA[CÇ]AO|MORA\s+OPERA[CÇ]AO\b",
+
+    # "MORA CREDITO PESSOAL" / "MORA CRED PESS" / "MORA CP"
     "MORA CREDITO PESSOAL": r"MORA\s+CREDITO\s+PESSOAL|MORA\s+CRED\s+PESS|MORA\s+CP\b",
+
+    # "MORA OPERACAO DE CREDITO" / "MORA OPER CRED"
     "MORA OPERACAO DE CREDITO": r"MORA\s+OPERA[CÇ]AO\s+DE\s+CREDITO|MORA\s+OPER\s+CRED",
+
+    # "BX" isolado — word boundary para não pegar "BXA" ou "COBRA"
     "BX": r"\bBX\b",
+
+    # "PARCELA CREDITO PESSOAL" / "PARC CRED PESS" / "PARCELA CP"
     "PARCELA CREDITO PESSOAL": r"PARCELA\s+CREDITO\s+PESSOAL|PARC\s+CRED\s+PESS|PARCELA\s+CP\b",
+
+    # "GASTOS CARTAO DE CREDITO" / "CARTAO DE CREDITO" / "FATURA CARTAO"
+    # NÃO inclui "CARTAO CREDITO ANUIDADE" (já capturado em ANUIDADE)
     "GASTOS CARTAO DE CREDITO": r"GASTOS\s+CART[AÃ]O|FATURA\s+CART[AÃ]O|CART[AÃ]O\s+DE\s+CREDITO(?!\s+ANUIDADE)",
+
+    # "SEGURO" / "SEG " / "SEGURADORA" — word boundary para não pegar "SAQUE"
     "SEGURO": r"\bSEGURO\b|\bSEGURADORA\b|\bSEG\s",
+
+    # "ADIANT" / "ADIANTAMENTO"
     "ADIANT": r"\bADIANT|\bADIANTAMENTO\b",
+
+    # "APLICACAO" / "APLIC" isolado
     "APLIC": r"\bAPLICA[CÇ]AO\b|\bAPLIC\b",
+
+    # "ENCARGOS" / "ENCARGO" / "ENCARGOS LIMITE DE CRED" / "IOF" não — só encargo mesmo
     "ENCARGOS": r"\bENCARGOS?\b|\bENC\s+LIMITE\b|\bLIMITE\s+DE\s+CRED\b",
+
+    # "CARTAO CREDITO ANUIDADE" / "ANUIDADE" — verificado ANTES de GASTOS CARTAO
     "ANUIDADE": r"\bANUIDADE\b|CART[AÃ]O\s+CREDITO\s+ANUIDADE",
+
+    # "OPERACOES VENCIDAS" / "OPERAÇÕES VENCIDAS"
     "OPERACOES VENCIDAS": r"OPERA[CÇ][OÕ]ES\s+VENCIDAS",
+
+    # "BRADESCO VIDA E PREVIDENCIA" / "VIDA E PREVIDENCIA" / "APORTE VGBL" / "PAGTO BRADESCO VIDA"
     "BRADESCO VIDA E PREVIDENCIA": r"BRADESCO\s+VIDA|VIDA\s+E\s+PREVID[EÊ]NCIA|APORTE\s+VGBL|PAGTO.*VIDA",
+
+    # "TITULO DE CAPITALIZACAO" / variações com acento
     "TITULO DE CAPITALIZACAO": r"T[IÍ]TULO\s+DE\s+CAPITALIZ|\bCAPITALIZ[AÇ]",
+
+    # "AUTO RE" — seguro automóvel / renovação automática
     "AUTO RE": r"\bAUTO\s+RE\b|\bAUTORE\b",
 }
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 
-# --- 3. MOTOR ---
+# --- 3. MOTOR — LÓGICA DATA INFERIOR ---
+#
+# COMO FUNCIONA O MODELO "DATA INFERIOR":
+#
+# No extrato Bradesco, existem dois formatos de linha:
+#
+#   FORMATO A — linha COM data ao lado da rubrica:
+#     "15/01/2020  TARIFA BANCARIA  CESTA B.EXPRESSO4  21,60"
+#     → rubrica e data estão juntas. A data pertence a esse lançamento.
+#
+#   FORMATO B — linha SEM data (rubrica "solta"):
+#     "MORA CREDITO PESSOAL  115,62"
+#     "ENCARGOS LIMITE DE CRED  19,31"
+#     "08/02/2017  SAQUE DIN CORBAN CARTAO  ..."   ← próxima linha datada
+#
+#   No formato B, as rubricas acima não têm data própria.
+#   A data que as referencia é a da PRÓXIMA linha que contiver uma data —
+#   chamada aqui de "data inferior" pois aparece abaixo no extrato.
+#
+# SOLUÇÃO IMPLEMENTADA — dois cestos separados:
+#
+#   cesto_com_data   → itens capturados em linhas QUE JÁ TÊM data (formato A)
+#                      são selados imediatamente com a data da própria linha.
+#
+#   cesto_sem_data   → itens capturados em linhas SEM data (formato B)
+#                      ficam aguardando. Quando a próxima linha com data aparece,
+#                      ela é usada para selar TODOS os itens pendentes do cesto_sem_data
+#                      ANTES de processar o lançamento novo dessa linha datada.
+#
+# Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
 def _extrair_debito(texto_up):
     """Penúltimo valor numérico = débito (último = saldo)."""
@@ -808,10 +907,37 @@ def _agrupar_linhas_por_y(words, tolerancia_y=5):
             linhas.append([w])
     return linhas
 
+# ── MOTOR POR COORDENADAS ─────────────────────────────────────────────────────
+#
+# PRINCÍPIO FUNDAMENTAL do extrato Bradesco:
+#
+# O extrato tem uma coluna "Data" à esquerda (X < 80px). Uma data nessa coluna
+# cobre TODOS os lançamentos abaixo até a próxima data na coluna Data.
+# Ou seja: lançamentos sem data na coluna Data pertencem ao mesmo dia da
+# última data que apareceu nessa coluna.
+#
+# Exemplo visual (pág7, jan/2021):
+#   Coluna Data    Coluna Histórico          Débito
+#   29/01/2021     TRANSF SALDO C/SAL P/CC
+#                  MORA CREDITO PESSOAL      289,14   ← sem data = 29/01/2021
+#                  ENCARGOS LIMITE DE CRED     6,81   ← sem data = 29/01/2021
+#                  TARIFA BANCARIA / CESTA    27,70   ← sem data = 29/01/2021
+#   01/02/2021     SAQUE DIN CORBAN           45,00
+#
+# O motor por texto tinha dificuldade em distinguir qual data pertencia a qual
+# lançamento. O motor por coordenadas resolve isso definitivamente ao usar
+# a posição X para identificar a coluna Data e a posição Y para agrupar linhas.
+#
+# Busca de valor (3 prioridades):
+#   1. Própria linha da rubrica
+#   2. Linha anterior (TIPO C — CESTA sublinha de TARIFA BANCARIA)
+#   3. Próximas linhas (TIPO B — ENCARGOS/PARCELA com dados abaixo)
+
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
 
     with pdfplumber.open(arquivo) as pdf:
+        # Variáveis compartilhadas entre páginas (pendentes podem atravessar fim de página)
         data_atual = None
         apos_excl  = False
         pendentes  = []
@@ -821,13 +947,16 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             if not words:
                 continue
 
+            # Agrupar palavras em linhas por proximidade Y
             grupos = _agrupar_linhas_por_y(words, tolerancia_y=5)
 
+            # Construir lista de linhas com metadados
             linhas = []
             for grupo in grupos:
                 grupo_s = sorted(grupo, key=lambda w: w['x0'])
                 texto_up = ' '.join(w['text'] for w in grupo_s).upper().strip()
 
+                # Detecta data na coluna Data (X < 80px)
                 data_col = None
                 for w in grupo_s:
                     if w['x0'] < 80:
@@ -837,10 +966,20 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                             break
 
                 # ── EXTRAÇÃO DE DÉBITO POR POSIÇÃO X ──────────────────────────────
-                # Coluna Débito (R$): X entre 445 e 520
-                # Calibrado a partir do cabeçalho real do PDF Bradesco
-                X_DEBITO_MIN = 445
-                X_DEBITO_MAX = 520
+                # O extrato Bradesco tem 3 colunas numéricas:
+                #   Crédito (R$) → X ≈ 385–440  (valores AZUIS — entradas, estornos)
+                #   Débito  (R$) → X ≈ 451–515  (valores VERMELHOS — saídas indevidas)
+                #   Saldo   (R$) → X ≈ 516–570  (saldo acumulado)
+                #
+                # REGRA: só capturar valores na coluna Débito (X entre 445 e 520).
+                # Valores na coluna Crédito (X < 445) são entradas/estornos → ignorar.
+                # Isso evita capturar créditos (ex: "ENCARGOS LIMITE CREDITO 800,00")
+                # que o motor confundia como débito por serem o penúltimo valor da linha.
+                #
+                # Limites calibrados a partir do cabeçalho real do PDF:
+                #   "Crédito (R$)" X=385   "Débito (R$)" X=451   "Saldo (R$)" X=519
+                X_DEBITO_MIN = 445   # início da coluna Débito
+                X_DEBITO_MAX = 520   # fim da coluna Débito (antes do Saldo)
 
                 valor_debito = None
                 for w in grupo_s:
@@ -848,7 +987,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         m = re.search(r'(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)', w['text'])
                         if m:
                             valor_debito = m.group(1)
-                            break
+                            break  # pega o primeiro valor válido na coluna Débito
 
                 linhas.append({
                     'texto':    texto_up,
@@ -856,20 +995,71 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     'valor':    valor_debito,
                 })
 
-            # ── CONTROLE DE LINHAS JÁ CONSUMIDAS COMO FONTE DE VALOR ─────────────
-            # Impede que o mesmo valor de uma linha seja usado por dois registros
-            # distintos (via Prioridade 2 e Prioridade 3 simultaneamente).
-            consumidas_como_fonte = set()
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA FUNDAMENTAL do extrato Bradesco:
+            # A coluna "Data" (X < 80px) só aparece quando muda o dia.
+            # Lançamentos sem data na coluna pertencem ao mesmo dia da última data vista.
+            #
+            # PORÉM: linhas de EXCLUSÃO (TRANSF/SALDO) com data na coluna NÃO transferem
+            # essa data para os lançamentos seguintes. Os lançamentos sem data que aparecem
+            # APÓS um bloco de exclusão pertencem ao grupo do dia seguinte (data inferior).
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO ...   ← exclusão, sua data é 29/01
+            #               MORA CREDITO       ← sem data na coluna → data inferior
+            #               ENCARGOS LIMITE    ← sem data na coluna → data inferior
+            #               TARIFA/CESTA       ← sem data na coluna → data inferior
+            #   01/02/2021  SAQUE DIN ...      ← ESTA é a data inferior que sela o grupo
+            #
+            # Solução: data_atual só é atualizada por linhas NÃO-exclusão.
+            # Quando a linha atual é de exclusão, sua data é registrada em
+            # data_excl_pendente mas NÃO altera data_atual.
+            # Rubricas que ficam "penduradas" (sem data_atual válida) recebem
+            # a data da próxima linha datada não-exclusão (buscada por lookahead).
+
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA DO EXTRATO BRADESCO:
+            # A coluna "Data" (X < 80px) aparece na linha do primeiro lançamento
+            # de cada dia. Todos os lançamentos abaixo SEM data na coluna pertencem
+            # ao mesmo dia — até aparecer uma nova data na coluna.
+            #
+            # EXCEÇÃO CRÍTICA — TRANSF SALDO (lançamento de exclusão):
+            # Quando TRANSF aparece com data na coluna, os lançamentos seguintes
+            # SEM data na coluna (MORA, ENCARGOS, CESTA, etc.) NÃO pertencem à
+            # data do TRANSF. Eles pertencem ao dia cujo lançamento aparece logo
+            # ABAIXO, na próxima linha COM data na coluna — a "data inferior".
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO → SUA data é 29/01 (exclusão, ignorada)
+            #               MORA CREDITO → sem data → aguarda data inferior
+            #               ENCARGOS     → sem data → aguarda data inferior
+            #               CESTA        → sem data → aguarda data inferior
+            #   01/02/2021  SAQUE DIN    → esta é a data inferior → sela as 3 acima
+            #
+            # IMPLEMENTAÇÃO:
+            # - data_atual: rastreia a data do grupo de lançamentos em andamento
+            # - apos_excl: True quando acabou de passar por uma exclusão COM DATA
+            #   (indica que os próximos sem data devem aguardar a data inferior)
+            # - pendentes: rubricas que aguardam data inferior
+            #
+            # Quando apos_excl=True e aparece nova linha com data na coluna (não exclusão),
+            # essa data é a "data inferior" → sela os pendentes E vira a nova data_atual.
+
+            # data_atual, apos_excl, pendentes são compartilhados entre páginas
 
             for idx, linha in enumerate(linhas):
                 txt = linha['texto']
+
                 eh_excl = bool(re.search(TERMOS_EXCLUSAO, txt))
 
                 if linha['data_col']:
                     if eh_excl:
-                        # Exclusão com data: próximos sem data aguardam data inferior
+                        # Exclusão com data: marca que os próximos sem data
+                        # devem aguardar a data inferior, não herdar data_atual
                         apos_excl = True
+                        # data_atual NÃO é alterada — permanece do lançamento anterior
                     else:
+                        # Lançamento normal com data na coluna
                         data_atual = linha['data_col']
                         apos_excl  = False
                         # Sela pendentes que aguardavam esta data inferior
@@ -879,6 +1069,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                                 resultados.append(p)
                             pendentes = []
 
+                # Pula cabeçalhos, linhas vazias, subtítulos com %, exclusões
                 if not txt or _eh_cabecalho(txt):
                     continue
                 if "%" in txt and not linha['data_col']:
@@ -890,27 +1081,23 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not rubrica:
                     continue
 
+                # Busca de valor (3 prioridades)
                 valor_final = linha['valor']
 
-                # ── PRIORIDADE 2: linha anterior ───────────────────────────────────
-                # Caso TIPO C — rubrica é sublinha de um lançamento maior
-                # (ex: CESTA aparece abaixo de TARIFA BANCARIA que contém o valor)
-                # Só usa se a linha anterior não foi já consumida por outro registro
-                if not valor_final and idx > 0 and (idx - 1) not in consumidas_como_fonte:
+                # Prioridade 2: linha anterior (TIPO C — CESTA sublinha de TARIFA)
+                if not valor_final and idx > 0:
                     ant      = linhas[idx - 1]
                     rub_ant  = _detectar_rubrica(ant['texto'], rubricas_alvo)
                     excl_ant = bool(re.search(TERMOS_EXCLUSAO, ant['texto']))
                     if ant['valor'] and not rub_ant and not excl_ant:
                         valor_final = ant['valor']
-                        consumidas_como_fonte.add(idx - 1)
 
-                # ── PRIORIDADE 3: próximas linhas ──────────────────────────────────
-                # Caso TIPO B — valor aparece em linha(s) abaixo da rubrica
-                # (ex: ENCARGOS LIMITE DE CRED com valor na linha seguinte)
+                # Prioridade 3: próximas linhas (TIPO B — ENCARGOS, PARCELA)
+                # ATENÇÃO: só usar a próxima linha como fonte de valor se ela NÃO é
+                # um lançamento completo (data_col + valor + rubrica), pois nesse caso
+                # o loop principal já a capturará no Caso A — usar aqui geraria duplicata.
                 if not valor_final:
                     for k in range(idx + 1, min(len(linhas), idx + 4)):
-                        if k in consumidas_como_fonte:
-                            continue
                         prox = linhas[k]
                         if re.search(TERMOS_EXCLUSAO, prox['texto']): break
                         if _detectar_rubrica(prox['texto'], rubricas_alvo): break
@@ -918,16 +1105,20 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         if prox['valor']:
                             # Bloqueia se a próxima linha tem data_col + valor:
                             # ela é um lançamento completo → será capturada pelo Caso A.
+                            # Usar ela aqui duplicaria o registro.
                             if prox['data_col']:
                                 break
                             valor_final = prox['valor']
-                            consumidas_como_fonte.add(k)
                             break
 
                 if not valor_final:
                     continue
 
+                # Determinar data do registro:
+                # Se apos_excl=True (viemos de um bloco TRANSF+data): pendentes
+                # Se apos_excl=False e data_atual disponível: usa data_atual direto
                 if apos_excl:
+                    # Aguarda a data inferior (próxima linha normal com data na coluna)
                     pendentes.append({
                         'DATA':      None,
                         'CATEGORIA': rubrica,
@@ -942,6 +1133,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         'HISTÓRICO': txt[:80],
                     })
 
+            # Pendentes ao fim de página: mantém para a próxima página
+            # (a data inferior pode estar na primeira linha da página seguinte)
+
     # Flush final: pendentes que sobraram após todas as páginas
     if pendentes:
         for p in pendentes:
@@ -950,14 +1144,13 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             resultados.append(p)
 
     # ── DEDUPLICAÇÃO FINAL ────────────────────────────────────────────────────
-    # Chave: DATA + CATEGORIA + VALOR
-    # O extrato Bradesco não emite dois lançamentos idênticos (mesmo dia,
-    # mesma rubrica, mesmo valor) distintos. Esta deduplicação remove qualquer
-    # duplicata residual que escapou do controle por consumidas_como_fonte.
+    # Remove registros com DATA + CATEGORIA + VALOR + HISTÓRICO idênticos.
+    # Preserva lançamentos legítimos com mesma categoria e valor em datas
+    # diferentes (ex: ANUIDADE cobrada todo mês) ou mesmo dia mas doctos distintos.
     vistos = set()
     unicos = []
     for r in resultados:
-        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'])
+        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:40])
         if chave not in vistos:
             vistos.add(chave)
             unicos.append(r)
@@ -1098,14 +1291,17 @@ st.markdown("""
 
 # ── SIDEBAR: painel de rubricas ──────────────────────────────────────────────
 
+# Estado inicial: todas marcadas
 if 'sel_all' not in st.session_state:
     st.session_state.sel_all = True
 
+# Inicializa o estado individual de cada rubrica (na primeira execução)
 for r in RUBRICAS_MESTRE.keys():
     key = f"check_{r}"
     if key not in st.session_state:
         st.session_state[key] = True
 
+# Cabeçalho
 st.sidebar.markdown("""
 <div class="sb-header">
     <div class="sb-eyebrow">Painel de Controle</div>
@@ -1113,6 +1309,7 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Botões Marcar / Desmarcar — aplicam imediatamente o estado individual
 col_b1, col_b2 = st.sidebar.columns(2)
 
 if col_b1.button("✦ Marcar Todas", key="btn_marcar"):
@@ -1123,6 +1320,7 @@ if col_b2.button("✕ Desmarcar", key="btn_desmarcar"):
     for r in RUBRICAS_MESTRE.keys():
         st.session_state[f"check_{r}"] = False
 
+# Lista de checkboxes — cada um com seu estado individual no session_state
 selecionadas = []
 for r in RUBRICAS_MESTRE.keys():
     key = f"check_{r}"
@@ -1130,6 +1328,7 @@ for r in RUBRICAS_MESTRE.keys():
     if marcado:
         selecionadas.append(r)
 
+# Contador de selecionadas
 st.sidebar.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 total_r   = len(RUBRICAS_MESTRE)
 sel_count = len(selecionadas)
@@ -1147,6 +1346,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
+# Divisor de seção
 st.markdown("""
 <div class="em-divider">
     <div class="em-divider-line"></div>
