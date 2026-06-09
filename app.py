@@ -118,21 +118,51 @@ st.markdown("""
 
 # --- 2. RÚBRICAS ---
 RUBRICAS_MESTRE = {
-    "CESTA": r"CESTA",
-    "PACOTE": r"PACOTE",
-    "MORA DE OPERAÇÃO": r"MORA DE OPERAÇÃO|MORA OPERACAO",
-    "MORA CREDITO PESSOAL": r"MORA CREDITO PESSOAL|MORA CRED PESS",
-    "MORA OPERACAO DE CREDITO": r"MORA OPERACAO DE CREDITO|MORA OPER CRED",
+    # "TARIFA BANCARIA / CESTA B.EXPRESSO4" — o nome real no extrato está na sublinha
+    "CESTA": r"\bCESTA\b",
+
+    # "PACOTE DE SERVICOS" ou "PACOTE SERVICOS"
+    "PACOTE": r"\bPACOTE\b",
+
+    # "MORA DE OPERACAO" / "MORA OPERACAO"
+    "MORA DE OPERAÇÃO": r"MORA\s+DE\s+OPERA[CÇ]AO|MORA\s+OPERA[CÇ]AO\b",
+
+    # "MORA CREDITO PESSOAL" / "MORA CRED PESS" / "MORA CP"
+    "MORA CREDITO PESSOAL": r"MORA\s+CREDITO\s+PESSOAL|MORA\s+CRED\s+PESS|MORA\s+CP\b",
+
+    # "MORA OPERACAO DE CREDITO" / "MORA OPER CRED"
+    "MORA OPERACAO DE CREDITO": r"MORA\s+OPERA[CÇ]AO\s+DE\s+CREDITO|MORA\s+OPER\s+CRED",
+
+    # "BX" isolado — word boundary para não pegar "BXA" ou "COBRA"
     "BX": r"\bBX\b",
-    "PARCELA CREDITO PESSOAL": r"PARCELA CREDITO PESSOAL|PARC CRED PESS",
-    "GASTOS CARTAO DE CREDITO": r"GASTOS CARTAO DE CREDITO|CARTAO DE CREDITO|GASTOS CARTAO",
-    "SEGURO": r"SEGURO|SEGURADORA|SEG\b",
-    "ADIANT": r"ADIANT|ADIANTAMENTO DEPOSITANTE",
-    "APLIC": r"APLICACAO|APLIC\b",
-    "ENCARGOS": r"ENCARGOS|ENCARGO|ENC LIMITE|LIMITE DE CRED",
-    "ANUIDADE": r"ANUIDADE|CARTAO CREDITO ANUIDADE",
-    "OPERACOES VENCIDAS": r"OPERACOES VENCIDAS|OPERAÇÕES VENCIDAS",
-    "DIV. EM ATRASO": r"DIV\. EM ATRASO|DIVIDA EM ATRASO"
+
+    # "PARCELA CREDITO PESSOAL" / "PARC CRED PESS" / "PARCELA CP"
+    "PARCELA CREDITO PESSOAL": r"PARCELA\s+CREDITO\s+PESSOAL|PARC\s+CRED\s+PESS|PARCELA\s+CP\b",
+
+    # "GASTOS CARTAO DE CREDITO" / "CARTAO DE CREDITO" / "FATURA CARTAO"
+    # NÃO inclui "CARTAO CREDITO ANUIDADE" (já capturado em ANUIDADE)
+    "GASTOS CARTAO DE CREDITO": r"GASTOS\s+CART[AÃ]O|FATURA\s+CART[AÃ]O|CART[AÃ]O\s+DE\s+CREDITO(?!\s+ANUIDADE)",
+
+    # "SEGURO" / "SEG " / "SEGURADORA" — word boundary para não pegar "SAQUE"
+    "SEGURO": r"\bSEGURO\b|\bSEGURADORA\b|\bSEG\s",
+
+    # "ADIANT" / "ADIANTAMENTO"
+    "ADIANT": r"\bADIANT|\bADIANTAMENTO\b",
+
+    # "APLICACAO" / "APLIC" isolado
+    "APLIC": r"\bAPLICA[CÇ]AO\b|\bAPLIC\b",
+
+    # "ENCARGOS" / "ENCARGO" / "ENCARGOS LIMITE DE CRED" / "IOF" não — só encargo mesmo
+    "ENCARGOS": r"\bENCARGOS?\b|\bENC\s+LIMITE\b|\bLIMITE\s+DE\s+CRED\b",
+
+    # "CARTAO CREDITO ANUIDADE" / "ANUIDADE" — verificado ANTES de GASTOS CARTAO
+    "ANUIDADE": r"\bANUIDADE\b|CART[AÃ]O\s+CREDITO\s+ANUIDADE",
+
+    # "OPERACOES VENCIDAS" / "OPERAÇÕES VENCIDAS"
+    "OPERACOES VENCIDAS": r"OPERA[CÇ][OÕ]ES\s+VENCIDAS",
+
+    # "DIV. EM ATRASO" / "DIVIDA EM ATRASO"
+    "DIV. EM ATRASO": r"DIV\.?\s+EM\s+ATRASO|DIVIDA\s+EM\s+ATRASO",
 }
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
@@ -169,10 +199,62 @@ TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 # Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
 def realizar_auditoria(arquivo, rubricas_alvo):
-    resultados = []
-
-    # Cesto para rubricas SEM data na linha (esperam a próxima data que aparecer)
+    resultados    = []
     cesto_sem_data = []
+
+    # ── Memória de contexto ────────────────────────────────────────────────────
+    # Mantém informações das últimas linhas para lidar com os vários formatos
+    # de quebra de linha que o pdfplumber produz:
+    #
+    #   CENÁRIO 1 — data isolada / rubrica+valor / subtítulo(%)
+    #     "08/01/2020"
+    #     "ENCARGOS LIMITE DE CRED  0,95"
+    #     "ENCARGO - 08,00%"
+    #     → rubrica herda data da linha anterior
+    #
+    #   CENÁRIO 2 — tudo junto / subtítulo(%)           [já funcionava]
+    #     "08/01/2020  ENCARGOS LIMITE DE CRED  0,95"
+    #     "ENCARGO - 08,00%"
+    #
+    #   CENÁRIO 3 — data+rubrica / valor separado / subtítulo(%)
+    #     "08/01/2020  ENCARGOS LIMITE DE CRED"
+    #     "0,95  12,33"
+    #     "ENCARGO - 08,00%"
+    #     → rubrica fica PENDENTE; valor da linha seguinte (sem data, sem rubrica) a preenche
+    #       antes que o subtítulo(%) seja descartado
+    #
+    #   CENÁRIO 4 — rubrica+valor sem data / subtítulo / data inferior [já funcionava]
+    #     "ENCARGOS LIMITE DE CRED  19,31"
+    #     "ENCARGO - 14,31%"
+    #     "08/02/2017  SAQUE..."
+    #
+    #   CENÁRIO 5 — rubrica sem data/valor / subtítulo / valor / data inferior
+    #     "ENCARGOS LIMITE DE CRED"
+    #     "ENCARGO - 14,31%"
+    #     "19,31  132,13"
+    #     "08/02/2017  SAQUE..."
+    #     → subtítulo(%) é ignorado mas NÃO zera o contexto da rubrica pendente;
+    #       valor da linha seguinte ainda preenche o último item do cesto
+    #
+    #   CENÁRIO 6 — CESTA como sublinha (herda data+valor da linha acima) [já funcionava]
+    #     "15/01/2020  TARIFA BANCARIA  21,60"
+    #     "CESTA B.EXPRESSO4"
+    #
+    #   CENÁRIO 7 — rubrica+data+valor / subtítulo de texto (sem %)   [já funcionava]
+    #     "20/01/2020  PARCELA CREDITO PESSOAL  385,50"
+    #     "CONTR 381101278 PARC 004/005"
+    #
+    # Campos do contexto:
+    #   data_ctx        → última data vista (None se ainda não apareceu)
+    #   valor_ctx       → último valor visto em linha SEM rubrica capturada
+    #   rubrica_pendente→ True se a última rubrica ainda não tem valor confirmado
+    #   era_exclusao    → True se a última linha relevante era termo de exclusão
+    ctx = {
+        "data_ctx":         None,
+        "valor_ctx":        None,
+        "rubrica_pendente": False,
+        "era_exclusao":     False,
+    }
 
     with pdfplumber.open(arquivo) as pdf:
         for page in pdf.pages:
@@ -180,76 +262,123 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             if not texto:
                 continue
 
-            linhas = texto.split('\n')
-            for linha in linhas:
+            for linha in texto.split('\n'):
                 linha_up = linha.upper().strip()
                 if not linha_up:
                     continue
 
-                # PASSO 1 — Detectar componentes da linha
+                # ── 1. Detectar componentes da linha ─────────────────────────
                 match_data  = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
                 match_valor = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*%)", linha_up)
-                tem_data    = match_data is not None
+                tem_data    = match_data  is not None
                 tem_valor   = match_valor is not None
+                tem_pct     = "%" in linha_up
 
-                # PASSO 2 — Termos de exclusão: descartar pendentes sem data e pular
-                if re.search(TERMOS_EXCLUSAO, linha_up):
-                    cesto_sem_data = [
-                        item for item in cesto_sem_data
-                        if item["VALOR"] != "PENDENTE"
-                    ]
+                # ── 2. Linha de subtítulo com % ───────────────────────────────
+                # Descarta a linha mas PRESERVA o contexto intacto.
+                # Isso permite que o valor da linha seguinte ainda alcance
+                # uma rubrica pendente (Cenário 5).
+                if tem_pct and not tem_data:
                     continue
 
-                # PASSO 3 — Identificar rubrica (ignora linhas com %)
-                rubrica_detectada = None
-                if "%" not in linha_up:
-                    for nome in rubricas_alvo:
-                        if re.search(RUBRICAS_MESTRE[nome], linha_up):
-                            rubrica_detectada = nome
-                            break
+                # ── 3. Termos de exclusão ────────────────────────────────────
+                if re.search(TERMOS_EXCLUSAO, linha_up):
+                    cesto_sem_data = [i for i in cesto_sem_data if i["VALOR"] != "PENDENTE"]
+                    ctx = {"data_ctx": None, "valor_ctx": None,
+                           "rubrica_pendente": False, "era_exclusao": True}
+                    continue
 
-                # PASSO 4 — SELAGEM DOS PENDENTES SEM DATA
-                #
-                # Se esta linha tem uma data, ela é a "data inferior" para todos
-                # os itens do cesto_sem_data acumulados antes dela.
-                # Selamos esses itens AGORA, antes de processar o lançamento atual.
-                #
-                # Isso garante que:
-                #   - MORA e ENCARGOS (sem data) recebem a data do SAQUE logo abaixo (08/02/2017)
-                #   - O próprio SAQUE (se for rubrica) ainda não entrou no cesto, então
-                #     não recebe erroneamente a mesma data que os anteriores.
+                # ── 4. Identificar rubrica (linhas sem %) ────────────────────
+                rubrica_detectada = None
+                for nome in rubricas_alvo:
+                    if re.search(RUBRICAS_MESTRE[nome], linha_up):
+                        rubrica_detectada = nome
+                        break
+
+                # ── 5. Selar cesto_sem_data com data inferior ─────────────────
+                # A data desta linha é a referência para tudo que veio antes sem data.
+                # Selamos ANTES de processar o lançamento atual.
                 if tem_data:
                     data_inferior = match_data.group(1)
-                    for item in cesto_sem_data:
-                        if item["VALOR"] != "PENDENTE":
-                            item["DATA"] = data_inferior
-                            resultados.append(item)
-                    # Descarta pendentes sem valor que ficaram órfãos
-                    cesto_sem_data = []
+                    prontos = [i for i in cesto_sem_data if i["VALOR"] != "PENDENTE"]
+                    for item in prontos:
+                        item["DATA"] = data_inferior
+                    resultados.extend(prontos)
+                    # Mantém apenas os ainda pendentes (aguardam valor)
+                    cesto_sem_data = [i for i in cesto_sem_data if i["VALOR"] == "PENDENTE"]
 
-                # PASSO 5 — Processar o lançamento da linha atual
+                # ── 6. Processar rubrica encontrada ──────────────────────────
                 if rubrica_detectada:
-                    valor_na_linha = match_valor.group(1) if tem_valor else "PENDENTE"
+
+                    # Valor: própria linha → herdado do contexto (se não veio de rubrica)
+                    if tem_valor:
+                        valor_final = match_valor.group(1)
+                    elif ctx["valor_ctx"] is not None and not ctx["rubrica_pendente"] and not ctx["era_exclusao"]:
+                        valor_final = ctx["valor_ctx"]
+                    else:
+                        valor_final = "PENDENTE"
+
+                    # Data: própria linha → herdada do contexto
+                    if tem_data:
+                        data_final = match_data.group(1)
+                    elif ctx["data_ctx"] is not None and not ctx["era_exclusao"]:
+                        data_final = ctx["data_ctx"]
+                    else:
+                        data_final = None  # irá ao cesto
+
                     novo_item = {
                         "CATEGORIA": rubrica_detectada,
-                        "VALOR":     valor_na_linha,
-                        "HISTÓRICO": linha_up[:80]
+                        "VALOR":     valor_final,
+                        "HISTÓRICO": linha_up[:80],
                     }
 
-                    if tem_data:
-                        # FORMATO A: data e rubrica na mesma linha → sela imediatamente
-                        novo_item["DATA"] = match_data.group(1)
-                        resultados.append(novo_item)
+                    if data_final:
+                        novo_item["DATA"] = data_final
+                        if valor_final == "PENDENTE":
+                            # C3: tem data mas valor ainda não chegou.
+                            # Guarda no cesto para receber valor da próxima linha.
+                            # O bloco 7a detecta que já tem DATA e promove para resultados.
+                            cesto_sem_data.append(novo_item)
+                        else:
+                            resultados.append(novo_item)
                     else:
-                        # FORMATO B: sem data → acumula no cesto para receber data inferior
                         cesto_sem_data.append(novo_item)
 
-                elif tem_valor and not tem_data and cesto_sem_data:
-                    # Linha de complemento (valor na linha seguinte à rubrica sem data)
-                    if cesto_sem_data[-1]["VALOR"] == "PENDENTE":
-                        cesto_sem_data[-1]["VALOR"] = match_valor.group(1)
+                    # Atualiza contexto: rubrica consumida, marca se ficou pendente
+                    ctx = {
+                        "data_ctx":         match_data.group(1)  if tem_data  else ctx["data_ctx"],
+                        "valor_ctx":        None,   # valor foi consumido pela rubrica
+                        "rubrica_pendente": valor_final == "PENDENTE",
+                        "era_exclusao":     False,
+                    }
 
-    # PASSO 6 — Flush final: itens que sobraram no cesto sem data ao fim do PDF
+                else:
+                    # ── 7. Linha sem rubrica ──────────────────────────────────
+
+                    # 7a. Valor complementar: preenche o último item PENDENTE do cesto,
+                    #     seja ele sem data (C2/C4) ou com data já definida (C3).
+                    #     Quando o item já tem DATA, move-o direto para resultados.
+                    if tem_valor and not tem_data:
+                        for item in reversed(cesto_sem_data):
+                            if item["VALOR"] == "PENDENTE":
+                                item["VALOR"] = match_valor.group(1)
+                                if "DATA" in item:
+                                    # C3: rubrica já tinha data → promove agora
+                                    cesto_sem_data.remove(item)
+                                    resultados.append(item)
+                                break
+                        ctx["rubrica_pendente"] = False
+
+                    # 7b. Atualiza contexto com data/valor desta linha
+                    if tem_data:
+                        ctx["data_ctx"]    = match_data.group(1)
+                        ctx["era_exclusao"] = False
+                    if tem_valor:
+                        ctx["valor_ctx"]   = match_valor.group(1)
+                        ctx["era_exclusao"] = False
+                    # Linha só de texto (sem data, sem valor, sem rubrica): preserva contexto
+
+    # ── 8. Flush final ───────────────────────────────────────────────────────
     for item in cesto_sem_data:
         if item["VALOR"] != "PENDENTE":
             item.setdefault("DATA", "00/00/0000")
