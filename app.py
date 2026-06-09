@@ -161,7 +161,7 @@ body::before {
 
 .em-eyebrow {
     font-family: var(--sans);
-    font-size: 0.52rem; font-weight: 600;
+    font-size: 0.68rem; font-weight: 600;
     letter-spacing: 5px; text-transform: uppercase;
     color: rgba(197,165,102,0.42);
     margin-bottom: 12px;
@@ -191,10 +191,10 @@ body::before {
 }
 .em-badge {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 14px;
+    padding: 6px 16px;
     border: 1px solid rgba(197,165,102,0.18);
     border-radius: 100px;
-    font-size: 0.58rem; font-weight: 600; letter-spacing: 2px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 1.5px;
     text-transform: uppercase; color: rgba(197,165,102,0.5);
 }
 .em-badge-dot {
@@ -234,7 +234,7 @@ body::before {
     background: rgba(197,165,102,0.04);
 }
 .em-divider-label {
-    font-size: 0.52rem; font-weight: 600;
+    font-size: 0.68rem; font-weight: 600;
     letter-spacing: 3.5px; text-transform: uppercase;
     color: rgba(197,165,102,0.45); white-space: nowrap;
 }
@@ -243,7 +243,7 @@ body::before {
     font-size: 0.75rem; color: rgba(197,165,102,0.35);
 }
 .em-section-note {
-    font-size: 0.78rem; color: rgba(237,229,212,0.3);
+    font-size: 0.88rem; color: rgba(237,229,212,0.3);
     text-align: center; letter-spacing: 0.3px;
     margin: 4px 0 28px; line-height: 1.6;
 }
@@ -283,7 +283,7 @@ body::before {
 [data-testid="stFileUploaderDropzoneInstructions"] small {
     color: rgba(197,165,102,0.55) !important;
     font-family: var(--sans) !important;
-    font-size: 0.82rem !important; letter-spacing: 0.5px;
+    font-size: 0.9rem !important; letter-spacing: 0.5px;
 }
 [data-testid="stFileUploadDropzone"] button {
     background: rgba(197,165,102,0.07) !important;
@@ -319,7 +319,7 @@ body::before {
     flex-shrink: 0;
 }
 .upload-step-t {
-    font-size: 0.7rem; color: rgba(237,229,212,0.35); letter-spacing: 0.3px;
+    font-size: 0.82rem; color: rgba(237,229,212,0.35); letter-spacing: 0.3px;
 }
 .upload-step-arrow {
     font-size: 0.6rem; color: rgba(197,165,102,0.2);
@@ -383,20 +383,20 @@ body::before {
 }
 .metric-card h4 {
     font-family: var(--sans);
-    font-size: 0.6rem; font-weight: 600;
+    font-size: 0.72rem; font-weight: 600;
     letter-spacing: 3.5px; text-transform: uppercase;
     color: rgba(197,165,102,0.45); margin: 0 0 8px 0;
 }
 .metric-card h2 {
     font-family: var(--serif);
-    font-size: 2.6rem; font-weight: 600;
+    font-size: 3rem; font-weight: 600;
     line-height: 1; margin: 0;
     background: linear-gradient(135deg, var(--g2) 0%, var(--g) 100%);
     background-clip: text; -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .metric-card-sub {
-    font-size: 0.68rem; color: rgba(197,165,102,0.3);
+    font-size: 0.78rem; color: rgba(197,165,102,0.3);
     letter-spacing: 0.8px; margin-top: 6px;
     font-style: italic;
 }
@@ -410,8 +410,8 @@ body::before {
     color: rgba(197,165,102,0.8) !important;
     border-radius: var(--r-md) !important;
     font-family: var(--sans) !important;
-    font-size: 0.68rem !important; font-weight: 500 !important;
-    letter-spacing: 1.2px !important; text-transform: uppercase !important;
+    font-size: 0.78rem !important; font-weight: 500 !important;
+    letter-spacing: 1px !important; text-transform: uppercase !important;
     padding: 14px 18px !important;
     transition: all 0.3s cubic-bezier(.22,1,.36,1) !important;
     width: 100% !important; text-align: left !important;
@@ -456,15 +456,15 @@ body::before {
     background: var(--p3) !important;
     color: rgba(197,165,102,0.65) !important;
     font-family: var(--sans) !important;
-    font-size: 0.6rem !important; font-weight: 600 !important;
-    letter-spacing: 3px !important; text-transform: uppercase !important;
+    font-size: 0.72rem !important; font-weight: 600 !important;
+    letter-spacing: 2px !important; text-transform: uppercase !important;
     border-bottom: 1px solid rgba(197,165,102,0.15) !important;
     padding: 14px 16px !important;
 }
 [data-testid="stDataFrame"] td {
     font-family: var(--sans) !important;
-    font-size: 0.8rem !important;
-    color: rgba(237,229,212,0.7) !important;
+    font-size: 0.86rem !important;
+    color: rgba(237,229,212,0.75) !important;
     border-color: rgba(197,165,102,0.06) !important;
     padding: 11px 16px !important;
 }
@@ -490,7 +490,7 @@ body::before {
 [data-testid="stSpinner"] p {
     color: rgba(197,165,102,0.5) !important;
     font-family: var(--sans) !important;
-    font-size: 0.72rem !important; letter-spacing: 2px !important;
+    font-size: 0.82rem !important; letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
 }
 
@@ -516,13 +516,13 @@ body::before {
     animation: glow 2.5s ease-in-out infinite;
 }
 .sb-eyebrow {
-    font-size: 0.48rem; font-weight: 600;
+    font-size: 0.65rem; font-weight: 600;
     letter-spacing: 4px; text-transform: uppercase;
     color: rgba(197,165,102,0.32); margin-bottom: 4px;
 }
 .sb-title {
     font-family: var(--serif);
-    font-size: 1.15rem; font-weight: 600;
+    font-size: 1.3rem; font-weight: 600;
     color: var(--c); letter-spacing: 0.5px; margin: 0;
 }
 .sb-title span { color: var(--g); }
@@ -536,12 +536,12 @@ body::before {
     border: 1px solid rgba(197,165,102,0.1);
 }
 .sb-tutorial-title {
-    font-size: 0.55rem; font-weight: 600;
+    font-size: 0.68rem; font-weight: 600;
     letter-spacing: 2.5px; text-transform: uppercase;
     color: rgba(197,165,102,0.4); margin-bottom: 7px;
 }
 .sb-tutorial-text {
-    font-size: 0.72rem; color: rgba(237,229,212,0.28);
+    font-size: 0.82rem; color: rgba(237,229,212,0.38);
     line-height: 1.6; letter-spacing: 0.2px;
 }
 
@@ -592,7 +592,7 @@ body::before {
 [data-testid="stSidebar"] .stCheckbox > label > div:last-child,
 [data-testid="stSidebar"] .stCheckbox > label > span {
     font-family: var(--sans) !important;
-    font-size: 0.7rem !important; font-weight: 400 !important;
+    font-size: 0.8rem !important; font-weight: 400 !important;
     color: rgba(237,229,212,0.28) !important;
     letter-spacing: 0.8px !important; text-transform: uppercase !important;
     line-height: 1 !important;
@@ -612,8 +612,8 @@ body::before {
     margin: 4px 0 0;
 }
 .rubrica-count {
-    padding: 7px 16px 14px;
-    font-size: 0.54rem; font-family: var(--sans);
+    padding: 8px 16px 16px;
+    font-size: 0.68rem; font-family: var(--sans);
     letter-spacing: 2px; text-transform: uppercase;
 }
 
@@ -636,14 +636,14 @@ body::before {
 }
 .em-footer-name {
     font-family: var(--serif);
-    font-size: 1.5rem; font-weight: 600; font-style: italic;
+    font-size: 1.8rem; font-weight: 600; font-style: italic;
     color: var(--g); letter-spacing: 2px;
 }
 .em-footer-contacts {
     display: flex; gap: 28px; flex-wrap: wrap; justify-content: center;
 }
 .em-footer-contact {
-    font-size: 0.7rem; color: rgba(197,165,102,0.4); letter-spacing: 1px;
+    font-size: 0.8rem; color: rgba(197,165,102,0.4); letter-spacing: 1px;
 }
 .em-footer-contact a {
     color: rgba(197,165,102,0.4); text-decoration: none;
@@ -706,272 +706,327 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # ── CSS: transforma o stApp inteiro na tela de login ──────────────────────
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
-    /* Esconde toda a UI padrão do Streamlit */
-    header, footer,
-    [data-testid="stSidebar"],
-    [data-testid="stToolbar"],
-    [data-testid="stDecoration"],
+    /* ── Oculta UI padrão ──────────────────────────────────────────────────── */
+    header, footer, [data-testid="stSidebar"],
+    [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* Fundo da tela */
+    /* ── Fundo ─────────────────────────────────────────────────────────────── */
     .stApp {
-        background: #060A0D !important;
+        background: #04060C !important;
         background-image:
-            radial-gradient(circle, rgba(197,165,102,0.055) 1px, transparent 1px) !important;
-        background-size: 30px 30px !important;
+            radial-gradient(circle, rgba(197,165,102,0.04) 1px, transparent 1px) !important;
+        background-size: 28px 28px !important;
     }
-    /* Vinheta sobre a grade */
-    .stApp::after {
+    .stApp::before {
         content: '';
-        position: fixed;
-        inset: 0;
-        background: radial-gradient(ellipse at 50% 50%,
-            transparent 30%, rgba(6,10,13,0.78) 100%);
-        pointer-events: none;
-        z-index: 0;
+        position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+        width: 100vw; height: 100vh;
+        background: radial-gradient(ellipse at 25% 50%,
+            rgba(197,165,102,0.06) 0%, transparent 60%);
+        pointer-events: none; z-index: 0;
     }
 
-    /* Container principal: centraliza verticalmente */
+    /* ── Container: split-screen desktop ──────────────────────────────────── */
     .block-container {
-        max-width: 480px !important;
-        padding: 0 24px !important;
+        max-width: 960px !important;
+        padding: 0 !important;
         margin: 0 auto !important;
-        position: relative;
-        z-index: 1;
-        /* Centralização vertical aproximada */
-        padding-top: max(60px, 10vh) !important;
+        min-height: 100vh !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: relative; z-index: 1;
     }
 
-    /* ── LOGOMARCA ────────────────────────────────────────────────────────── */
-    .lx-logo {
-        text-align: center;
-        margin-bottom: 10px;
+    /* ── Painel esquerdo: identidade ───────────────────────────────────────── */
+    .lx-split {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        min-height: 580px;
+        border: 1px solid rgba(197,165,102,0.12);
+        background: rgba(6,10,15,0.8);
+        overflow: hidden;
+        box-shadow: 0 40px 120px rgba(0,0,0,0.6);
     }
-    .lx-eyebrow {
+    .lx-left {
+        padding: 64px 52px;
+        border-right: 1px solid rgba(197,165,102,0.1);
+        background: linear-gradient(135deg,
+            rgba(197,165,102,0.05) 0%,
+            rgba(4,6,12,0.9) 60%,
+            rgba(10,18,28,0.95) 100%);
+        display: flex; flex-direction: column; justify-content: center;
+        position: relative; overflow: hidden;
+    }
+    /* Assinatura SVG de fundo no painel esquerdo */
+    .lx-left::before {
+        content: '';
+        position: absolute; bottom: -40px; right: -20px;
+        width: 340px; height: 200px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 200'%3E%3Cpath d='M20 120 C 40 80, 80 60, 120 90 S 180 130, 220 100 C 250 78, 280 85, 310 95' stroke='rgba(197,165,102,0.12)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M10 140 C 50 110, 100 95, 150 120 S 230 155, 280 130 C 300 122, 318 128, 330 135' stroke='rgba(197,165,102,0.08)' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3Cpath d='M60 160 C 100 148, 160 152, 200 145 C 230 140, 255 148, 280 155' stroke='rgba(197,165,102,0.06)' stroke-width='0.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+        background-size: contain;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    /* Círculo decorativo de fundo */
+    .lx-left::after {
+        content: '';
+        position: absolute; top: -80px; left: -80px;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        border: 1px solid rgba(197,165,102,0.07);
+        pointer-events: none;
+    }
+
+    .lx-left-eyebrow {
         font-family: 'Inter', sans-serif;
-        font-size: 0.52rem;
-        font-weight: 600;
-        letter-spacing: 5.5px;
-        text-transform: uppercase;
+        font-size: 0.65rem; font-weight: 600;
+        letter-spacing: 5px; text-transform: uppercase;
         color: rgba(197,165,102,0.45);
-        margin-bottom: 12px;
+        margin-bottom: 20px;
     }
-    .lx-monogram {
+    .lx-left-name {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 3.8rem;
-        font-weight: 300;
-        color: #C5A566;
-        line-height: 1;
-        letter-spacing: 8px;
+        font-size: 3rem; font-weight: 600; line-height: 1.1;
+        color: #EDE5D4; letter-spacing: 1px;
         margin-bottom: 8px;
     }
-    .lx-name {
+    .lx-left-name em {
+        color: #C5A566; font-style: normal;
+    }
+    .lx-left-role {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #E8DCC8;
-        letter-spacing: 4px;
-        text-transform: uppercase;
+        font-size: 1.1rem; font-style: italic;
+        color: rgba(197,165,102,0.55); letter-spacing: 2px;
+        margin-bottom: 36px;
+    }
+    /* Assinatura cursiva "E. Medeiros" */
+    .lx-signature {
+        font-family: 'Great Vibes', cursive;
+        font-size: 3.2rem;
+        color: rgba(197,165,102,0.35);
         line-height: 1;
+        margin-bottom: 36px;
+        letter-spacing: 1px;
     }
-    .lx-tagline {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 0.8rem;
-        font-style: italic;
-        color: rgba(197,165,102,0.42);
-        letter-spacing: 2px;
-        margin-top: 5px;
-    }
-
-    /* ── ORNAMENTO ───────────────────────────────────────────────────────── */
-    .lx-ornament {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 22px 0 20px;
-    }
-    .lx-line {
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.28));
-    }
-    .lx-line-rev {
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(197,165,102,0.28), transparent);
-    }
-    .lx-diamond { font-size: 0.45rem; color: rgba(197,165,102,0.45); }
-
-    /* ── NOME DO ROBÔ ────────────────────────────────────────────────────── */
-    .lx-robot {
-        text-align: center;
-        margin-bottom: 14px;
-    }
-    .lx-robot-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.50rem;
-        font-weight: 600;
-        letter-spacing: 4.5px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.32);
-        margin-bottom: 6px;
-    }
-    .lx-robot-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.6rem;
-        font-weight: 300;
-        color: #DDD3BE;
-        letter-spacing: 5px;
-        line-height: 1;
-    }
-    .lx-robot-x {
-        font-weight: 700;
-        color: #C5A566;
-        font-size: 3rem;
-        letter-spacing: 0;
-    }
-
-    /* ── BOAS-VINDAS ─────────────────────────────────────────────────────── */
-    .lx-welcome {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 0.92rem;
-        font-style: italic;
-        color: rgba(232,220,200,0.35);
-        text-align: center;
-        letter-spacing: 0.4px;
-        line-height: 1.65;
+    /* Linha separadora */
+    .lx-left-sep {
+        width: 48px; height: 1px;
+        background: linear-gradient(90deg, var(--g, #C5A566), transparent);
         margin-bottom: 28px;
     }
+    .lx-left-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem; font-weight: 300;
+        color: rgba(237,229,212,0.35);
+        line-height: 1.75; letter-spacing: 0.3px;
+        max-width: 320px;
+        margin-bottom: 40px;
+    }
+    /* Badges de features */
+    .lx-features {
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .lx-feature {
+        display: flex; align-items: center; gap: 12px;
+    }
+    .lx-feature-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #C5A566; opacity: 0.5; flex-shrink: 0;
+    }
+    .lx-feature-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem; font-weight: 400;
+        color: rgba(237,229,212,0.38); letter-spacing: 0.3px;
+    }
 
-    /* ── FORMULÁRIO — inputs ─────────────────────────────────────────────── */
-    /* Wrapper do form sem bordas padrão */
+    /* ── Painel direito: formulário ────────────────────────────────────────── */
+    .lx-right {
+        padding: 64px 48px;
+        display: flex; flex-direction: column; justify-content: center;
+        background: rgba(8,12,20,0.7);
+    }
+    .lx-form-eyebrow {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem; font-weight: 600;
+        letter-spacing: 4px; text-transform: uppercase;
+        color: rgba(197,165,102,0.38); margin-bottom: 10px;
+    }
+    .lx-form-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.1rem; font-weight: 600; line-height: 1.1;
+        color: #EDE5D4; margin-bottom: 8px;
+    }
+    .lx-form-title span { color: #C5A566; }
+    .lx-form-sub {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.95rem; font-style: italic;
+        color: rgba(197,165,102,0.42); margin-bottom: 36px;
+        letter-spacing: 0.5px;
+    }
+    .lx-form-ornament {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 32px;
+    }
+    .lx-orn-line { flex:1; height:1px; background: rgba(197,165,102,0.15); }
+    .lx-orn-d { font-size:0.4rem; color:rgba(197,165,102,0.3); }
+
+    /* ── Inputs ────────────────────────────────────────────────────────────── */
     [data-testid="stForm"] {
-        background: rgba(197,165,102,0.03) !important;
-        border: 1px solid rgba(197,165,102,0.16) !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-    }
-    /* Inputs: linha inferior apenas, sem caixa */
-    [data-testid="stForm"] input {
         background: transparent !important;
-        border: none !important;
-        border-bottom: 1px solid rgba(197,165,102,0.18) !important;
-        border-radius: 0 !important;
-        color: #E8DCC8 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 0.8px !important;
-        padding: 10px 20px !important;
-        caret-color: #C5A566 !important;
-        outline: none !important;
-        box-shadow: none !important;
+        border: none !important; padding: 0 !important;
     }
-    [data-testid="stForm"] input:focus {
-        border-bottom-color: #C5A566 !important;
-        box-shadow: none !important;
-        outline: none !important;
-    }
-    /* Labels dos inputs */
     [data-testid="stForm"] label {
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.55rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 3.5px !important;
-        text-transform: uppercase !important;
+        font-size: 0.62rem !important; font-weight: 600 !important;
+        letter-spacing: 3px !important; text-transform: uppercase !important;
         color: rgba(197,165,102,0.42) !important;
-        padding-left: 20px !important;
-        padding-top: 14px !important;
-        padding-bottom: 2px !important;
+        margin-bottom: 2px !important;
     }
-    /* Esconde o asterisco de "required" */
     [data-testid="stForm"] label span { display: none !important; }
+    [data-testid="stForm"] input {
+        background: rgba(197,165,102,0.04) !important;
+        border: 1px solid rgba(197,165,102,0.14) !important;
+        border-radius: 10px !important;
+        color: #EDE5D4 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.9rem !important; font-weight: 300 !important;
+        letter-spacing: 0.5px !important;
+        padding: 12px 16px !important;
+        caret-color: #C5A566 !important;
+        outline: none !important; box-shadow: none !important;
+        transition: border-color 0.25s ease !important;
+    }
+    [data-testid="stForm"] input:focus {
+        border-color: rgba(197,165,102,0.45) !important;
+        background: rgba(197,165,102,0.07) !important;
+        box-shadow: 0 0 0 3px rgba(197,165,102,0.07) !important;
+    }
 
-    /* ── BOTÃO SUBMISSÃO ─────────────────────────────────────────────────── */
+    /* ── Botão ─────────────────────────────────────────────────────────────── */
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
-        background: transparent !important;
-        border: none !important;
-        border-top: 1px solid rgba(197,165,102,0.18) !important;
-        border-radius: 0 !important;
-        color: rgba(197,165,102,0.7) !important;
+        background: rgba(197,165,102,0.1) !important;
+        border: 1px solid rgba(197,165,102,0.35) !important;
+        border-radius: 10px !important;
+        color: #C5A566 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.62rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 3.5px !important;
-        text-transform: uppercase !important;
-        padding: 14px 20px !important;
-        margin-top: 0 !important;
-        transition: all 0.25s ease !important;
+        font-size: 0.72rem !important; font-weight: 600 !important;
+        letter-spacing: 3px !important; text-transform: uppercase !important;
+        padding: 14px 20px !important; margin-top: 8px !important;
+        transition: all 0.3s ease !important;
     }
     [data-testid="stFormSubmitButton"] > button:hover {
-        background: rgba(197,165,102,0.07) !important;
-        color: #C5A566 !important;
-        border-top-color: rgba(197,165,102,0.35) !important;
+        background: rgba(197,165,102,0.18) !important;
+        border-color: #C5A566 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(197,165,102,0.12) !important;
     }
 
-    /* ── ALERTA DE ERRO ──────────────────────────────────────────────────── */
+    /* ── Alerta de erro ────────────────────────────────────────────────────── */
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
-        border: 1px solid rgba(180,60,60,0.25) !important;
-        border-radius: 0 !important;
-        color: rgba(220,100,100,0.8) !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.62rem !important;
-        letter-spacing: 2px !important;
-        text-transform: uppercase !important;
+        border: 1px solid rgba(180,60,60,0.22) !important;
+        border-radius: 10px !important;
+        color: rgba(220,110,110,0.8) !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 1px !important;
     }
-    /* Esconde ícone padrão do alerta */
     [data-testid="stAlert"] svg { display: none !important; }
 
-    /* ── SPINNER ─────────────────────────────────────────────────────────── */
-    [data-testid="stSpinner"] { display: none !important; }
+    /* ── Rodapé da página ──────────────────────────────────────────────────── */
+    .lx-footer {
+        position: fixed; bottom: 24px; left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem; font-weight: 500;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: rgba(197,165,102,0.22);
+        display: flex; align-items: center; gap: 20px;
+        white-space: nowrap;
+        z-index: 10;
+    }
+    .lx-footer-sep { opacity: 0.3; }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── CONTEÚDO VISUAL (logomarca + robô + boas-vindas) ──────────────────────
+    # ── LAYOUT SPLIT-SCREEN ───────────────────────────────────────────────────
     st.markdown("""
-    <div class="lx-logo">
-        <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
-        <div class="lx-monogram">E M</div>
-        <div class="lx-name">Edson Medeiros</div>
-        <div class="lx-tagline">Consultorias &amp; Compliance</div>
+    <div class="lx-split">
+
+        <!-- PAINEL ESQUERDO: IDENTIDADE -->
+        <div class="lx-left">
+            <div class="lx-left-eyebrow">Escritório de Assessoria Jurídica</div>
+            <div class="lx-left-name">Edson<br><em>Medeiros</em></div>
+            <div class="lx-left-role">Consultorias &amp; Compliance</div>
+            <div class="lx-signature">E. Medeiros</div>
+            <div class="lx-left-sep"></div>
+            <p class="lx-left-desc">
+                Sistema especializado em auditoria bancária inteligente.
+                Identificamos cobranças indevidas com precisão e geramos
+                relatórios prontos para uso jurídico.
+            </p>
+            <div class="lx-features">
+                <div class="lx-feature">
+                    <div class="lx-feature-dot"></div>
+                    <div class="lx-feature-text">Extrai débitos indevidos do extrato PDF</div>
+                </div>
+                <div class="lx-feature">
+                    <div class="lx-feature-dot"></div>
+                    <div class="lx-feature-text">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div>
+                </div>
+                <div class="lx-feature">
+                    <div class="lx-feature-dot"></div>
+                    <div class="lx-feature-text">Suporta extratos Bradesco · múltiplas páginas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL DIREITO: FORMULÁRIO -->
+        <div class="lx-right">
+            <div class="lx-form-eyebrow">Sistema de Auditoria</div>
+            <div class="lx-form-title">Extrato<span>X</span></div>
+            <div class="lx-form-sub">Acesse sua conta para continuar</div>
+            <div class="lx-form-ornament">
+                <div class="lx-orn-line"></div>
+                <div class="lx-orn-d">◆</div>
+                <div class="lx-orn-line"></div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="lx-ornament">
-        <div class="lx-line-rev"></div>
-        <div class="lx-diamond">◆</div>
-        <div class="lx-line"></div>
+    <div class="lx-footer">
+        <span>Edson Medeiros Consultorias</span>
+        <span class="lx-footer-sep">·</span>
+        <span>(92) 99508-7379</span>
+        <span class="lx-footer-sep">·</span>
+        <span>edson.senabr@gmail.com</span>
     </div>
-
-    <div class="lx-robot">
-        <div class="lx-robot-label">Sistema de Auditoria Bancária</div>
-        <div class="lx-robot-title">Extrato<span class="lx-robot-x">X</span></div>
-    </div>
-
-    <p class="lx-welcome">
-        Bem-vindo ao sistema de auditoria bancária inteligente.<br>
-        Identifique cobranças indevidas com precisão e eficiência.
-    </p>
     """, unsafe_allow_html=True)
 
-    # ── FORMULÁRIO DE LOGIN ────────────────────────────────────────────────────
+    # ── FORMULÁRIO STREAMLIT (renderiza dentro do painel direito via CSS overlay) ──
+    # Posicionar o form sobre o painel direito com CSS
+    st.markdown("""
+    <style>
+    /* Posiciona o stForm sobre o painel direito do split */
+    [data-testid="stVerticalBlock"] > div:last-of-type {
+        position: relative;
+        margin-top: -320px;
+        padding: 0 24px;
+        max-width: 480px;
+        margin-left: auto;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     with st.form("login_form", clear_on_submit=False):
-        _email = st.text_input(
-            "E-mail",
-            placeholder="seu@email.com",
-            key="login_email"
-        )
-        _senha = st.text_input(
-            "Senha",
-            placeholder="••••••••••",
-            type="password",
-            key="login_senha"
-        )
+        _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
+        _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
         _submitted = st.form_submit_button("◆  Acessar o Sistema")
 
     if _submitted:
@@ -1605,6 +1660,201 @@ upload = st.file_uploader(
     type=["pdf"],
     help="Suporta extratos Bradesco em PDF. Múltiplas páginas aceitas."
 )
+
+if not upload:
+    # ── SEÇÃO "COMO FUNCIONA" — preenche o espaço quando não há PDF ──────────
+    st.markdown("""
+<div style="margin-top: 52px;">
+<div class="em-divider">
+    <div class="em-divider-line"></div>
+    <div class="em-divider-pill">
+        <span class="em-divider-label">Como Funciona</span>
+    </div>
+    <div class="em-divider-line"></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+    h1, h2, h3 = st.columns(3)
+    with h1:
+        st.markdown("""
+<div class="how-card">
+    <div class="how-num">01</div>
+    <div class="how-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="#C5A566" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+        </svg>
+    </div>
+    <div class="how-title">Faça o Upload</div>
+    <div class="how-desc">
+        Importe o extrato bancário em PDF diretamente do seu computador.
+        O sistema aceita extratos Bradesco com múltiplas páginas e anos.
+    </div>
+    <div class="how-tip">✦ Suporta extratos de vários anos em um único PDF</div>
+</div>
+""", unsafe_allow_html=True)
+
+    with h2:
+        st.markdown("""
+<div class="how-card how-card--center">
+    <div class="how-num">02</div>
+    <div class="how-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="#C5A566" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+    </div>
+    <div class="how-title">Análise Automática</div>
+    <div class="how-desc">
+        O motor de auditoria lê cada linha do extrato, identifica datas,
+        valores e rubricas indevidas com precisão posicional por coluna.
+    </div>
+    <div class="how-tip">✦ Distingue débitos de créditos automaticamente</div>
+</div>
+""", unsafe_allow_html=True)
+
+    with h3:
+        st.markdown("""
+<div class="how-card">
+    <div class="how-num">03</div>
+    <div class="how-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="#C5A566" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+    </div>
+    <div class="how-title">Baixe as Planilhas</div>
+    <div class="how-desc">
+        Gera planilhas Excel por rubrica com tabela mensal/anual e cálculo
+        do valor em dobro conforme Art. 42 do Código de Defesa do Consumidor.
+    </div>
+    <div class="how-tip">✦ Pronta para uso jurídico e peticionamento</div>
+</div>
+""", unsafe_allow_html=True)
+
+    # Seção de rubricas suportadas
+    st.markdown("""
+<div style="margin-top: 48px;">
+<div class="em-divider">
+    <div class="em-divider-line"></div>
+    <div class="em-divider-pill">
+        <span class="em-divider-label">Rubricas Monitoradas</span>
+    </div>
+    <div class="em-divider-line"></div>
+</div>
+<div class="em-section-note">
+    Selecione na barra lateral as cobranças que deseja auditar
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+    r1, r2, r3 = st.columns(3)
+    rubricas_info = [
+        ("Cesta / Pacote", "Tarifas de manutenção de conta — frequentemente cobradas mesmo sem contratação formal"),
+        ("Mora Crédito Pessoal", "Juros de mora sobre contratos de crédito pessoal — podem ser abusivos ou duplicados"),
+        ("Encargos de Limite", "Cobranças sobre limite de crédito — verifique se há contratação expressa"),
+        ("Anuidade de Cartão", "Taxa anual cobrada mesmo em cartões sem anuidade contratada"),
+        ("Parcela Crédito Pessoal", "Parcelas de empréstimos — identifica cobranças após liquidação"),
+        ("Seguro / Previdência", "Seguros vinculados a contas sem consentimento expresso do titular"),
+    ]
+    cols = [r1, r2, r3]
+    for i, (titulo, desc) in enumerate(rubricas_info):
+        with cols[i % 3]:
+            st.markdown(f"""
+<div class="rub-card">
+    <div class="rub-title">{titulo}</div>
+    <div class="rub-desc">{desc}</div>
+</div>
+""", unsafe_allow_html=True)
+
+    # CSS das novas seções
+    st.markdown("""
+<style>
+/* ── Como Funciona ──────────────────────────────────────────────────────── */
+.how-card {
+    background: linear-gradient(145deg, var(--p3, #111823) 0%, var(--p2, #0A0F18) 100%);
+    border: 1px solid rgba(197,165,102,0.1);
+    border-radius: 16px;
+    padding: 28px 24px;
+    height: 100%;
+    position: relative;
+    transition: all 0.35s cubic-bezier(.22,1,.36,1);
+}
+.how-card:hover {
+    border-color: rgba(197,165,102,0.28);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 20px rgba(197,165,102,0.06);
+}
+.how-card--center {
+    border-top: 2px solid rgba(197,165,102,0.4);
+}
+.how-num {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 3.5rem; font-weight: 300; line-height: 1;
+    color: rgba(197,165,102,0.1); margin-bottom: 14px;
+    letter-spacing: -1px;
+}
+.how-icon {
+    margin-bottom: 16px;
+    width: 48px; height: 48px;
+    background: rgba(197,165,102,0.06);
+    border: 1px solid rgba(197,165,102,0.14);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+}
+.how-card:hover .how-icon {
+    background: rgba(197,165,102,0.12);
+    border-color: rgba(197,165,102,0.3);
+}
+.how-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.35rem; font-weight: 600; color: #EDE5D4;
+    margin-bottom: 12px; letter-spacing: 0.3px;
+}
+.how-desc {
+    font-size: 0.85rem; color: rgba(237,229,212,0.4);
+    line-height: 1.7; letter-spacing: 0.2px;
+    margin-bottom: 16px;
+}
+.how-tip {
+    font-size: 0.72rem; color: rgba(197,165,102,0.45);
+    letter-spacing: 0.3px; line-height: 1.5;
+    padding-top: 14px;
+    border-top: 1px solid rgba(197,165,102,0.08);
+}
+
+/* ── Rubricas info ──────────────────────────────────────────────────────── */
+.rub-card {
+    background: rgba(197,165,102,0.03);
+    border: 1px solid rgba(197,165,102,0.08);
+    border-radius: 12px;
+    padding: 20px 18px;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+}
+.rub-card:hover {
+    background: rgba(197,165,102,0.06);
+    border-color: rgba(197,165,102,0.2);
+}
+.rub-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.05rem; font-weight: 600;
+    color: rgba(197,165,102,0.85); margin-bottom: 7px;
+}
+.rub-desc {
+    font-size: 0.8rem; color: rgba(237,229,212,0.32);
+    line-height: 1.6; letter-spacing: 0.2px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 if upload:
     with st.spinner("Analisando extratos e gerando tabelas de cálculos..."):
