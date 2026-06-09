@@ -199,7 +199,7 @@ TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 # Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
 def _extrair_debito(linha_up):
-    """Penúltimo valor numérico da linha = débito (último = saldo)."""
+    """Penúltimo valor numérico = débito (último = saldo)."""
     vals = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', linha_up)
     if not vals: return None
     return vals[-2] if len(vals) >= 2 else vals[0]
@@ -209,7 +209,6 @@ def _extrair_data(linha_up):
     return m.group(1) if m else None
 
 def _detectar_rubrica(linha_up, rubricas_alvo):
-    """Retorna o nome da rubrica detectada na linha, ou None."""
     if "%" in linha_up:
         return None
     for nome in rubricas_alvo:
@@ -218,29 +217,36 @@ def _detectar_rubrica(linha_up, rubricas_alvo):
     return None
 
 def _tem_apenas_dados(linha_up):
-    """Linha com pouquíssimo texto descritivo — basicamente data + números.
-    Usado para distinguir a linha de data/valor de uma linha de histórico."""
+    """Linha com pouquíssimo texto — basicamente docto/data + números."""
     sem_numeros = re.sub(r'\d', '', linha_up)
-    sem_numeros = re.sub(r'[/,\.\s]', '', sem_numeros)
+    sem_numeros = re.sub(r'[/,.\s\-]', '', sem_numeros)
     return len(sem_numeros) < 8
 
-# ── MOTOR v3 — lógica de lookahead baseada na estrutura REAL do PDF ──────────
+# ── MOTOR v5 ─────────────────────────────────────────────────────────────────
 #
-# O pdfplumber divide cada lançamento do extrato Bradesco em linhas separadas:
+# Estrutura do PDF Bradesco (conforme pdfplumber):
 #
-#   TIPO A — linha única (rubrica + data + valor juntos):
-#     'CARTAO CREDITO ANUIDADE 4740002 13,50 11,27'  (data na própria linha)
+#  TIPO A: rubrica + data + valor na mesma linha
+#    'CARTAO CREDITO ANUIDADE 4740002 13,50 11,27'
 #
-#   TIPO B — rubrica ACIMA da linha de dados (padrão dominante):
-#     Linha i:   'ENCARGOS LIMITE DE CRED'         ← rubrica, sem dados
-#     Linha i+1: '08/01/2020 8118726 0,95 12,33'   ← data + valor
-#     Linha i+2: 'ENCARGO - 08,00%'                ← subtítulo, ignorado
+#  TIPO B: rubrica ACIMA, dados ABAIXO
+#    'ENCARGOS LIMITE DE CRED'
+#    '08/01/2020 8118726 0,95 12,33'
 #
-#   TIPO C — rubrica ABAIXO da linha de dados (sublinha de descrição):
-#     Linha i-1: '15/01/2020 0130120 21,60 16,40'  ← data + valor
-#     Linha i:   'CESTA B.EXPRESSO4'               ← rubrica, sem dados
+#  TIPO C: rubrica ABAIXO dos dados (sublinha — CESTA)
+#    '15/01/2020 0130120 21,60 16,40'
+#    'CESTA B.EXPRESSO4'
 #
-# Estratégia: processar com índice explícito para lookahead/lookbehind.
+#  TIPO D: rubrica + valor mas SEM DATA (pertence ao mesmo grupo da data acima)
+#    'MORA CREDITO PESSOAL 3460029 289,14'  (a data está 2 linhas acima)
+#    Ex bloco: '29/01/2021 2903714 ...' → 'P M STA IZABEL' → 'MORA...' → 'ENCARGOS...' → '8118726 6,81'
+#
+# Estratégia:
+#   1. Mantém rastreador da ÚLTIMA DATA vista no fluxo de linhas.
+#   2. Para cada rubrica: tenta obter data+valor da própria linha,
+#      da próxima, ou da anterior.
+#   3. Se tem valor mas não data → usa a ultima_data_vista do grupo.
+#   4. Atualiza ultima_data_vista a cada linha que contém data.
 
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
@@ -264,6 +270,8 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     continue
                 linhas.append(lu)
 
+            ultima_data_vista = None  # última data encontrada no fluxo desta página
+
             i = 0
             while i < len(linhas):
                 linha = linhas[i]
@@ -273,7 +281,14 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     i += 1
                     continue
 
+                # Atualiza rastreador de data
+                d_linha = _extrair_data(linha)
+                if d_linha:
+                    ultima_data_vista = d_linha
+
                 # Ignora termos de exclusão
+                # NÃO zera ultima_data_vista: a data da linha de exclusão
+                # pode ser a referência dos lançamentos que a seguem no mesmo grupo.
                 if re.search(TERMOS_EXCLUSAO, linha):
                     i += 1
                     continue
@@ -284,60 +299,95 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     data_final  = None
                     valor_final = None
 
-                    # CASO A: data e valor na própria linha (linha completa)
+                    # ── CASO A: dados completos na própria linha ─────────────
                     d = _extrair_data(linha)
                     v = _extrair_debito(linha)
                     if d and v:
-                        data_final  = d
-                        valor_final = v
+                        data_final, valor_final = d, v
 
-                    # CASO B: dados na linha SEGUINTE (rubrica acima da linha de dados)
-                    # Ex: 'ENCARGOS LIMITE DE CRED' → '08/01/2020 8118726 0,95 12,33'
-                    if not data_final:
+                    # ── CASO B: próxima linha tem os dados (tipo B) ──────────
+                    # Só ativa quando a própria linha NÃO tem valor.
+                    # A próxima linha deve ser uma linha de DADOS PUROS (docto + valores),
+                    # não um lançamento descritivo novo (ex: EMPRESTIMO PESSOAL 900,00).
+                    # Critério: a próxima linha tem pouquíssimo texto descritivo
+                    # (_tem_apenas_dados) OU não tem texto algum além de números.
+                    if not data_final and not _extrair_debito(linha):
                         j = i + 1
-                        # Pula eventuais linhas de % entre rubrica e dados
                         while j < len(linhas) and "%" in linhas[j] and not _extrair_data(linhas[j]):
                             j += 1
                         if j < len(linhas):
                             prox = linhas[j]
-                            d = _extrair_data(prox)
-                            v = _extrair_debito(prox)
-                            rub_prox = _detectar_rubrica(prox, rubricas_alvo)
-                            if (d and v
-                                    and not rub_prox
-                                    and not re.search(TERMOS_EXCLUSAO, prox)
-                                    and _tem_apenas_dados(prox)):
-                                data_final  = d
-                                valor_final = v
+                            if not re.search(TERMOS_EXCLUSAO, prox):
+                                d = _extrair_data(prox)
+                                v = _extrair_debito(prox)
+                                rub_p = _detectar_rubrica(prox, rubricas_alvo)
+                                # Aceita a próxima linha somente se ela é "linha de dados"
+                                # (pouco texto descritivo) — evita capturar lançamentos novos
+                                if v and not rub_p and _tem_apenas_dados(prox):
+                                    valor_final = v
+                                    data_final  = d  # pode ser None (será completado)
 
-                    # CASO C: dados na linha ANTERIOR (rubrica abaixo da linha de dados)
-                    # Ex: '15/01/2020 0130120 21,60 16,40' → 'CESTA B.EXPRESSO4'
-                    # Só herda se a linha anterior é "apenas dados" e não é outra rubrica.
-                    # Verifica também que a linha i-2 NÃO é outra linha de dados
-                    # (evita herdar de lançamento anterior completamente diferente).
-                    if not data_final and i >= 1:
+                    # ── CASO C: linha anterior fornece dados (sublinha de descrição) ─
+                    # Dois subtipos:
+                    #   C1 — sem valor próprio (CESTA): herda data E valor da linha anterior
+                    #        ant: '15/01/2020 0130120 21,60 16,40'  → data=15/01 valor=21,60
+                    #        lin: 'CESTA B.EXPRESSO4'
+                    #   C2 — com valor próprio (MORA): herda só a DATA da linha anterior
+                    #        ant: '22/06/2022 DEP CORBAN DINHEIRO 482,00'  → data=22/06
+                    #        lin: 'MORA CREDITO PESSOAL 89,73'             → valor=89,73
+                    if not valor_final and i >= 1:
                         ant = linhas[i - 1]
-                        d = _extrair_data(ant)
-                        v = _extrair_debito(ant)
-                        rub_ant = _detectar_rubrica(ant, rubricas_alvo)
-                        if (d and v
-                                and not rub_ant
-                                and not re.search(TERMOS_EXCLUSAO, ant)
-                                and _tem_apenas_dados(ant)):
-                            # Confirma que não é lançamento isolado sem texto acima
-                            contexto_ok = True
-                            if i >= 2:
-                                ant2 = linhas[i - 2]
-                                if (_extrair_data(ant2) and _extrair_debito(ant2)
-                                        and _tem_apenas_dados(ant2)):
-                                    contexto_ok = False
-                            if contexto_ok:
-                                data_final  = d
-                                valor_final = v
+                        if not re.search(TERMOS_EXCLUSAO, ant):
+                            d_ant   = _extrair_data(ant)
+                            v_ant   = _extrair_debito(ant)
+                            rub_a   = _detectar_rubrica(ant, rubricas_alvo)
+                            v_propria = _extrair_debito(linha)
+                            # Linha anterior deve ter valor e não ser outra rubrica
+                            if v_ant and not rub_a:
+                                ok = True
+                                # Bloqueia se ant2 também é linha de dados pura
+                                # (evita herdar de lançamento completamente diferente)
+                                if i >= 2:
+                                    ant2 = linhas[i - 2]
+                                    if (_extrair_data(ant2) and _extrair_debito(ant2)
+                                            and _tem_apenas_dados(ant2)):
+                                        ok = False
+                                if ok:
+                                    # C2: rubrica tem valor próprio → usa seu valor + data da ant
+                                    # C1: rubrica sem valor → herda valor E data da ant
+                                    if v_propria:
+                                        valor_final = v_propria
+                                        data_final  = d_ant  # pode ser None
+                                    else:
+                                        valor_final = v_ant
+                                        data_final  = d_ant  # pode ser None
 
-                    if data_final and valor_final:
+                    # ── CASO D: fallback — captura valor da própria linha se ainda sem valor ─
+                    # Cobre: rubrica com valor mas SEM DATA na mesma linha,
+                    # e cujos vizinhos (próxima = outra rubrica, anterior = texto puro)
+                    # não forneceram dados. Ex:
+                    #   'CARTAO CREDITO ANUIDADE 4740275 13,50 11,18'  (sem data)
+                    #   'MORA CREDITO PESSOAL 3460029 289,14 79,63'    (sem data)
+                    if not valor_final:
+                        v_propria = _extrair_debito(linha)
+                        if v_propria:
+                            valor_final = v_propria
+
+                    # Preenche data ausente com ultima_data_vista do grupo
+                    if valor_final and not data_final:
+                        data_final = ultima_data_vista
+
+                    if valor_final and data_final:
                         resultados.append({
                             "DATA":      data_final,
+                            "CATEGORIA": rubrica,
+                            "VALOR":     valor_final,
+                            "HISTÓRICO": linha[:80],
+                        })
+                    elif valor_final:
+                        # Tem valor mas data não foi encontrada em nenhum dos casos
+                        resultados.append({
+                            "DATA":      "00/00/0000",
                             "CATEGORIA": rubrica,
                             "VALOR":     valor_final,
                             "HISTÓRICO": linha[:80],
