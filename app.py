@@ -198,202 +198,241 @@ TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
 #
 # Assim, o motor lida corretamente com ambos os formatos no mesmo extrato.
 
-def _extrair_debito(linha_up):
+def _extrair_debito(texto_up):
     """Penúltimo valor numérico = débito (último = saldo)."""
-    vals = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', linha_up)
+    vals = re.findall(r'\d{1,3}(?:\.\d{3})*,\d{2}(?!\s*%)', texto_up)
     if not vals: return None
     return vals[-2] if len(vals) >= 2 else vals[0]
 
-def _extrair_data(linha_up):
-    m = re.search(r"(\d{2}/\d{2}/\d{2,4})", linha_up)
-    return m.group(1) if m else None
-
-def _detectar_rubrica(linha_up, rubricas_alvo):
-    if "%" in linha_up:
-        return None
+def _detectar_rubrica(texto_up, rubricas_alvo):
+    """Retorna o nome da rubrica detectada, ou None."""
+    if "%" in texto_up: return None
     for nome in rubricas_alvo:
-        if re.search(RUBRICAS_MESTRE[nome], linha_up):
-            return nome
+        if re.search(RUBRICAS_MESTRE[nome], texto_up): return nome
     return None
 
-def _tem_apenas_dados(linha_up):
-    """Linha com pouquíssimo texto — basicamente docto/data + números."""
-    sem_numeros = re.sub(r'\d', '', linha_up)
-    sem_numeros = re.sub(r'[/,.\s\-]', '', sem_numeros)
-    return len(sem_numeros) < 8
+CABECALHOS_PREFIXOS = [
+    'BRADESCO CELULAR', 'DATA:', 'NOME:', 'EXTRATO DE:',
+    'DATA HISTÓRICO', 'DATA HISTORICO', 'FOLHA:', 'TOTAL'
+]
 
-# ── MOTOR v5 ─────────────────────────────────────────────────────────────────
+def _eh_cabecalho(texto_up):
+    return any(texto_up.startswith(p.upper()) for p in CABECALHOS_PREFIXOS)
+
+def _agrupar_linhas_por_y(words, tolerancia_y=5):
+    """Agrupa palavras em linhas pela proximidade vertical (Y)."""
+    if not words: return []
+    linhas = [[words[0]]]
+    for w in words[1:]:
+        if abs(w['top'] - linhas[-1][0]['top']) <= tolerancia_y:
+            linhas[-1].append(w)
+        else:
+            linhas.append([w])
+    return linhas
+
+# ── MOTOR POR COORDENADAS ─────────────────────────────────────────────────────
 #
-# Estrutura do PDF Bradesco (conforme pdfplumber):
+# PRINCÍPIO FUNDAMENTAL do extrato Bradesco:
 #
-#  TIPO A: rubrica + data + valor na mesma linha
-#    'CARTAO CREDITO ANUIDADE 4740002 13,50 11,27'
+# O extrato tem uma coluna "Data" à esquerda (X < 80px). Uma data nessa coluna
+# cobre TODOS os lançamentos abaixo até a próxima data na coluna Data.
+# Ou seja: lançamentos sem data na coluna Data pertencem ao mesmo dia da
+# última data que apareceu nessa coluna.
 #
-#  TIPO B: rubrica ACIMA, dados ABAIXO
-#    'ENCARGOS LIMITE DE CRED'
-#    '08/01/2020 8118726 0,95 12,33'
+# Exemplo visual (pág7, jan/2021):
+#   Coluna Data    Coluna Histórico          Débito
+#   29/01/2021     TRANSF SALDO C/SAL P/CC
+#                  MORA CREDITO PESSOAL      289,14   ← sem data = 29/01/2021
+#                  ENCARGOS LIMITE DE CRED     6,81   ← sem data = 29/01/2021
+#                  TARIFA BANCARIA / CESTA    27,70   ← sem data = 29/01/2021
+#   01/02/2021     SAQUE DIN CORBAN           45,00
 #
-#  TIPO C: rubrica ABAIXO dos dados (sublinha — CESTA)
-#    '15/01/2020 0130120 21,60 16,40'
-#    'CESTA B.EXPRESSO4'
+# O motor por texto tinha dificuldade em distinguir qual data pertencia a qual
+# lançamento. O motor por coordenadas resolve isso definitivamente ao usar
+# a posição X para identificar a coluna Data e a posição Y para agrupar linhas.
 #
-#  TIPO D: rubrica + valor mas SEM DATA (pertence ao mesmo grupo da data acima)
-#    'MORA CREDITO PESSOAL 3460029 289,14'  (a data está 2 linhas acima)
-#    Ex bloco: '29/01/2021 2903714 ...' → 'P M STA IZABEL' → 'MORA...' → 'ENCARGOS...' → '8118726 6,81'
-#
-# Estratégia:
-#   1. Mantém rastreador da ÚLTIMA DATA vista no fluxo de linhas.
-#   2. Para cada rubrica: tenta obter data+valor da própria linha,
-#      da próxima, ou da anterior.
-#   3. Se tem valor mas não data → usa a ultima_data_vista do grupo.
-#   4. Atualiza ultima_data_vista a cada linha que contém data.
+# Busca de valor (3 prioridades):
+#   1. Própria linha da rubrica
+#   2. Linha anterior (TIPO C — CESTA sublinha de TARIFA BANCARIA)
+#   3. Próximas linhas (TIPO B — ENCARGOS/PARCELA com dados abaixo)
 
 def realizar_auditoria(arquivo, rubricas_alvo):
     resultados = []
 
     with pdfplumber.open(arquivo) as pdf:
+        # Variáveis compartilhadas entre páginas (pendentes podem atravessar fim de página)
+        data_atual = None
+        apos_excl  = False
+        pendentes  = []
+
         for page in pdf.pages:
-            texto = page.extract_text(x_tolerance=3, y_tolerance=3)
-            if not texto:
+            words = page.extract_words(x_tolerance=3, y_tolerance=3)
+            if not words:
                 continue
 
-            # Filtra cabeçalhos fixos de cada página
+            # Agrupar palavras em linhas por proximidade Y
+            grupos = _agrupar_linhas_por_y(words, tolerancia_y=5)
+
+            # Construir lista de linhas com metadados
             linhas = []
-            for l in texto.split('\n'):
-                lu = l.upper().strip()
-                if not lu:
+            for grupo in grupos:
+                grupo_s = sorted(grupo, key=lambda w: w['x0'])
+                texto_up = ' '.join(w['text'] for w in grupo_s).upper().strip()
+
+                # Detecta data na coluna Data (X < 80px)
+                data_col = None
+                for w in grupo_s:
+                    if w['x0'] < 80:
+                        m = re.search(r'(\d{2}/\d{2}/\d{2,4})', w['text'])
+                        if m:
+                            data_col = m.group(1)
+                            break
+
+                linhas.append({
+                    'texto':    texto_up,
+                    'data_col': data_col,
+                    'valor':    _extrair_debito(texto_up),
+                })
+
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA FUNDAMENTAL do extrato Bradesco:
+            # A coluna "Data" (X < 80px) só aparece quando muda o dia.
+            # Lançamentos sem data na coluna pertencem ao mesmo dia da última data vista.
+            #
+            # PORÉM: linhas de EXCLUSÃO (TRANSF/SALDO) com data na coluna NÃO transferem
+            # essa data para os lançamentos seguintes. Os lançamentos sem data que aparecem
+            # APÓS um bloco de exclusão pertencem ao grupo do dia seguinte (data inferior).
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO ...   ← exclusão, sua data é 29/01
+            #               MORA CREDITO       ← sem data na coluna → data inferior
+            #               ENCARGOS LIMITE    ← sem data na coluna → data inferior
+            #               TARIFA/CESTA       ← sem data na coluna → data inferior
+            #   01/02/2021  SAQUE DIN ...      ← ESTA é a data inferior que sela o grupo
+            #
+            # Solução: data_atual só é atualizada por linhas NÃO-exclusão.
+            # Quando a linha atual é de exclusão, sua data é registrada em
+            # data_excl_pendente mas NÃO altera data_atual.
+            # Rubricas que ficam "penduradas" (sem data_atual válida) recebem
+            # a data da próxima linha datada não-exclusão (buscada por lookahead).
+
+            # ── RASTREADOR DE DATA — LÓGICA DATA INFERIOR ────────────────────────
+            # REGRA DO EXTRATO BRADESCO:
+            # A coluna "Data" (X < 80px) aparece na linha do primeiro lançamento
+            # de cada dia. Todos os lançamentos abaixo SEM data na coluna pertencem
+            # ao mesmo dia — até aparecer uma nova data na coluna.
+            #
+            # EXCEÇÃO CRÍTICA — TRANSF SALDO (lançamento de exclusão):
+            # Quando TRANSF aparece com data na coluna, os lançamentos seguintes
+            # SEM data na coluna (MORA, ENCARGOS, CESTA, etc.) NÃO pertencem à
+            # data do TRANSF. Eles pertencem ao dia cujo lançamento aparece logo
+            # ABAIXO, na próxima linha COM data na coluna — a "data inferior".
+            #
+            # Exemplo pág7:
+            #   29/01/2021  TRANSF SALDO → SUA data é 29/01 (exclusão, ignorada)
+            #               MORA CREDITO → sem data → aguarda data inferior
+            #               ENCARGOS     → sem data → aguarda data inferior
+            #               CESTA        → sem data → aguarda data inferior
+            #   01/02/2021  SAQUE DIN    → esta é a data inferior → sela as 3 acima
+            #
+            # IMPLEMENTAÇÃO:
+            # - data_atual: rastreia a data do grupo de lançamentos em andamento
+            # - apos_excl: True quando acabou de passar por uma exclusão COM DATA
+            #   (indica que os próximos sem data devem aguardar a data inferior)
+            # - pendentes: rubricas que aguardam data inferior
+            #
+            # Quando apos_excl=True e aparece nova linha com data na coluna (não exclusão),
+            # essa data é a "data inferior" → sela os pendentes E vira a nova data_atual.
+
+            # data_atual, apos_excl, pendentes são compartilhados entre páginas
+
+            for idx, linha in enumerate(linhas):
+                txt = linha['texto']
+
+                eh_excl = bool(re.search(TERMOS_EXCLUSAO, txt))
+
+                if linha['data_col']:
+                    if eh_excl:
+                        # Exclusão com data: marca que os próximos sem data
+                        # devem aguardar a data inferior, não herdar data_atual
+                        apos_excl = True
+                        # data_atual NÃO é alterada — permanece do lançamento anterior
+                    else:
+                        # Lançamento normal com data na coluna
+                        data_atual = linha['data_col']
+                        apos_excl  = False
+                        # Sela pendentes que aguardavam esta data inferior
+                        if pendentes:
+                            for p in pendentes:
+                                p['DATA'] = data_atual
+                                resultados.append(p)
+                            pendentes = []
+
+                # Pula cabeçalhos, linhas vazias, subtítulos com %, exclusões
+                if not txt or _eh_cabecalho(txt):
                     continue
-                if any(lu.startswith(p) for p in [
-                    'BRADESCO CELULAR', 'DATA: ', 'NOME: ',
-                    'EXTRATO DE:', 'DATA HISTÓRICO', 'DATA HISTORICO', 'FOLHA:'
-                ]):
+                if "%" in txt and not linha['data_col']:
                     continue
-                linhas.append(lu)
-
-            ultima_data_vista = None  # última data encontrada no fluxo desta página
-
-            i = 0
-            while i < len(linhas):
-                linha = linhas[i]
-
-                # Ignora subtítulos com % (sem data)
-                if "%" in linha and not _extrair_data(linha):
-                    i += 1
+                if eh_excl:
                     continue
 
-                # Atualiza rastreador de data
-                d_linha = _extrair_data(linha)
-                if d_linha:
-                    ultima_data_vista = d_linha
-
-                # Ignora termos de exclusão
-                # NÃO zera ultima_data_vista: a data da linha de exclusão
-                # pode ser a referência dos lançamentos que a seguem no mesmo grupo.
-                if re.search(TERMOS_EXCLUSAO, linha):
-                    i += 1
+                rubrica = _detectar_rubrica(txt, rubricas_alvo)
+                if not rubrica:
                     continue
 
-                rubrica = _detectar_rubrica(linha, rubricas_alvo)
+                # Busca de valor (3 prioridades)
+                valor_final = linha['valor']
 
-                if rubrica:
-                    data_final  = None
-                    valor_final = None
+                # Prioridade 2: linha anterior (TIPO C — CESTA sublinha de TARIFA)
+                if not valor_final and idx > 0:
+                    ant      = linhas[idx - 1]
+                    rub_ant  = _detectar_rubrica(ant['texto'], rubricas_alvo)
+                    excl_ant = bool(re.search(TERMOS_EXCLUSAO, ant['texto']))
+                    if ant['valor'] and not rub_ant and not excl_ant:
+                        valor_final = ant['valor']
 
-                    # ── CASO A: dados completos na própria linha ─────────────
-                    d = _extrair_data(linha)
-                    v = _extrair_debito(linha)
-                    if d and v:
-                        data_final, valor_final = d, v
+                # Prioridade 3: próximas linhas (TIPO B — ENCARGOS, PARCELA)
+                if not valor_final:
+                    for k in range(idx + 1, min(len(linhas), idx + 4)):
+                        prox = linhas[k]
+                        if re.search(TERMOS_EXCLUSAO, prox['texto']): break
+                        if _detectar_rubrica(prox['texto'], rubricas_alvo): break
+                        if "%" in prox['texto'] and not prox['data_col']: continue
+                        if prox['valor']:
+                            valor_final = prox['valor']
+                            break
 
-                    # ── CASO B: próxima linha tem os dados (tipo B) ──────────
-                    # Só ativa quando a própria linha NÃO tem valor.
-                    # A próxima linha deve ser uma linha de DADOS PUROS (docto + valores),
-                    # não um lançamento descritivo novo (ex: EMPRESTIMO PESSOAL 900,00).
-                    # Critério: a próxima linha tem pouquíssimo texto descritivo
-                    # (_tem_apenas_dados) OU não tem texto algum além de números.
-                    if not data_final and not _extrair_debito(linha):
-                        j = i + 1
-                        while j < len(linhas) and "%" in linhas[j] and not _extrair_data(linhas[j]):
-                            j += 1
-                        if j < len(linhas):
-                            prox = linhas[j]
-                            if not re.search(TERMOS_EXCLUSAO, prox):
-                                d = _extrair_data(prox)
-                                v = _extrair_debito(prox)
-                                rub_p = _detectar_rubrica(prox, rubricas_alvo)
-                                # Aceita a próxima linha somente se ela é "linha de dados"
-                                # (pouco texto descritivo) — evita capturar lançamentos novos
-                                if v and not rub_p and _tem_apenas_dados(prox):
-                                    valor_final = v
-                                    data_final  = d  # pode ser None (será completado)
+                if not valor_final:
+                    continue
 
-                    # ── CASO C: linha anterior fornece dados (sublinha de descrição) ─
-                    # Dois subtipos:
-                    #   C1 — sem valor próprio (CESTA): herda data E valor da linha anterior
-                    #        ant: '15/01/2020 0130120 21,60 16,40'  → data=15/01 valor=21,60
-                    #        lin: 'CESTA B.EXPRESSO4'
-                    #   C2 — com valor próprio (MORA): herda só a DATA da linha anterior
-                    #        ant: '22/06/2022 DEP CORBAN DINHEIRO 482,00'  → data=22/06
-                    #        lin: 'MORA CREDITO PESSOAL 89,73'             → valor=89,73
-                    if not valor_final and i >= 1:
-                        ant = linhas[i - 1]
-                        if not re.search(TERMOS_EXCLUSAO, ant):
-                            d_ant   = _extrair_data(ant)
-                            v_ant   = _extrair_debito(ant)
-                            rub_a   = _detectar_rubrica(ant, rubricas_alvo)
-                            v_propria = _extrair_debito(linha)
-                            # Linha anterior deve ter valor e não ser outra rubrica
-                            if v_ant and not rub_a:
-                                ok = True
-                                # Bloqueia se ant2 também é linha de dados pura
-                                # (evita herdar de lançamento completamente diferente)
-                                if i >= 2:
-                                    ant2 = linhas[i - 2]
-                                    if (_extrair_data(ant2) and _extrair_debito(ant2)
-                                            and _tem_apenas_dados(ant2)):
-                                        ok = False
-                                if ok:
-                                    # C2: rubrica tem valor próprio → usa seu valor + data da ant
-                                    # C1: rubrica sem valor → herda valor E data da ant
-                                    if v_propria:
-                                        valor_final = v_propria
-                                        data_final  = d_ant  # pode ser None
-                                    else:
-                                        valor_final = v_ant
-                                        data_final  = d_ant  # pode ser None
+                # Determinar data do registro:
+                # Se apos_excl=True (viemos de um bloco TRANSF+data): pendentes
+                # Se apos_excl=False e data_atual disponível: usa data_atual direto
+                if apos_excl:
+                    # Aguarda a data inferior (próxima linha normal com data na coluna)
+                    pendentes.append({
+                        'DATA':      None,
+                        'CATEGORIA': rubrica,
+                        'VALOR':     valor_final,
+                        'HISTÓRICO': txt[:80],
+                    })
+                elif data_atual:
+                    resultados.append({
+                        'DATA':      data_atual,
+                        'CATEGORIA': rubrica,
+                        'VALOR':     valor_final,
+                        'HISTÓRICO': txt[:80],
+                    })
 
-                    # ── CASO D: fallback — captura valor da própria linha se ainda sem valor ─
-                    # Cobre: rubrica com valor mas SEM DATA na mesma linha,
-                    # e cujos vizinhos (próxima = outra rubrica, anterior = texto puro)
-                    # não forneceram dados. Ex:
-                    #   'CARTAO CREDITO ANUIDADE 4740275 13,50 11,18'  (sem data)
-                    #   'MORA CREDITO PESSOAL 3460029 289,14 79,63'    (sem data)
-                    if not valor_final:
-                        v_propria = _extrair_debito(linha)
-                        if v_propria:
-                            valor_final = v_propria
+            # Pendentes ao fim de página: mantém para a próxima página
+            # (a data inferior pode estar na primeira linha da página seguinte)
 
-                    # Preenche data ausente com ultima_data_vista do grupo
-                    if valor_final and not data_final:
-                        data_final = ultima_data_vista
-
-                    if valor_final and data_final:
-                        resultados.append({
-                            "DATA":      data_final,
-                            "CATEGORIA": rubrica,
-                            "VALOR":     valor_final,
-                            "HISTÓRICO": linha[:80],
-                        })
-                    elif valor_final:
-                        # Tem valor mas data não foi encontrada em nenhum dos casos
-                        resultados.append({
-                            "DATA":      "00/00/0000",
-                            "CATEGORIA": rubrica,
-                            "VALOR":     valor_final,
-                            "HISTÓRICO": linha[:80],
-                        })
-
-                i += 1
+    # Flush final: pendentes que sobraram após todas as páginas
+    if pendentes:
+        for p in pendentes:
+            if p['DATA'] is None:
+                p['DATA'] = '00/00/0000'
+            resultados.append(p)
 
     return resultados
 
