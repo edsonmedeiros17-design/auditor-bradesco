@@ -499,241 +499,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 1b. CSS DA TELA DE LOGIN ---
-LOGIN_CSS = """
-<style>
-/* ── TELA DE LOGIN — RESET GLOBAL ─────────────────────────────────────────── */
-.login-page * { box-sizing: border-box; }
-
-/* ── FUNDO COMPLETO ───────────────────────────────────────────────────────── */
-.login-page {
-    position: fixed;
-    inset: 0;
-    background: #060A0D;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    overflow: hidden;
-}
-/* Grade de pontos — textura de luxo discreta */
-.login-page::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        radial-gradient(circle, rgba(197,165,102,0.07) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none;
-}
-/* Vinheta nas bordas */
-.login-page::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        ellipse at center,
-        transparent 40%,
-        rgba(6,10,13,0.85) 100%
-    );
-    pointer-events: none;
-}
-
-/* ── CARD CENTRAL ─────────────────────────────────────────────────────────── */
-.login-card {
-    position: relative;
-    z-index: 1;
-    width: 420px;
-    max-width: 94vw;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-}
-
-/* ── LOGOMARCA ────────────────────────────────────────────────────────────── */
-.login-logo {
-    text-align: center;
-    margin-bottom: 28px;
-}
-.login-logo-eyebrow {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.54rem;
-    font-weight: 600;
-    letter-spacing: 5px;
-    text-transform: uppercase;
-    color: rgba(197,165,102,0.55);
-    margin-bottom: 10px;
-}
-.login-logo-monogram {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 4.2rem;
-    font-weight: 300;
-    color: #C5A566;
-    line-height: 1;
-    letter-spacing: -2px;
-}
-.login-logo-monogram sup {
-    font-size: 1.8rem;
-    font-weight: 600;
-    letter-spacing: 0;
-    vertical-align: super;
-    color: #D4B87A;
-}
-.login-logo-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.45rem;
-    font-weight: 600;
-    color: #E8DCC8;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    margin-top: 6px;
-    line-height: 1;
-}
-.login-logo-tagline {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 0.82rem;
-    font-weight: 400;
-    font-style: italic;
-    color: rgba(197,165,102,0.5);
-    letter-spacing: 1.5px;
-    margin-top: 4px;
-}
-/* Ornamento separador */
-.login-ornament {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 18px 0 24px;
-    width: 100%;
-}
-.login-orn-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.3));
-}
-.login-orn-line.rev {
-    background: linear-gradient(90deg, rgba(197,165,102,0.3), transparent);
-}
-.login-orn-diamond {
-    font-size: 0.5rem;
-    color: rgba(197,165,102,0.5);
-}
-
-/* ── NOME DO ROBÔ ─────────────────────────────────────────────────────────── */
-.login-robot-name {
-    text-align: center;
-    margin-bottom: 6px;
-}
-.login-robot-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.52rem;
-    font-weight: 600;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: rgba(197,165,102,0.38);
-    margin-bottom: 5px;
-}
-.login-robot-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2.5rem;
-    font-weight: 300;
-    color: #E8DCC8;
-    letter-spacing: 4px;
-    line-height: 1;
-}
-.login-robot-title .x-letter {
-    font-weight: 700;
-    color: #C5A566;
-    font-size: 2.9rem;
-    letter-spacing: 0;
-}
-
-/* ── MENSAGEM DE BOAS-VINDAS ─────────────────────────────────────────────── */
-.login-welcome {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 0.95rem;
-    font-weight: 400;
-    font-style: italic;
-    color: rgba(232,220,200,0.4);
-    text-align: center;
-    letter-spacing: 0.5px;
-    line-height: 1.6;
-    margin-bottom: 32px;
-    padding: 0 8px;
-}
-
-/* ── FORMULÁRIO ──────────────────────────────────────────────────────────── */
-.login-form {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid rgba(197,165,102,0.14);
-    background: rgba(197,165,102,0.025);
-}
-.login-field {
-    display: flex;
-    flex-direction: column;
-    padding: 14px 20px 10px;
-    border-bottom: 1px solid rgba(197,165,102,0.1);
-    position: relative;
-}
-.login-field:last-of-type { border-bottom: none; }
-.login-field label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.52rem;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: rgba(197,165,102,0.45);
-    margin-bottom: 6px;
-}
-.login-field input {
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #E8DCC8;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 300;
-    letter-spacing: 1.5px;
-    padding: 0;
-    width: 100%;
-    caret-color: #C5A566;
-}
-.login-field input::placeholder {
-    color: rgba(232,220,200,0.15);
-    letter-spacing: 1px;
-}
-.login-field input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 100px #0D1014 inset;
-    -webkit-text-fill-color: #E8DCC8;
-}
-
-/* ── ERRO ─────────────────────────────────────────────────────────────────── */
-.login-error {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.65rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: rgba(220,100,100,0.75);
-    text-align: center;
-    margin-top: 12px;
-    min-height: 14px;
-}
-
-/* ── STREAMLIT: esconde tudo exceto o formulário de login ─────────────────── */
-.login-active header,
-.login-active [data-testid="stSidebar"],
-.login-active [data-testid="stToolbar"],
-.login-active footer {
-    display: none !important;
-}
-</style>
-"""
-
-# --- 1c. LÓGICA DE LOGIN ---
+# --- 1b. LÓGICA DE LOGIN ---
 def _check_login(email: str, senha: str) -> bool:
     return email.strip() == "edson.senabr@gmail.com" and senha == "Edsonsena14"
 
@@ -741,167 +507,283 @@ if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
-    # Esconde a UI padrão do Streamlit enquanto mostra o login
+
+    # ── CSS: transforma o stApp inteiro na tela de login ──────────────────────
     st.markdown("""
     <style>
-        header, [data-testid="stSidebar"], [data-testid="stToolbar"],
-        footer, [data-testid="stDecoration"] { display: none !important; }
-        .stApp { background: #060A0D !important; }
-        .block-container { padding: 0 !important; max-width: 100% !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+
+    /* Esconde toda a UI padrão do Streamlit */
+    header, footer,
+    [data-testid="stSidebar"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"] { display: none !important; }
+
+    /* Fundo da tela */
+    .stApp {
+        background: #060A0D !important;
+        background-image:
+            radial-gradient(circle, rgba(197,165,102,0.055) 1px, transparent 1px) !important;
+        background-size: 30px 30px !important;
+    }
+    /* Vinheta sobre a grade */
+    .stApp::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 50%,
+            transparent 30%, rgba(6,10,13,0.78) 100%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Container principal: centraliza verticalmente */
+    .block-container {
+        max-width: 480px !important;
+        padding: 0 24px !important;
+        margin: 0 auto !important;
+        position: relative;
+        z-index: 1;
+        /* Centralização vertical aproximada */
+        padding-top: max(60px, 10vh) !important;
+    }
+
+    /* ── LOGOMARCA ────────────────────────────────────────────────────────── */
+    .lx-logo {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .lx-eyebrow {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.52rem;
+        font-weight: 600;
+        letter-spacing: 5.5px;
+        text-transform: uppercase;
+        color: rgba(197,165,102,0.45);
+        margin-bottom: 12px;
+    }
+    .lx-monogram {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 3.8rem;
+        font-weight: 300;
+        color: #C5A566;
+        line-height: 1;
+        letter-spacing: 8px;
+        margin-bottom: 8px;
+    }
+    .lx-name {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #E8DCC8;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+    .lx-tagline {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.8rem;
+        font-style: italic;
+        color: rgba(197,165,102,0.42);
+        letter-spacing: 2px;
+        margin-top: 5px;
+    }
+
+    /* ── ORNAMENTO ───────────────────────────────────────────────────────── */
+    .lx-ornament {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 22px 0 20px;
+    }
+    .lx-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.28));
+    }
+    .lx-line-rev {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(197,165,102,0.28), transparent);
+    }
+    .lx-diamond { font-size: 0.45rem; color: rgba(197,165,102,0.45); }
+
+    /* ── NOME DO ROBÔ ────────────────────────────────────────────────────── */
+    .lx-robot {
+        text-align: center;
+        margin-bottom: 14px;
+    }
+    .lx-robot-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.50rem;
+        font-weight: 600;
+        letter-spacing: 4.5px;
+        text-transform: uppercase;
+        color: rgba(197,165,102,0.32);
+        margin-bottom: 6px;
+    }
+    .lx-robot-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.6rem;
+        font-weight: 300;
+        color: #DDD3BE;
+        letter-spacing: 5px;
+        line-height: 1;
+    }
+    .lx-robot-x {
+        font-weight: 700;
+        color: #C5A566;
+        font-size: 3rem;
+        letter-spacing: 0;
+    }
+
+    /* ── BOAS-VINDAS ─────────────────────────────────────────────────────── */
+    .lx-welcome {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.92rem;
+        font-style: italic;
+        color: rgba(232,220,200,0.35);
+        text-align: center;
+        letter-spacing: 0.4px;
+        line-height: 1.65;
+        margin-bottom: 28px;
+    }
+
+    /* ── FORMULÁRIO — inputs ─────────────────────────────────────────────── */
+    /* Wrapper do form sem bordas padrão */
+    [data-testid="stForm"] {
+        background: rgba(197,165,102,0.03) !important;
+        border: 1px solid rgba(197,165,102,0.16) !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+    /* Inputs: linha inferior apenas, sem caixa */
+    [data-testid="stForm"] input {
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(197,165,102,0.18) !important;
+        border-radius: 0 !important;
+        color: #E8DCC8 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.8px !important;
+        padding: 10px 20px !important;
+        caret-color: #C5A566 !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stForm"] input:focus {
+        border-bottom-color: #C5A566 !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    /* Labels dos inputs */
+    [data-testid="stForm"] label {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.55rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 3.5px !important;
+        text-transform: uppercase !important;
+        color: rgba(197,165,102,0.42) !important;
+        padding-left: 20px !important;
+        padding-top: 14px !important;
+        padding-bottom: 2px !important;
+    }
+    /* Esconde o asterisco de "required" */
+    [data-testid="stForm"] label span { display: none !important; }
+
+    /* ── BOTÃO SUBMISSÃO ─────────────────────────────────────────────────── */
+    [data-testid="stFormSubmitButton"] > button {
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        border-top: 1px solid rgba(197,165,102,0.18) !important;
+        border-radius: 0 !important;
+        color: rgba(197,165,102,0.7) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.62rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 3.5px !important;
+        text-transform: uppercase !important;
+        padding: 14px 20px !important;
+        margin-top: 0 !important;
+        transition: all 0.25s ease !important;
+    }
+    [data-testid="stFormSubmitButton"] > button:hover {
+        background: rgba(197,165,102,0.07) !important;
+        color: #C5A566 !important;
+        border-top-color: rgba(197,165,102,0.35) !important;
+    }
+
+    /* ── ALERTA DE ERRO ──────────────────────────────────────────────────── */
+    [data-testid="stAlert"] {
+        background: rgba(180,60,60,0.06) !important;
+        border: 1px solid rgba(180,60,60,0.25) !important;
+        border-radius: 0 !important;
+        color: rgba(220,100,100,0.8) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.62rem !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+    }
+    /* Esconde ícone padrão do alerta */
+    [data-testid="stAlert"] svg { display: none !important; }
+
+    /* ── SPINNER ─────────────────────────────────────────────────────────── */
+    [data-testid="stSpinner"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
-    # Renderiza o CSS da tela de login
-    st.markdown(LOGIN_CSS, unsafe_allow_html=True)
-
-    # Estrutura visual da tela de login
+    # ── CONTEÚDO VISUAL (logomarca + robô + boas-vindas) ──────────────────────
     st.markdown("""
-    <div class="login-page">
-      <div class="login-card">
-
-        <!-- LOGOMARCA -->
-        <div class="login-logo">
-          <div class="login-logo-eyebrow">Escritório de Assessoria</div>
-          <div class="login-logo-monogram">EM</div>
-          <div class="login-logo-name">Edson Medeiros</div>
-          <div class="login-logo-tagline">Consultorias &amp; Compliance</div>
-        </div>
-
-        <!-- ORNAMENTO -->
-        <div class="login-ornament">
-          <div class="login-orn-line rev"></div>
-          <div class="login-orn-diamond">◆</div>
-          <div class="login-orn-line"></div>
-        </div>
-
-        <!-- NOME DO ROBÔ -->
-        <div class="login-robot-name">
-          <div class="login-robot-label">Sistema de Auditoria</div>
-          <div class="login-robot-title">
-            Extrato<span class="x-letter">X</span>
-          </div>
-        </div>
-
-        <!-- MENSAGEM DE BOAS-VINDAS -->
-        <p class="login-welcome">
-          Bem-vindo ao sistema de auditoria bancária inteligente.<br>
-          Identifique cobranças indevidas com precisão e eficiência.
-        </p>
-
-      </div>
+    <div class="lx-logo">
+        <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
+        <div class="lx-monogram">E M</div>
+        <div class="lx-name">Edson Medeiros</div>
+        <div class="lx-tagline">Consultorias &amp; Compliance</div>
     </div>
+
+    <div class="lx-ornament">
+        <div class="lx-line-rev"></div>
+        <div class="lx-diamond">◆</div>
+        <div class="lx-line"></div>
+    </div>
+
+    <div class="lx-robot">
+        <div class="lx-robot-label">Sistema de Auditoria Bancária</div>
+        <div class="lx-robot-title">Extrato<span class="lx-robot-x">X</span></div>
+    </div>
+
+    <p class="lx-welcome">
+        Bem-vindo ao sistema de auditoria bancária inteligente.<br>
+        Identifique cobranças indevidas com precisão e eficiência.
+    </p>
     """, unsafe_allow_html=True)
 
-    # Formulário funcional do Streamlit (renderiza abaixo do HTML visual)
-    # Usamos colunas para centralizar
-    _col_l, _col_c, _col_r = st.columns([1, 1.2, 1])
-    with _col_c:
-        with st.form("login_form", clear_on_submit=False):
-            st.markdown("""
-            <div style="
-                border: 1px solid rgba(197,165,102,0.14);
-                background: rgba(197,165,102,0.025);
-                padding: 0;
-                margin-bottom: 0;
-            ">
-                <div style="
-                    padding: 10px 20px 2px;
-                    border-bottom: 1px solid rgba(197,165,102,0.1);
-                ">
-                    <div style="font-family:Inter,sans-serif;font-size:0.52rem;font-weight:600;
-                                letter-spacing:3px;text-transform:uppercase;
-                                color:rgba(197,165,102,0.45);margin-bottom:2px;">
-                        Acesso
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    # ── FORMULÁRIO DE LOGIN ────────────────────────────────────────────────────
+    with st.form("login_form", clear_on_submit=False):
+        _email = st.text_input(
+            "E-mail",
+            placeholder="seu@email.com",
+            key="login_email"
+        )
+        _senha = st.text_input(
+            "Senha",
+            placeholder="••••••••••",
+            type="password",
+            key="login_senha"
+        )
+        _submitted = st.form_submit_button("◆  Acessar o Sistema")
 
-            _email = st.text_input(
-                "E-mail",
-                placeholder="seu@email.com",
-                key="login_email",
-                label_visibility="collapsed"
-            )
-            _senha = st.text_input(
-                "Senha",
-                placeholder="••••••••••",
-                type="password",
-                key="login_senha",
-                label_visibility="collapsed"
-            )
+    if _submitted:
+        if _check_login(_email, _senha):
+            st.session_state["autenticado"] = True
+            st.rerun()
+        else:
+            st.error("Credenciais inválidas — verifique e-mail e senha")
 
-            # Estiliza os inputs para combinar com o design
-            st.markdown("""
-            <style>
-            /* Inputs dentro do formulário de login */
-            [data-testid="stForm"] input {
-                background: transparent !important;
-                border: none !important;
-                border-bottom: 1px solid rgba(197,165,102,0.2) !important;
-                border-radius: 0 !important;
-                color: #E8DCC8 !important;
-                font-family: 'Inter', sans-serif !important;
-                font-size: 0.88rem !important;
-                letter-spacing: 1px !important;
-                padding: 8px 0 !important;
-                caret-color: #C5A566 !important;
-            }
-            [data-testid="stForm"] input:focus {
-                border-bottom-color: #C5A566 !important;
-                box-shadow: none !important;
-            }
-            [data-testid="stForm"] label {
-                font-family: 'Inter', sans-serif !important;
-                font-size: 0.58rem !important;
-                font-weight: 600 !important;
-                letter-spacing: 3px !important;
-                text-transform: uppercase !important;
-                color: rgba(197,165,102,0.5) !important;
-            }
-            /* Botão de submissão */
-            [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button {
-                width: 100% !important;
-                background: transparent !important;
-                border: 1px solid rgba(197,165,102,0.45) !important;
-                border-radius: 0 !important;
-                color: #C5A566 !important;
-                font-family: 'Inter', sans-serif !important;
-                font-size: 0.65rem !important;
-                font-weight: 600 !important;
-                letter-spacing: 3px !important;
-                text-transform: uppercase !important;
-                padding: 10px !important;
-                margin-top: 8px !important;
-                transition: all 0.2s ease !important;
-            }
-            [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button:hover {
-                background: rgba(197,165,102,0.08) !important;
-                border-color: #C5A566 !important;
-            }
-            /* Esconde o fundo padrão do form */
-            [data-testid="stForm"] {
-                background: transparent !important;
-                border: none !important;
-                padding: 0 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-            _submitted = st.form_submit_button("◆  Acessar o Sistema")
-
-            if _submitted:
-                if _check_login(_email, _senha):
-                    st.session_state["autenticado"] = True
-                    st.rerun()
-                else:
-                    st.markdown("""
-                    <div class="login-error">
-                        ✕ &nbsp; Credenciais inválidas — verifique e-mail e senha
-                    </div>
-                    """, unsafe_allow_html=True)
-
-    st.stop()  # Bloqueia completamente o resto da app
+    st.stop()
 
 # --- (USUÁRIO AUTENTICADO — APP NORMAL A PARTIR DAQUI) ---
 
