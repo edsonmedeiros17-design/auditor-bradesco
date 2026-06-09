@@ -1093,6 +1093,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         valor_final = ant['valor']
 
                 # Prioridade 3: próximas linhas (TIPO B — ENCARGOS, PARCELA)
+                # ATENÇÃO: só usar a próxima linha como fonte de valor se ela NÃO é
+                # um lançamento completo (data_col + valor + rubrica), pois nesse caso
+                # o loop principal já a capturará no Caso A — usar aqui geraria duplicata.
                 if not valor_final:
                     for k in range(idx + 1, min(len(linhas), idx + 4)):
                         prox = linhas[k]
@@ -1100,6 +1103,11 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                         if _detectar_rubrica(prox['texto'], rubricas_alvo): break
                         if "%" in prox['texto'] and not prox['data_col']: continue
                         if prox['valor']:
+                            # Bloqueia se a próxima linha tem data_col + valor:
+                            # ela é um lançamento completo → será capturada pelo Caso A.
+                            # Usar ela aqui duplicaria o registro.
+                            if prox['data_col']:
+                                break
                             valor_final = prox['valor']
                             break
 
@@ -1135,7 +1143,18 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 p['DATA'] = '00/00/0000'
             resultados.append(p)
 
-    return resultados
+    # ── DEDUPLICAÇÃO FINAL ────────────────────────────────────────────────────
+    # Remove registros com DATA + CATEGORIA + VALOR + HISTÓRICO idênticos.
+    # Preserva lançamentos legítimos com mesma categoria e valor em datas
+    # diferentes (ex: ANUIDADE cobrada todo mês) ou mesmo dia mas doctos distintos.
+    vistos = set()
+    unicos = []
+    for r in resultados:
+        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:40])
+        if chave not in vistos:
+            vistos.add(chave)
+            unicos.append(r)
+    return unicos
 
 # --- 4. GERAÇÃO DE PLANILHA ---
 def fix_date(d):
