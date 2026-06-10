@@ -958,18 +958,22 @@ if not st.session_state["autenticado"]:
 
     /* Rodapé fixo */
     .lx-footer {
+        position: fixed;
+        bottom: 16px; left: 50%; transform: translateX(-50%);
         text-align: center;
         font-family: 'Inter', sans-serif;
         font-size: 0.62rem; letter-spacing: 2px;
         text-transform: uppercase;
         color: rgba(197,165,102,0.2);
-        margin-top: 20px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 100;
     }
 
     /* Selo de fundação fixo — mesmo estilo do app */
     .em-founder-seal {
         position: fixed;
-        bottom: 20px; right: 24px;
+        bottom: 52px; right: 24px;
         z-index: 9999;
         display: flex; flex-direction: column; align-items: flex-end;
         gap: 2px;
