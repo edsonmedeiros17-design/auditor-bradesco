@@ -1339,23 +1339,37 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 if not valor_final:
                     continue
 
-                # Determinar data do registro:
-                # Se apos_excl=True (viemos de um bloco TRANSF+data): pendentes
-                # Se apos_excl=False e data_atual disponível: usa data_atual direto
-                if apos_excl:
-                    # Aguarda a data inferior (próxima linha normal com data na coluna)
+                # Determinar data do registro.
+                #
+                # REGRA GERAL: sem data_col → herda data_atual (grupo atual).
+                #
+                # EXCEÇÃO 1 — após exclusão (apos_excl=True):
+                #   vai para pendentes, aguarda data inferior.
+                #
+                # EXCEÇÃO 2 — tarifas bancárias (EXTRATO MES, SAQUE TERMINAL):
+                #   No extrato Bradesco, essas tarifas aparecem entre grupos de datas
+                #   sem data própria na coluna. A data correta é a da próxima linha
+                #   datada (data inferior), não a última vista.
+                #   Ex: TARIFA EMISSAO EXTRATO entre 11/04 e 14/04 → data = 14/04
+                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL"}
+
+                usa_data_inferior = apos_excl or (
+                    rubrica in RUBRICAS_DATA_INFERIOR and not linha["data_col"]
+                )
+
+                if usa_data_inferior:
                     pendentes.append({
-                        'DATA':      None,
-                        'CATEGORIA': rubrica,
-                        'VALOR':     valor_final,
-                        'HISTÓRICO': txt[:80],
+                        "DATA":      None,
+                        "CATEGORIA": rubrica,
+                        "VALOR":     valor_final,
+                        "HISTÓRICO": txt[:80],
                     })
                 elif data_atual:
                     resultados.append({
-                        'DATA':      data_atual,
-                        'CATEGORIA': rubrica,
-                        'VALOR':     valor_final,
-                        'HISTÓRICO': txt[:80],
+                        "DATA":      data_atual,
+                        "CATEGORIA": rubrica,
+                        "VALOR":     valor_final,
+                        "HISTÓRICO": txt[:80],
                     })
 
             # Pendentes ao fim de página: mantém para a próxima página
