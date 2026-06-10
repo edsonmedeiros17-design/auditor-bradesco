@@ -16,7 +16,7 @@ st.set_page_config(page_title="Edson Medeiros | Consultoria e Compliance", layou
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
 /* ═══ VARIÁVEIS ════════════════════════════════════════════════════════════ */
 :root {
