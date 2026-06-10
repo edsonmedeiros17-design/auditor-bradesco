@@ -1031,6 +1031,15 @@ RUBRICAS_MESTRE = {
 
     # "AUTO RE" — seguro automóvel / renovação automática
     "AUTO RE": r"\bAUTO\s+RE\b|\bAUTORE\b",
+
+    # "SAQUE terminal" — saque em terminal/caixa eletrônico/correspondente
+    # Captura: "SAQUE DIN CORBAN CARTAO", "SAQUE DINHEIRO ATM", "SAQUE TERMINAL"
+    # NÃO captura: "SAQUE DIN CORBAN RECIBO" (recibo de depósito, não cobrança indevida)
+    "SAQUE TERMINAL": r"\bSAQUE\s+DIN(?:HEIRO)?\s+CORBAN\s+CART[AÃ]O|\bSAQUE\s+DIN(?:HEIRO)?\s+ATM\b|\bSAQUE\s+TERMINAL\b",
+
+    # "EXTRATOMES(E)" — tarifa de emissão de extrato mensal
+    # Captura: "EXTRATOMES(E)", "TARIFA EMISSAO EXTRATO", "EXTRATO MES"
+    "EXTRATO MES": r"\bEXTRATOMES\b|EXTRATO\s*MES\s*\(E\)|TARIFA\s+EMISSAO\s+EXTRATO",
 }
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
