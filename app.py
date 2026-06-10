@@ -1586,100 +1586,150 @@ def gerar_excel_calculos(df, rubrica_nome):
     ws = wb.active
     ws.title = "Tabela de Cálculos"
 
-    font_header  = Font(bold=True, size=11)
-    font_title   = Font(bold=True, size=12)
-    fill_blue    = PatternFill(start_color="9C9C9C", end_color="9C9C9C", fill_type="solid")
-    fill_peach   = PatternFill(start_color="F6F6F6", end_color="F6F6F6", fill_type="solid")
-    border       = Border(left=Side(style='thin'), right=Side(style='thin'),
-                          top=Side(style='thin'),  bottom=Side(style='thin'))
-    align_center = Alignment(horizontal='center', vertical='center')
+    # ── Estilos ────────────────────────────────────────────────────────────────
+    font_titulo  = Font(bold=True, size=11, color="FFFFFF")   # branco no cinza escuro
+    font_header  = Font(bold=True, size=10)
+    font_valor   = Font(bold=False, size=10)
+    font_total   = Font(bold=True,  size=10)
 
-    ws.merge_cells('A1:E1')
-    ws['A1']           = f"VALORES DESCONTADOS INDEVIDAMENTE - \"{rubrica_nome}\""
-    ws['A1'].font      = font_title
-    ws['A1'].fill      = fill_blue
-    ws['A1'].alignment = align_center
+    fill_cinza   = PatternFill(start_color="9C9C9C", end_color="9C9C9C", fill_type="solid")
+    fill_branco  = PatternFill(start_color="F6F6F6", end_color="F6F6F6", fill_type="solid")
+    fill_vazio   = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
 
-    meses_nomes = ["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO",
-                   "JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"]
+    borda = Border(
+        left=Side(style='thin',   color="AAAAAA"),
+        right=Side(style='thin',  color="AAAAAA"),
+        top=Side(style='thin',    color="AAAAAA"),
+        bottom=Side(style='thin', color="AAAAAA"),
+    )
+    borda_titulo = Border(
+        left=Side(style='medium',  color="707070"),
+        right=Side(style='medium', color="707070"),
+        top=Side(style='medium',   color="707070"),
+        bottom=Side(style='medium',color="707070"),
+    )
 
-    ws['A2']           = "MESES"
-    ws['A2'].font      = font_header
-    ws['A2'].alignment = align_center
+    al_centro   = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    al_direita  = Alignment(horizontal='right',  vertical='center')
+    al_esq      = Alignment(horizontal='left',   vertical='center', wrap_text=True)
 
+    # ── Anos disponíveis ───────────────────────────────────────────────────────
     anos = sorted(agrupado['ANO'].dropna().astype(int).unique())
     if not anos:
         anos = [datetime.now().year]
+    n_anos    = len(anos)
+    last_col  = n_anos + 1                          # última coluna com dados
+    last_let  = get_column_letter(last_col)
+
+    # ── Linha 1 — Título (ocupa coluna A + todas as colunas de anos) ──────────
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=last_col)
+    titulo_txt = f'VALORES DESCONTADOS INDEVIDAMENTE\n"{rubrica_nome}"'
+    c = ws.cell(row=1, column=1, value=titulo_txt)
+    c.font      = font_titulo
+    c.fill      = fill_cinza
+    c.alignment = al_centro
+    c.border    = borda_titulo
+    ws.row_dimensions[1].height = 42   # altura fixa: acomoda 2 linhas de texto
+
+    # ── Linha 2 — Cabeçalhos: MESES | ANO1 | ANO2 | ... ──────────────────────
+    ws.row_dimensions[2].height = 22
+    c = ws.cell(row=2, column=1, value="MESES")
+    c.font = font_header; c.fill = fill_cinza
+    c.alignment = al_centro; c.border = borda_titulo
 
     for idx, ano in enumerate(anos):
-        col = idx + 2
-        ws.cell(row=2, column=col, value=ano).font      = font_header
-        ws.cell(row=2, column=col).alignment             = align_center
-        ws.cell(row=2, column=col).fill                  = fill_blue
+        c = ws.cell(row=2, column=idx + 2, value=int(ano))
+        c.font = font_header; c.fill = fill_cinza
+        c.alignment = al_centro; c.border = borda_titulo
+
+    # ── Linhas 3–14 — Meses ───────────────────────────────────────────────────
+    meses_nomes = ["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO",
+                   "JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"]
 
     for m_idx, mes in enumerate(meses_nomes):
         row = m_idx + 3
-        ws.cell(row=row, column=1, value=mes).font = font_header
-        ws.cell(row=row, column=1).fill            = fill_blue
+        ws.row_dimensions[row].height = 18
 
+        # Coluna A: nome do mês
+        c = ws.cell(row=row, column=1, value=mes)
+        c.font = font_header; c.fill = fill_cinza
+        c.alignment = al_centro; c.border = borda
+
+        # Colunas de anos: valor ou vazio, sempre com fill e borda
         for a_idx, ano in enumerate(anos):
             col = a_idx + 2
             val = agrupado[
                 (agrupado['ANO'] == ano) & (agrupado['MES_NUM'] == m_idx + 1)
             ]['V_NUM'].sum()
-            if val > 0:
-                cell = ws.cell(row=row, column=col, value=val)
-                cell.number_format = '"R$ " #,##0.00'
-            ws.cell(row=row, column=col).fill   = fill_peach
-            ws.cell(row=row, column=col).border = border
 
+            c = ws.cell(row=row, column=col, value=val if val > 0 else None)
+            c.fill      = fill_branco if val > 0 else fill_vazio
+            c.border    = borda
+            c.alignment = al_direita
+            c.font      = font_valor
+            if val > 0:
+                c.number_format = '"R$" #,##0.00'
+
+    # ── Linha 15 — Valor Anual ────────────────────────────────────────────────
     row_anual = 15
-    ws.cell(row=row_anual, column=1, value="VALOR ANUAL:").font = font_header
-    ws.cell(row=row_anual, column=1).fill = fill_blue
+    ws.row_dimensions[row_anual].height = 20
+    c = ws.cell(row=row_anual, column=1, value="VALOR ANUAL:")
+    c.font = font_total; c.fill = fill_cinza
+    c.alignment = al_centro; c.border = borda_titulo
 
     for idx, ano in enumerate(anos):
-        col        = idx + 2
-        col_letter = get_column_letter(col)
-        formula    = f"=SUM({col_letter}3:{col_letter}14)"
-        cell       = ws.cell(row=row_anual, column=col, value=formula)
-        cell.number_format = '"R$ " #,##0.00'
-        cell.font   = font_header
-        cell.fill   = fill_peach
-        cell.border = border
+        col     = idx + 2
+        col_let = get_column_letter(col)
+        c = ws.cell(row=row_anual, column=col, value=f"=SUM({col_let}3:{col_let}14)")
+        c.font          = font_total
+        c.fill          = fill_branco
+        c.border        = borda_titulo
+        c.alignment     = al_direita
+        c.number_format = '"R$" #,##0.00'
 
+    # ── Linha 16 — Valor Total ────────────────────────────────────────────────
     row_total = 16
-    ws.cell(row=row_total, column=1, value="VALOR TOTAL:").font = font_header
-    ws.cell(row=row_total, column=1).fill = fill_blue
+    ws.row_dimensions[row_total].height = 20
+    c = ws.cell(row=row_total, column=1, value="VALOR TOTAL:")
+    c.font = font_total; c.fill = fill_cinza
+    c.alignment = al_centro; c.border = borda_titulo
 
-    last_col_letter = get_column_letter(len(anos) + 1)
-    formula_total   = f"=SUM(B{row_anual}:{last_col_letter}{row_anual})"
     ws.merge_cells(start_row=row_total, start_column=2,
-                   end_row=row_total, end_column=len(anos)+1)
-    cell_total                = ws.cell(row=row_total, column=2, value=formula_total)
-    cell_total.number_format  = '"R$ " #,##0.00'
-    cell_total.font           = font_header
-    cell_total.alignment      = Alignment(horizontal='right')
+                   end_row=row_total, end_column=last_col)
+    c = ws.cell(row=row_total, column=2,
+                value=f"=SUM(B{row_anual}:{last_let}{row_anual})")
+    c.font          = font_total
+    c.fill          = fill_branco
+    c.border        = borda_titulo
+    c.alignment     = al_direita
+    c.number_format = '"R$" #,##0.00'
 
+    # ── Linhas 17–18 — Valor em Dobro (Art. 42 CDC) ──────────────────────────
     row_dobro = 17
+    ws.row_dimensions[row_dobro].height = 20
+    ws.row_dimensions[row_dobro + 1].height = 20
     ws.merge_cells(start_row=row_dobro, start_column=1,
-                   end_row=row_dobro+1, end_column=1)
-    ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO ART. 42 DO CDC").font = font_header
-    ws.cell(row=row_dobro, column=1).alignment = Alignment(
-        wrap_text=True, horizontal='center', vertical='center')
-    ws.cell(row=row_dobro, column=1).fill = fill_blue
+                   end_row=row_dobro + 1, end_column=1)
+    c = ws.cell(row=row_dobro, column=1, value="VALOR EM DOBRO\nART. 42 DO CDC")
+    c.font = font_total; c.fill = fill_cinza
+    c.alignment = al_centro; c.border = borda_titulo
 
     ws.merge_cells(start_row=row_dobro, start_column=2,
-                   end_row=row_dobro+1, end_column=len(anos)+1)
-    formula_dobro              = f"=B{row_total}*2"
-    cell_dobro                 = ws.cell(row=row_dobro, column=2, value=formula_dobro)
-    cell_dobro.number_format   = '"R$ " #,##0.00'
-    cell_dobro.font            = font_header
-    cell_dobro.alignment       = Alignment(horizontal='right', vertical='center')
-    cell_dobro.fill            = fill_peach
+                   end_row=row_dobro + 1, end_column=last_col)
+    c = ws.cell(row=row_dobro, column=2, value=f"=B{row_total}*2")
+    c.font          = font_total
+    c.fill          = fill_branco
+    c.border        = borda_titulo
+    c.alignment     = al_direita
+    c.number_format = '"R$" #,##0.00'
 
-    ws.column_dimensions['A'].width = 25
-    for i in range(2, len(anos) + 2):
-        ws.column_dimensions[get_column_letter(i)].width = 15
+    # ── Larguras de coluna ─────────────────────────────────────────────────────
+    ws.column_dimensions['A'].width = 22          # meses + rótulos
+    for i in range(2, last_col + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 16   # anos
+
+    # ── Congelar cabeçalho ─────────────────────────────────────────────────────
+    ws.freeze_panes = 'B3'
 
     output = io.BytesIO()
     wb.save(output)
