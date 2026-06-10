@@ -694,6 +694,65 @@ header[data-testid="stHeader"] {
     border-bottom: 1px solid rgba(197,165,102,0.07) !important;
     backdrop-filter: blur(16px) !important;
 }
+
+/* ═══ SELO DE FUNDAÇÃO — fixo, canto inferior direito ══════════════════════ */
+.em-founder-seal {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    pointer-events: none;
+    opacity: 0.65;
+    transition: opacity 0.4s ease;
+}
+.em-founder-seal:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+.em-seal-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
+    margin-bottom: 6px;
+    animation: glow 3s ease-in-out infinite;
+}
+.em-seal-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.46rem;
+    font-weight: 600;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: rgba(197,165,102,0.35);
+    text-align: right;
+}
+.em-seal-name {
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.6rem;
+    color: rgba(197,165,102,0.6);
+    line-height: 1;
+    text-align: right;
+    letter-spacing: 0.5px;
+}
+.em-seal-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.42rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(197,165,102,0.22);
+    text-align: right;
+    margin-top: 1px;
+}
+.em-seal-ornament {
+    font-size: 0.35rem;
+    color: rgba(197,165,102,0.28);
+    letter-spacing: 4px;
+    margin-top: 4px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -906,6 +965,46 @@ if not st.session_state["autenticado"]:
         color: rgba(197,165,102,0.2);
         margin-top: 20px;
     }
+
+    /* Selo de fundação fixo — mesmo estilo do app */
+    .em-founder-seal {
+        position: fixed;
+        bottom: 20px; right: 24px;
+        z-index: 9999;
+        display: flex; flex-direction: column; align-items: flex-end;
+        gap: 2px;
+        pointer-events: none;
+        opacity: 0.65;
+        transition: opacity 0.4s ease;
+    }
+    .em-founder-seal:hover { opacity: 1; pointer-events: auto; }
+    .em-seal-line {
+        width: 100%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
+        margin-bottom: 6px;
+    }
+    .em-seal-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.46rem; font-weight: 600;
+        letter-spacing: 3.5px; text-transform: uppercase;
+        color: rgba(197,165,102,0.35); text-align: right;
+    }
+    .em-seal-name {
+        font-family: 'Great Vibes', cursive;
+        font-size: 1.6rem; color: rgba(197,165,102,0.6);
+        line-height: 1; text-align: right;
+    }
+    .em-seal-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.42rem; font-weight: 500;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: rgba(197,165,102,0.22); text-align: right;
+        margin-top: 1px;
+    }
+    .em-seal-ornament {
+        font-size: 0.35rem; color: rgba(197,165,102,0.28);
+        letter-spacing: 4px; margin-top: 4px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -971,6 +1070,16 @@ if not st.session_state["autenticado"]:
     st.markdown("""
     <div class="lx-footer">
         Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="em-founder-seal">
+        <div class="em-seal-line"></div>
+        <div class="em-seal-label">Fundado por</div>
+        <div class="em-seal-name">Edson Medeiros</div>
+        <div class="em-seal-sub">Consultorias &amp; Compliance &nbsp;·&nbsp; 2024</div>
+        <div class="em-seal-ornament">◆ &nbsp; ◆ &nbsp; ◆</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1992,5 +2101,16 @@ st.markdown("""
        target="_blank">
         ◆ &nbsp; Agendar Consulta via WhatsApp
     </a>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Selo de fundação fixo ───────────────────────────────────────────────────
+st.markdown("""
+<div class="em-founder-seal">
+    <div class="em-seal-line"></div>
+    <div class="em-seal-label">Fundado por</div>
+    <div class="em-seal-name">Edson Medeiros</div>
+    <div class="em-seal-sub">Consultorias &amp; Compliance &nbsp;·&nbsp; 2024</div>
+    <div class="em-seal-ornament">◆ &nbsp; ◆ &nbsp; ◆</div>
 </div>
 """, unsafe_allow_html=True)
