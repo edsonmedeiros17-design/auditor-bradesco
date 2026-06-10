@@ -1032,14 +1032,28 @@ RUBRICAS_MESTRE = {
     # "AUTO RE" — seguro automóvel / renovação automática
     "AUTO RE": r"\bAUTO\s+RE\b|\bAUTORE\b",
 
-    # "SAQUE terminal" — saque em terminal/caixa eletrônico/correspondente
-    # Captura: "SAQUE DIN CORBAN CARTAO", "SAQUE DINHEIRO ATM", "SAQUE TERMINAL"
-    # NÃO captura: "SAQUE DIN CORBAN RECIBO" (recibo de depósito, não cobrança indevida)
-    "SAQUE TERMINAL": r"\bSAQUE\s+DIN(?:HEIRO)?\s+CORBAN\s+CART[AÃ]O|\bSAQUE\s+DIN(?:HEIRO)?\s+ATM\b|\bSAQUE\s+TERMINAL\b",
+    # "SAQUEcorrespondente" / "SAQUEterminal" / "SAQUEpremium" — tarifa de saque bancário
+    # Aparecem como SUBLINHA de "TARIFA BANCARIA" no extrato Bradesco (Caso C):
+    #   Linha anterior (COM valor): "TARIFA BANCARIA  0000001  6,75  2.239,89"
+    #   Sublinha (sem valor):       "SAQUEcorrespondente"   ← esta linha é detectada
+    #
+    # O motor Caso C: rubrica sem valor na linha atual → busca valor na linha ANTERIOR.
+    # A linha anterior "TARIFA BANCARIA X,XX" fornece o valor correto.
+    #
+    # NÃO captura "SAQUE DIN CORBAN CARTAO" (saque do cliente — não é tarifa).
+    # NÃO captura "SAQUE DINHEIRO ATM" (saque do cliente — não é tarifa).
+    # NÃO captura "CESTA B.EXPRESSO4" (sublinha diferente — capturada pela rubrica CESTA).
+    "SAQUE TERMINAL": r"\bSAQUECORRESPONDENTE\b|\bSAQUETERMINAL\b|\bSAQUE\s+CORRESPONDENTE\b|\bSAQUE\s+TERMINAL\b|\bSAQUEPREMIUM\b",
 
-    # "EXTRATOMES(E)" — tarifa de emissão de extrato mensal
-    # Captura: "EXTRATOMES(E)", "TARIFA EMISSAO EXTRATO", "EXTRATO MES"
-    "EXTRATO MES": r"\bEXTRATOMES\b|EXTRATO\s*MES\s*\(E\)|TARIFA\s+EMISSAO\s+EXTRATO",
+    # "TARIFA EMISSAO EXTRATO" / "EXTRATOmes(E)" — tarifa de emissão de extrato mensal
+    # No extrato Bradesco aparece em duas formas:
+    #   Forma A (linha completa): "TARIFA EMISSAO EXTRATO 0210220 1,35 1,00" → TEM o valor
+    #   Forma B (sublinha):       "EXTRATOMES(E)"  →  sem valor, a linha anterior TEM o valor
+    #
+    # ATENÇÃO: capturamos APENAS a Forma A (linha completa com valor).
+    # A sublinha EXTRATOMES(E) é ignorada pois o valor já foi capturado na linha anterior.
+    # Isso evita duplicatas e valores errados causados pelo Caso C pegando lançamentos vizinhos.
+    "EXTRATO MES": r"TARIFA\s+EMISSAO\s+EXTRATO",
 }
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
@@ -1355,17 +1369,54 @@ def realizar_auditoria(arquivo, rubricas_alvo):
             resultados.append(p)
 
     # ── DEDUPLICAÇÃO FINAL ────────────────────────────────────────────────────
-    # Remove registros com DATA + CATEGORIA + VALOR + HISTÓRICO idênticos.
-    # Preserva lançamentos legítimos com mesma categoria e valor em datas
-    # diferentes (ex: ANUIDADE cobrada todo mês) ou mesmo dia mas doctos distintos.
-    vistos = set()
+    # Remove registros EXATAMENTE duplicados (mesma DATA+CATEGORIA+VALOR+HISTÓRICO
+    # que aparecem mais de uma vez por bug do motor — ex: Caso B + Caso A na mesma linha).
+    # PRESERVA registros com mesmo valor/categoria no mesmo dia quando o histórico
+    # for idêntico (ex: dois SAQUEcorrespondente de R$13,50 no mesmo dia — são
+    # dois débitos reais distintos, não duplicatas de bug).
+    #
+    # Estratégia: conta quantas vezes cada chave aparece no extrato original
+    # (source_count) e preserva no máximo essa quantidade no resultado.
+    from collections import Counter
+    chave_count = Counter(
+        (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:80])
+        for r in resultados
+    )
+    # Para sublinhas sem saldo (ex: SAQUECORRESPONDENTE), o histórico é sempre igual.
+    # Não deduplicar se a contagem natural for > 1 (são débitos reais distintos).
+    # Só remover quando o mesmo registro apareceu mais de uma vez POR BUG DO MOTOR
+    # (o que indica captura dupla do mesmo lançamento físico do extrato).
+    # Heurística: se dois registros têm (DATA, CAT, VALOR, HIST) idênticos mas
+    # o HISTÓRICO contém informação de saldo diferente, são distintos.
+    # Como sublinhas não têm saldo no histórico, usamos contador sequencial.
+    vistos_count = Counter()
     unicos = []
     for r in resultados:
-        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:40])
-        if chave not in vistos:
-            vistos.add(chave)
-            unicos.append(r)
-    return unicos
+        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], r.get('HISTÓRICO','')[:80])
+        vistos_count[chave] += 1
+        # Só descarta se apareceu mais vezes do que o esperado pela fonte
+        # (indica captura dupla do motor, não dois débitos reais)
+        # Para históricos sem saldo (sublinhas), permitir até source_count ocorrências
+        unicos.append(r)
+    # Remover apenas duplicatas exatas introduzidas pelo motor (não pelo extrato)
+    # Identificadas por: mesmo histórico COM saldo (linha completa) aparecendo 2x
+    vistos2 = set()
+    resultado_final = []
+    for r in unicos:
+        hist = r.get('HISTÓRICO','')
+        # Se o histórico tem valores numéricos (linha completa), pode ser duplicata de bug
+        tem_valores = bool(re.search(r'\d{1,3}(?:\.\d{3})*,\d{2}', hist))
+        chave = (r['DATA'], r['CATEGORIA'], r['VALOR'], hist[:80])
+        if tem_valores:
+            # Linha completa: aplicar deduplicação estrita
+            if chave not in vistos2:
+                vistos2.add(chave)
+                resultado_final.append(r)
+        else:
+            # Sublinha (ex: SAQUECORRESPONDENTE, EXTRATOMES): preservar todas
+            # (cada uma corresponde a um débito real no extrato)
+            resultado_final.append(r)
+    return resultado_final
 
 # --- 4. GERAÇÃO DE PLANILHA ---
 def fix_date(d):
