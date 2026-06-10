@@ -735,7 +735,6 @@ header[data-testid="stHeader"] {
     color: rgba(197,165,102,0.6);
     line-height: 1;
     text-align: right;
-    letter-spacing: 0.5px;
 }
 .em-seal-sub {
     font-family: 'Inter', sans-serif;
