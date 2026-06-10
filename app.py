@@ -769,156 +769,182 @@ if not st.session_state["autenticado"]:
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
+    /* ── Oculta UI padrão ──────────────────────────────────────────────── */
     header, footer, [data-testid="stSidebar"],
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
+    /* ── Fundo grade de pontos ─────────────────────────────────────────── */
     .stApp {
         background: #04060C !important;
         background-image: radial-gradient(circle, rgba(197,165,102,0.045) 1px, transparent 1px) !important;
         background-size: 28px 28px !important;
     }
 
-    /* Centraliza o container verticalmente */
+    /* ── Reset total do container ──────────────────────────────────────── */
     .block-container {
-        max-width: 1000px !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
         min-height: 100vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
-    /* Remove gaps entre colunas do Streamlit */
+    /* ── Split 50/50 ocupa a tela toda ────────────────────────────────── */
     [data-testid="stHorizontalBlock"] {
         gap: 0 !important;
-        border: 1px solid rgba(197,165,102,0.12) !important;
+        border: none !important;
         border-radius: 0 !important;
-        overflow: hidden !important;
-        box-shadow: 0 40px 100px rgba(0,0,0,0.7) !important;
+        min-height: 100vh !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        overflow: visible !important;
     }
+    /* Cada metade ocupa exatamente 50% */
     [data-testid="stHorizontalBlock"] > div {
         padding: 0 !important;
+        min-height: 100vh !important;
+        flex: 1 1 50% !important;
     }
 
-    /* Painel esquerdo */
+    /* ── PAINEL ESQUERDO ───────────────────────────────────────────────── */
     .lx-left {
-        padding: 60px 48px;
-        background: linear-gradient(145deg,
-            rgba(197,165,102,0.06) 0%,
-            rgba(6,10,16,0.95) 50%,
-            rgba(10,16,24,0.98) 100%);
-        border-right: 1px solid rgba(197,165,102,0.1);
-        min-height: 560px;
+        padding: 72px 8vw 72px 7vw;
+        background: linear-gradient(150deg,
+            rgba(197,165,102,0.08) 0%,
+            rgba(6,10,16,0.97) 45%,
+            rgba(8,12,20,0.99) 100%);
+        border-right: 1px solid rgba(197,165,102,0.12);
+        min-height: 100vh;
         display: flex; flex-direction: column; justify-content: center;
         position: relative; overflow: hidden;
     }
-    .lx-left::after {
+    /* Círculo decorativo grande de fundo */
+    .lx-left::before {
         content: '';
-        position: absolute; top: -60px; left: -60px;
-        width: 260px; height: 260px; border-radius: 50%;
-        border: 1px solid rgba(197,165,102,0.06);
+        position: absolute; top: -140px; left: -140px;
+        width: 560px; height: 560px; border-radius: 50%;
+        border: 1px solid rgba(197,165,102,0.05);
         pointer-events: none;
     }
+    .lx-left::after {
+        content: '';
+        position: absolute; bottom: -100px; right: -80px;
+        width: 380px; height: 380px; border-radius: 50%;
+        border: 1px solid rgba(197,165,102,0.03);
+        pointer-events: none;
+    }
+
+    /* Eyebrow */
     .lx-eyebrow {
         font-family: 'Inter', sans-serif;
-        font-size: 0.62rem; font-weight: 600;
-        letter-spacing: 5px; text-transform: uppercase;
+        font-size: 0.65rem; font-weight: 600;
+        letter-spacing: 5.5px; text-transform: uppercase;
         color: rgba(197,165,102,0.4);
-        margin-bottom: 18px;
+        margin-bottom: 22px;
     }
+    /* Nome grande */
     .lx-name {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 2.8rem; font-weight: 600; line-height: 1.1;
+        font-size: clamp(3.2rem, 4.5vw, 5.5rem);
+        font-weight: 600; line-height: 1.0;
         color: #EDE5D4; letter-spacing: 1px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
     }
     .lx-name em { color: #C5A566; font-style: normal; }
+    /* Cargo */
     .lx-role {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 1.05rem; font-style: italic;
-        color: rgba(197,165,102,0.5); letter-spacing: 2px;
-        margin-bottom: 28px;
+        font-size: 1.18rem; font-style: italic;
+        color: rgba(197,165,102,0.5); letter-spacing: 2.5px;
+        margin-bottom: 36px;
     }
+    /* Assinatura cursiva */
     .lx-sig {
         font-family: 'Great Vibes', cursive;
-        font-size: 2.8rem; color: rgba(197,165,102,0.32);
-        line-height: 1; margin-bottom: 28px;
+        font-size: clamp(2.8rem, 3.8vw, 4.2rem);
+        color: rgba(197,165,102,0.3);
+        line-height: 1; margin-bottom: 38px;
     }
+    /* Separador */
     .lx-sep {
-        width: 44px; height: 1px;
+        width: 56px; height: 1px;
         background: linear-gradient(90deg, #C5A566, transparent);
-        margin-bottom: 24px;
+        margin-bottom: 30px;
     }
+    /* Descrição */
     .lx-desc {
         font-family: 'Inter', sans-serif;
-        font-size: 0.82rem; font-weight: 300;
-        color: rgba(237,229,212,0.32); line-height: 1.75;
-        margin-bottom: 32px;
+        font-size: 0.9rem; font-weight: 300;
+        color: rgba(237,229,212,0.32); line-height: 1.85;
+        margin-bottom: 44px;
+        max-width: 520px;
     }
-    .lx-feat { display: flex; flex-direction: column; gap: 10px; }
-    .lx-feat-row { display: flex; align-items: center; gap: 10px; }
+    /* Features */
+    .lx-feat { display: flex; flex-direction: column; gap: 14px; }
+    .lx-feat-row { display: flex; align-items: center; gap: 12px; }
     .lx-dot {
         width: 5px; height: 5px; border-radius: 50%;
         background: #C5A566; opacity: 0.45; flex-shrink: 0;
     }
     .lx-feat-t {
         font-family: 'Inter', sans-serif;
-        font-size: 0.78rem; color: rgba(237,229,212,0.35);
+        font-size: 0.83rem; color: rgba(237,229,212,0.35);
     }
 
-    /* Painel direito */
+    /* ── PAINEL DIREITO ─────────────────────────────────────────────────── */
     .lx-right {
-        padding: 60px 44px;
-        background: rgba(6,10,16,0.85);
-        min-height: 560px;
+        padding: 72px 7vw 72px 6vw;
+        background: rgba(4,7,12,0.94);
+        min-height: 100vh;
         display: flex; flex-direction: column; justify-content: center;
+        border-left: 1px solid rgba(197,165,102,0.1);
     }
     .lx-form-label {
         font-family: 'Inter', sans-serif;
-        font-size: 0.6rem; font-weight: 600;
+        font-size: 0.62rem; font-weight: 600;
         letter-spacing: 4px; text-transform: uppercase;
-        color: rgba(197,165,102,0.36); margin-bottom: 8px;
+        color: rgba(197,165,102,0.38); margin-bottom: 10px;
     }
     .lx-form-title {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 2.2rem; font-weight: 600; color: #EDE5D4;
-        margin-bottom: 6px; line-height: 1.1;
+        font-size: clamp(2.2rem, 3.2vw, 3rem);
+        font-weight: 600; color: #EDE5D4;
+        margin-bottom: 8px; line-height: 1.0;
     }
     .lx-form-title span { color: #C5A566; }
     .lx-form-sub {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 0.95rem; font-style: italic;
-        color: rgba(197,165,102,0.4); margin-bottom: 32px;
+        font-size: 1.0rem; font-style: italic;
+        color: rgba(197,165,102,0.42); margin-bottom: 36px;
     }
     .lx-orn {
         display: flex; align-items: center;
-        gap: 10px; margin-bottom: 28px;
+        gap: 12px; margin-bottom: 32px;
     }
     .lx-orn-l { flex: 1; height: 1px; background: rgba(197,165,102,0.14); }
-    .lx-orn-d { font-size: 0.38rem; color: rgba(197,165,102,0.28); }
+    .lx-orn-d { font-size: 0.4rem; color: rgba(197,165,102,0.3); }
 
-    /* Inputs */
+    /* ── Inputs ─────────────────────────────────────────────────────────── */
     [data-testid="stForm"] {
         background: transparent !important;
         border: none !important; padding: 0 !important;
     }
     [data-testid="stForm"] label {
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.62rem !important; font-weight: 600 !important;
+        font-size: 0.64rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        color: rgba(197,165,102,0.4) !important;
+        color: rgba(197,165,102,0.42) !important;
     }
     [data-testid="stForm"] label span { display: none !important; }
     [data-testid="stForm"] input {
         background: rgba(197,165,102,0.04) !important;
-        border: 1px solid rgba(197,165,102,0.14) !important;
+        border: 1px solid rgba(197,165,102,0.16) !important;
         border-radius: 10px !important;
         color: #EDE5D4 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.9rem !important; font-weight: 300 !important;
-        padding: 13px 16px !important;
+        font-size: 0.92rem !important; font-weight: 300 !important;
+        padding: 14px 18px !important;
         caret-color: #C5A566 !important;
         outline: none !important; box-shadow: none !important;
         transition: all 0.25s ease !important;
@@ -931,53 +957,50 @@ if not st.session_state["autenticado"]:
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
         background: rgba(197,165,102,0.09) !important;
-        border: 1px solid rgba(197,165,102,0.32) !important;
+        border: 1px solid rgba(197,165,102,0.35) !important;
         border-radius: 10px !important;
         color: #C5A566 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.72rem !important; font-weight: 600 !important;
+        font-size: 0.74rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        padding: 14px !important; margin-top: 8px !important;
+        padding: 15px !important; margin-top: 10px !important;
         transition: all 0.3s ease !important;
     }
     [data-testid="stFormSubmitButton"] > button:hover {
         background: rgba(197,165,102,0.16) !important;
         border-color: #C5A566 !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(197,165,102,0.12) !important;
+        box-shadow: 0 8px 28px rgba(197,165,102,0.14) !important;
     }
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
         border: 1px solid rgba(180,60,60,0.22) !important;
         border-radius: 10px !important;
         color: rgba(220,110,110,0.8) !important;
-        font-size: 0.75rem !important;
+        font-size: 0.78rem !important;
     }
     [data-testid="stAlert"] svg { display: none !important; }
 
-    /* Rodapé fixo */
+    /* ── Rodapé centralizado ─────────────────────────────────────────────── */
     .lx-footer {
         position: fixed;
-        bottom: 16px; left: 50%; transform: translateX(-50%);
-        text-align: center;
+        bottom: 14px; left: 50%; transform: translateX(-50%);
         font-family: 'Inter', sans-serif;
-        font-size: 0.62rem; letter-spacing: 2px;
+        font-size: 0.6rem; letter-spacing: 2.5px;
         text-transform: uppercase;
         color: rgba(197,165,102,0.2);
         white-space: nowrap;
-        pointer-events: none;
-        z-index: 100;
+        pointer-events: none; z-index: 100;
     }
 
-    /* Selo de fundação fixo — mesmo estilo do app */
+    /* ── Selo de fundação ────────────────────────────────────────────────── */
     .em-founder-seal {
         position: fixed;
-        bottom: 52px; right: 24px;
+        bottom: 48px; right: 28px;
         z-index: 9999;
         display: flex; flex-direction: column; align-items: flex-end;
         gap: 2px;
-        pointer-events: none;
-        opacity: 0.65;
+        pointer-events: none; opacity: 0.65;
         transition: opacity 0.4s ease;
     }
     .em-founder-seal:hover { opacity: 1; pointer-events: auto; }
@@ -1011,8 +1034,8 @@ if not st.session_state["autenticado"]:
     </style>
     """, unsafe_allow_html=True)
 
-    # LAYOUT: st.columns para split real
-    col_esq, col_dir = st.columns([1.15, 0.85])
+    # ── LAYOUT: colunas 50/50 em tela cheia ─────────────────────────────────
+    col_esq, col_dir = st.columns([1.1, 0.9])
 
     with col_esq:
         st.markdown("""
@@ -1047,7 +1070,7 @@ if not st.session_state["autenticado"]:
     with col_dir:
         st.markdown("""
         <div class="lx-right">
-            <div class="lx-form-label">Sistema de Auditoria</div>
+            <div class="lx-form-label">Sistema de Auditoria Bancária</div>
             <div class="lx-form-title">Extrato<span>X</span></div>
             <div class="lx-form-sub">Acesse sua conta para continuar</div>
             <div class="lx-orn">
