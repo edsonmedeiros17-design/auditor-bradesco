@@ -1588,8 +1588,8 @@ def gerar_excel_calculos(df, rubrica_nome):
 
     font_header  = Font(bold=True, size=11)
     font_title   = Font(bold=True, size=12)
-    fill_blue    = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
-    fill_peach   = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+    fill_blue    = PatternFill(start_color="9C9C9C", end_color="9C9C9C", fill_type="solid")
+    fill_peach   = PatternFill(start_color="F6F6F6", end_color="F6F6F6", fill_type="solid")
     border       = Border(left=Side(style='thin'), right=Side(style='thin'),
                           top=Side(style='thin'),  bottom=Side(style='thin'))
     align_center = Alignment(horizontal='center', vertical='center')
