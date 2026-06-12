@@ -764,318 +764,247 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # Tela de login — iframe HTML puro fullscreen
-    import streamlit.components.v1 as components
-
-    # Ocultar todo o chrome do Streamlit
+    # Tela de login — visual fullscreen + form nativo Streamlit
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap');
+
     header,footer,[data-testid="stSidebar"],[data-testid="stToolbar"],
     [data-testid="stDecoration"],[data-testid="stStatusWidget"],
     [data-testid="stHeader"]{display:none!important;}
 
-    html,body,.stApp{background:#030508!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+    html,body,.stApp{
+        margin:0!important;padding:0!important;
+        background:#030508!important;
+        background-image:
+            linear-gradient(rgba(197,165,102,.016) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(197,165,102,.016) 1px,transparent 1px)!important;
+        background-size:56px 56px!important;
+    }
 
-    /* Zera TODOS os paddings do Streamlit */
+    /* Zera todo padding do Streamlit */
     .block-container,.main .block-container,div.block-container,
     section[data-testid="stMain"],section[data-testid="stMain"]>div,
     section[data-testid="stMain"]>div>div,section[data-testid="stMain"]>div>div>div,
     [data-testid="stAppViewBlockContainer"],[data-testid="stAppViewBlockContainer"]>div,
     [data-testid="stMainBlockContainer"],[data-testid="stMainBlockContainer"]>div,
     .appview-container .main,.appview-container .main>div,
-    .appview-container section,.css-z5fcl4,.css-1d391kg{
+    .appview-container section{
         padding:0!important;margin:0!important;
-        max-width:100vw!important;width:100vw!important;
+        max-width:100%!important;width:100%!important;
+        min-height:0!important;
     }
+    [data-testid="stHorizontalBlock"]{gap:0!important;padding:0!important;margin:0!important;align-items:stretch!important;}
+    [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
     [data-testid="stVerticalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
     [data-testid="stVerticalBlock"]>div,[data-testid="stVerticalBlock"]>div>div{padding:0!important;margin:0!important;}
     [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
     [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
+    div.stMarkdown,div.stMarkdown>div{margin:0!important;padding:0!important;}
+    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;margin:0!important;}
+    [data-testid="stForm"]>div,[data-testid="stForm"]>div>div{padding:0!important;margin:0!important;}
+    div[data-testid="stTextInput"]{margin-bottom:0!important;}
+    div[data-testid="stTextInput"]>div{padding:0!important;}
 
-    /* Iframe ocupa 100vh sem barra de scroll */
-    iframe{
-        display:block!important;border:none!important;
-        width:100vw!important;height:100vh!important;
-        position:fixed!important;top:0!important;left:0!important;
-        z-index:999!important;
+    /* ══ LAYOUT 2 COLUNAS ══ */
+    .lp-wrap{
+        display:grid;
+        grid-template-columns:1.1fr 1fr;
+        min-height:100vh;
+        width:100%;
+    }
+
+    /* COLUNA ESQUERDA */
+    .lp-L{
+        background:linear-gradient(150deg,rgba(197,165,102,.07) 0%,rgba(3,5,8,.02) 55%,transparent 100%);
+        border-right:1px solid rgba(197,165,102,.1);
+        padding:clamp(28px,5vh,56px) clamp(24px,3.5vw,48px);
+        display:flex;flex-direction:column;justify-content:space-between;
+        position:relative;overflow:hidden;min-height:100vh;
+    }
+    .lp-L::after{
+        content:'';position:absolute;bottom:-100px;right:-100px;
+        width:clamp(180px,26vw,340px);height:clamp(180px,26vw,340px);
+        border-radius:50%;border:1px solid rgba(197,165,102,.06);pointer-events:none;
+    }
+    .lp-brand{display:flex;align-items:center;gap:10px;}
+    .lp-mark{
+        width:clamp(28px,2.8vw,38px);height:clamp(28px,2.8vw,38px);
+        background:rgba(197,165,102,.1);border:1px solid rgba(197,165,102,.24);
+        border-radius:8px;display:flex;align-items:center;justify-content:center;
+        font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.1vw,15px);
+        font-weight:700;color:#C5A566;flex-shrink:0;
+    }
+    .lp-bname{font-size:clamp(7px,.65vw,10px);letter-spacing:3px;text-transform:uppercase;color:rgba(237,229,212,.25);font-weight:600;}
+    .lp-mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(16px,2.5vh,32px) 0;}
+    .lp-pname{
+        font-family:'Cormorant Garamond',serif;
+        font-size:clamp(40px,5.8vw,80px);font-weight:600;line-height:.9;
+        color:#EDE5D4;margin-bottom:clamp(4px,.5vh,8px);
+    }
+    .lp-x{
+        background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
+        background-size:600px;
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        animation:lpsh 5s linear infinite;
+    }
+    @keyframes lpsh{0%{background-position:-600px 0}100%{background-position:600px 0}}
+    .lp-ptag{
+        font-family:'Cormorant Garamond',serif;font-style:italic;
+        font-size:clamp(12px,1.2vw,17px);color:rgba(197,165,102,.42);
+        margin-bottom:clamp(14px,2vh,24px);letter-spacing:.5px;
+    }
+    .lp-spd{
+        display:flex;align-items:center;gap:clamp(8px,1vw,14px);
+        padding:clamp(10px,1.2vh,14px) clamp(12px,1.4vw,18px);
+        background:rgba(197,165,102,.05);border:1px solid rgba(197,165,102,.14);
+        border-left:3px solid rgba(197,165,102,.6);border-radius:0 6px 6px 0;
+        margin-bottom:clamp(14px,2vh,24px);
+    }
+    .lp-spdn{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.5vw,48px);font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;}
+    .lp-spdt{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.55);}
+    .lp-spds{font-size:clamp(9px,.75vw,11px);color:rgba(237,229,212,.25);margin-top:3px;line-height:1.55;}
+    .lp-bens{display:flex;flex-direction:column;}
+    .lp-ben{display:flex;align-items:flex-start;gap:clamp(8px,1vw,14px);padding:clamp(9px,1.2vh,13px) 0;border-bottom:1px solid rgba(197,165,102,.07);}
+    .lp-ben:last-child{border-bottom:none;}
+    .lp-bnum{font-family:'Cormorant Garamond',serif;font-size:clamp(14px,1.4vw,19px);font-weight:300;color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;}
+    .lp-btt{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.58);margin-bottom:2px;}
+    .lp-bdd{font-size:clamp(9px,.78vw,11px);color:rgba(237,229,212,.26);line-height:1.6;}
+    .lp-foot{font-size:clamp(8px,.65vw,10px);color:rgba(197,165,102,.2);letter-spacing:.8px;line-height:1.9;}
+
+    /* COLUNA DIREITA */
+    .lp-R{
+        background:rgba(4,6,12,.97);
+        padding:clamp(28px,5vh,56px) clamp(24px,3.8vw,52px);
+        display:flex;flex-direction:column;justify-content:space-between;
+        min-height:100vh;
+    }
+    .lp-rlogo{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.5vw,52px);font-weight:600;color:#EDE5D4;line-height:1;margin-bottom:4px;}
+    .lp-rsub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(11px,1vw,14px);color:rgba(197,165,102,.32);margin-bottom:clamp(18px,2.8vh,32px);letter-spacing:.8px;}
+    .lp-orn{display:flex;align-items:center;gap:10px;margin-bottom:clamp(14px,2.2vh,24px);}
+    .lp-ornl{flex:1;height:1px;background:rgba(197,165,102,.1);}
+    .lp-ornd{font-size:7px;color:rgba(197,165,102,.24);}
+
+    /* Inputs nativos do Streamlit estilizados */
+    [data-testid="stForm"] label{
+        font-family:'Inter',sans-serif!important;font-size:clamp(8px,.65vw,10px)!important;
+        font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;
+        color:rgba(197,165,102,.36)!important;
+    }
+    [data-testid="stForm"] label span{display:none!important;}
+    [data-testid="stForm"] input{
+        background:rgba(197,165,102,.04)!important;border:1px solid rgba(197,165,102,.15)!important;
+        border-radius:8px!important;color:#EDE5D4!important;
+        font-family:'Inter',sans-serif!important;
+        font-size:clamp(13px,1.1vw,16px)!important;font-weight:300!important;
+        padding:clamp(10px,1.3vh,14px) 16px!important;
+        caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;transition:all .25s!important;
+    }
+    [data-testid="stForm"] input:focus{
+        border-color:rgba(197,165,102,.5)!important;background:rgba(197,165,102,.07)!important;
+        box-shadow:0 0 0 3px rgba(197,165,102,.06)!important;
+    }
+    [data-testid="stFormSubmitButton"]>button{
+        width:100%!important;background:rgba(197,165,102,.11)!important;
+        border:1px solid rgba(197,165,102,.4)!important;border-radius:8px!important;
+        color:#C5A566!important;font-family:'Inter',sans-serif!important;
+        font-size:clamp(9px,.75vw,11px)!important;font-weight:700!important;
+        letter-spacing:3.5px!important;text-transform:uppercase!important;
+        padding:clamp(11px,1.5vh,16px)!important;margin-top:clamp(8px,1.2vh,14px)!important;
+        transition:all .3s!important;
+    }
+    [data-testid="stFormSubmitButton"]>button:hover{
+        background:rgba(197,165,102,.2)!important;border-color:#C5A566!important;
+        transform:translateY(-2px)!important;
+    }
+    [data-testid="stAlert"]{
+        background:rgba(180,60,60,.05)!important;border:1px solid rgba(180,60,60,.2)!important;
+        border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:clamp(10px,.85vw,12px)!important;
+    }
+    [data-testid="stAlert"] svg{display:none!important;}
+
+    /* Grid stats + why */
+    .lp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;margin-top:clamp(14px,2vh,22px);}
+    .lp-gs{background:#04060C;padding:clamp(10px,1.4vh,16px) clamp(10px,1.2vw,16px);}
+    .lp-gsn{font-family:'Cormorant Garamond',serif;font-size:clamp(16px,1.8vw,26px);font-weight:600;color:#C5A566;line-height:1;}
+    .lp-gsl{font-size:clamp(7px,.58vw,9px);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(237,229,212,.18);margin-top:4px;}
+    .lp-why{margin-top:clamp(10px,1.5vh,16px);padding-top:clamp(10px,1.4vh,14px);border-top:1px solid rgba(197,165,102,.07);}
+    .lp-wlbl{font-size:clamp(7px,.6vw,9px);font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.22);margin-bottom:10px;}
+    .lp-wrow{display:flex;}
+    .lp-wi{flex:1;padding:0 10px;border-right:1px solid rgba(197,165,102,.07);text-align:center;}
+    .lp-wi:first-child{padding-left:0;text-align:left;}
+    .lp-wi:last-child{border-right:none;}
+    .lp-win{font-family:'Cormorant Garamond',serif;font-size:clamp(13px,1.3vw,18px);font-weight:600;color:#C5A566;line-height:1;}
+    .lp-wil{font-size:clamp(7px,.6vw,9px);color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;}
+    .lp-status{display:flex;align-items:center;gap:6px;margin-top:clamp(10px,1.4vh,14px);font-size:clamp(7px,.6vw,9px);color:rgba(197,165,102,.18);letter-spacing:1.5px;text-transform:uppercase;}
+    .lp-sdot{width:5px;height:5px;border-radius:50%;background:#4CAF50;animation:lppd 2.5s ease-in-out infinite;}
+    @keyframes lppd{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
+
+    /* Selo */
+    .lp-seal{position:fixed;bottom:28px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;opacity:.5;z-index:10;pointer-events:none;}
+    .lp-seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
+    .lp-seal-lbl{font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);text-align:right;}
+    .lp-seal-name{font-family:'Great Vibes',cursive;font-size:18px;color:rgba(197,165,102,.5);line-height:1;text-align:right;}
+    .lp-seal-sub{font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.18);text-align:right;margin-top:1px;}
+
+    /* Mobile */
+    @media(max-width:768px){
+        .lp-wrap{grid-template-columns:1fr;}
+        .lp-L{min-height:auto;border-right:none;border-bottom:1px solid rgba(197,165,102,.1);}
+        .lp-R{min-height:auto;}
+        .lp-seal{display:none;}
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Verificar credenciais vindas do iframe
-    params = st.query_params
-    if "lge" in params and "lgp" in params:
-        em = params["lge"]
-        pw = params["lgp"]
-        st.query_params.clear()
-        if _check_login(em, pw):
-            st.session_state["autenticado"] = True
-            st.rerun()
-        else:
-            st.session_state["login_erro"] = True
+    # ── LAYOUT ──────────────────────────────────────────────────────────────
+    col_L, col_R = st.columns([1.1, 1.0])
 
-    erro = st.session_state.get("login_erro", False)
-    erro_js = "true" if erro else "false"
-    if erro:
-        st.session_state["login_erro"] = False
+    with col_L:
+        st.markdown('<div class="lp-wrap" style="display:contents">', unsafe_allow_html=True)
+        st.markdown('<div class="lp-L">', unsafe_allow_html=True)
+        st.markdown('<div class="lp-brand"><div class="lp-mark">EM</div><div class="lp-bname">Edson Medeiros · Consultorias</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-mid">', unsafe_allow_html=True)
+        st.markdown('<div class="lp-pname">Extrato<span class="lp-x">X</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-ptag">O rob&ocirc; que audita seu extrato em 10 segundos.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-spd"><div class="lp-spdn">10s</div><div><div class="lp-spdt">An&aacute;lise completa do extrato</div><div class="lp-spds">Do upload ao relat&oacute;rio pronto &mdash; sem esfor&ccedil;o manual</div></div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-bens">', unsafe_allow_html=True)
+        for num, t, d in [
+            ("01","Precis&atilde;o de 100%","Leitura posicional por coluna X &mdash; distingue d&eacute;bito de cr&eacute;dito sem falhas"),
+            ("02","19 rubricas monitoradas","CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO e mais &mdash; detectadas automaticamente"),
+            ("03","Relat&oacute;rio jur&iacute;dico pronto","Planilha com Art. 42 CDC em dobro, pronta para peticionamento instantaneamente"),
+        ]:
+            st.markdown(f'<div class="lp-ben"><div class="lp-bnum">{num}</div><div><div class="lp-btt">{t}</div><div class="lp-bdd">{d}</div></div></div>', unsafe_allow_html=True)
+        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-foot">(92) 99508-7379 &nbsp;&middot;&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    LOGIN_HTML = """<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{height:100%}
-body{
-  font-family:'Inter',sans-serif;
-  background:#030508;
-  color:#EDE5D4;
-  min-height:100%;
-  background-image:
-    linear-gradient(rgba(197,165,102,.016) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(197,165,102,.016) 1px,transparent 1px);
-  background-size:56px 56px;
-}
-.wrap{
-  display:grid;
-  grid-template-columns:1.1fr 1fr;
-  min-height:100vh;
-}
-/* LEFT */
-.L{
-  background:linear-gradient(150deg,rgba(197,165,102,.07) 0%,rgba(3,5,8,.02) 55%,transparent 100%);
-  border-right:1px solid rgba(197,165,102,.1);
-  padding:clamp(28px,5vh,56px) clamp(24px,3.5vw,48px);
-  display:flex;flex-direction:column;justify-content:space-between;
-  position:relative;overflow:hidden;
-}
-.L::after{
-  content:'';position:absolute;bottom:-100px;right:-100px;
-  width:clamp(180px,26vw,340px);height:clamp(180px,26vw,340px);
-  border-radius:50%;border:1px solid rgba(197,165,102,.06);pointer-events:none;
-}
-.brand{display:flex;align-items:center;gap:10px;margin-bottom:0;}
-.mark{
-  width:clamp(28px,2.8vw,38px);height:clamp(28px,2.8vw,38px);
-  background:rgba(197,165,102,.1);border:1px solid rgba(197,165,102,.24);
-  border-radius:8px;display:flex;align-items:center;justify-content:center;
-  font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.1vw,15px);
-  font-weight:700;color:#C5A566;flex-shrink:0;
-}
-.bname{font-size:clamp(7px,.65vw,10px);letter-spacing:3px;text-transform:uppercase;color:rgba(237,229,212,.25);font-weight:600;}
-.mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(16px,2.5vh,32px) 0;}
-.pname{
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(40px,5.8vw,80px);font-weight:600;line-height:.9;
-  color:#EDE5D4;margin-bottom:clamp(4px,.5vh,8px);
-}
-.pname .x{
-  background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
-  background-size:600px;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:sh 5s linear infinite;
-}
-@keyframes sh{0%{background-position:-600px 0}100%{background-position:600px 0}}
-.ptag{
-  font-family:'Cormorant Garamond',serif;font-style:italic;
-  font-size:clamp(12px,1.2vw,17px);color:rgba(197,165,102,.42);
-  margin-bottom:clamp(14px,2vh,24px);letter-spacing:.5px;
-}
-.spd{
-  display:flex;align-items:center;gap:clamp(8px,1vw,14px);
-  padding:clamp(10px,1.2vh,14px) clamp(12px,1.4vw,18px);
-  background:rgba(197,165,102,.05);
-  border:1px solid rgba(197,165,102,.14);
-  border-left:3px solid rgba(197,165,102,.6);
-  border-radius:0 6px 6px 0;
-  margin-bottom:clamp(14px,2vh,24px);
-}
-.spdn{
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(26px,3.5vw,48px);font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
-}
-.spdt{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.55);}
-.spds{font-size:clamp(9px,.75vw,11px);color:rgba(237,229,212,.25);margin-top:3px;line-height:1.55;}
-.bens{display:flex;flex-direction:column;}
-.ben{
-  display:flex;align-items:flex-start;gap:clamp(8px,1vw,14px);
-  padding:clamp(9px,1.2vh,13px) 0;
-  border-bottom:1px solid rgba(197,165,102,.07);
-}
-.ben:last-child{border-bottom:none;}
-.bnum{
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(14px,1.4vw,19px);font-weight:300;
-  color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;
-}
-.btt{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.58);margin-bottom:2px;}
-.bdd{font-size:clamp(9px,.78vw,11px);color:rgba(237,229,212,.26);line-height:1.6;}
-.lfoot{font-size:clamp(8px,.65vw,10px);color:rgba(197,165,102,.2);letter-spacing:.8px;line-height:1.9;}
+    with col_R:
+        st.markdown('<div class="lp-R">', unsafe_allow_html=True)
+        st.markdown('<div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-rlogo">Extrato<span class="lp-x">X</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-rsub">Acesse o portal de auditoria</div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-orn"><div class="lp-ornl"></div><div class="lp-ornd">&#9670;</div><div class="lp-ornl"></div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-/* RIGHT */
-.R{
-  background:rgba(4,6,12,.97);
-  padding:clamp(28px,5vh,56px) clamp(24px,3.8vw,52px);
-  display:flex;flex-direction:column;justify-content:space-between;
-}
-.rlogo{
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(26px,3.5vw,52px);font-weight:600;color:#EDE5D4;line-height:1;margin-bottom:4px;
-}
-.rlogo .x{color:#C5A566;}
-.rsub{
-  font-family:'Cormorant Garamond',serif;font-style:italic;
-  font-size:clamp(11px,1vw,14px);color:rgba(197,165,102,.32);
-  margin-bottom:clamp(18px,2.8vh,32px);letter-spacing:.8px;
-}
-.orn{display:flex;align-items:center;gap:10px;margin-bottom:clamp(16px,2.5vh,28px);}
-.ornl{flex:1;height:1px;background:rgba(197,165,102,.1);}
-.ornd{font-size:7px;color:rgba(197,165,102,.24);}
-.fld{margin-bottom:clamp(10px,1.5vh,16px);}
-.fld label{
-  display:block;font-size:clamp(8px,.65vw,10px);font-weight:600;
-  letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.36);margin-bottom:5px;
-}
-.fld input{
-  width:100%;background:rgba(197,165,102,.04);
-  border:1px solid rgba(197,165,102,.15);border-radius:8px;
-  color:#EDE5D4;font-family:'Inter',sans-serif;
-  font-size:clamp(13px,1.1vw,16px);font-weight:300;
-  padding:clamp(10px,1.3vh,14px) 16px;
-  caret-color:#C5A566;outline:none;transition:all .25s;
-}
-.fld input:focus{border-color:rgba(197,165,102,.5);background:rgba(197,165,102,.07);box-shadow:0 0 0 3px rgba(197,165,102,.06);}
-.fld input::placeholder{color:rgba(197,165,102,.22);}
-.btn{
-  width:100%;background:rgba(197,165,102,.11);
-  border:1px solid rgba(197,165,102,.4);border-radius:8px;
-  color:#C5A566;font-family:'Inter',sans-serif;
-  font-size:clamp(9px,.75vw,11px);font-weight:700;
-  letter-spacing:3.5px;text-transform:uppercase;
-  padding:clamp(11px,1.5vh,16px);margin-top:clamp(8px,1.2vh,14px);
-  cursor:pointer;transition:all .3s;
-}
-.btn:hover{background:rgba(197,165,102,.2);border-color:#C5A566;transform:translateY(-2px);}
-.err{
-  color:rgba(220,110,110,.8);font-size:clamp(10px,.85vw,12px);
-  padding:8px 12px;margin-top:10px;
-  background:rgba(180,60,60,.06);border:1px solid rgba(180,60,60,.2);
-  border-radius:8px;
-}
-.grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
-  background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;
-  margin-top:clamp(14px,2vh,22px);
-}
-.gs{background:#04060C;padding:clamp(10px,1.4vh,16px) clamp(10px,1.2vw,16px);}
-.gsn{font-family:'Cormorant Garamond',serif;font-size:clamp(16px,1.8vw,26px);font-weight:600;color:#C5A566;line-height:1;}
-.gsl{font-size:clamp(7px,.58vw,9px);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(237,229,212,.18);margin-top:4px;}
-.why{margin-top:clamp(10px,1.5vh,16px);padding-top:clamp(10px,1.4vh,14px);border-top:1px solid rgba(197,165,102,.07);}
-.why-lbl{font-size:clamp(7px,.6vw,9px);font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.22);margin-bottom:10px;}
-.why-row{display:flex;gap:0;}
-.wi{flex:1;padding:0 10px;border-right:1px solid rgba(197,165,102,.07);text-align:center;}
-.wi:first-child{padding-left:0;text-align:left;}
-.wi:last-child{border-right:none;}
-.win{font-family:'Cormorant Garamond',serif;font-size:clamp(13px,1.3vw,18px);font-weight:600;color:#C5A566;line-height:1;}
-.wil{font-size:clamp(7px,.6vw,9px);color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;}
-.status{display:flex;align-items:center;gap:6px;margin-top:clamp(10px,1.4vh,14px);font-size:clamp(7px,.6vw,9px);color:rgba(197,165,102,.18);letter-spacing:1.5px;text-transform:uppercase;}
-.sdot{width:5px;height:5px;border-radius:50%;background:#4CAF50;animation:pd 2.5s ease-in-out infinite;}
-@keyframes pd{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
-.seal{position:fixed;bottom:28px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;opacity:.5;}
-.seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
-.seal-lbl{font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);text-align:right;}
-.seal-name{font-family:'Great Vibes',cursive;font-size:18px;color:rgba(197,165,102,.5);line-height:1;text-align:right;}
-.seal-sub{font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.18);text-align:right;margin-top:1px;}
-@media(max-width:768px){
-  .wrap{grid-template-columns:1fr;}
-  .L{border-right:none;border-bottom:1px solid rgba(197,165,102,.1);}
-  .seal{display:none;}
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="L">
-    <div class="brand">
-      <div class="mark">EM</div>
-      <div class="bname">Edson Medeiros · Consultorias</div>
-    </div>
-    <div class="mid">
-      <div class="pname">Extrato<span class="x">X</span></div>
-      <div class="ptag">O rob&#244; que audita seu extrato em 10 segundos.</div>
-      <div class="spd">
-        <div class="spdn">10s</div>
-        <div><div class="spdt">An&#225;lise completa do extrato</div><div class="spds">Do upload ao relat&#243;rio pronto &#8212; sem esfor&#231;o manual</div></div>
-      </div>
-      <div class="bens">
-        <div class="ben"><div class="bnum">01</div><div><div class="btt">Precis&#227;o de 100%</div><div class="bdd">Leitura posicional por coluna X &#8212; distingue d&#233;bito de cr&#233;dito sem falhas</div></div></div>
-        <div class="ben"><div class="bnum">02</div><div><div class="btt">19 rubricas monitoradas</div><div class="bdd">CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO e mais &#8212; detectadas automaticamente</div></div></div>
-        <div class="ben"><div class="bnum">03</div><div><div class="btt">Relat&#243;rio jur&#237;dico pronto</div><div class="bdd">Planilha com Art. 42 CDC em dobro, pronta para peticionamento instantaneamente</div></div></div>
-      </div>
-    </div>
-    <div class="lfoot">(92) 99508-7379 &nbsp;&#183;&nbsp; edson.senabr@gmail.com</div>
-  </div>
-  <div class="R">
-    <div>
-      <div class="rlogo">Extrato<span class="x">X</span></div>
-      <div class="rsub">Acesse o portal de auditoria</div>
-      <div class="orn"><div class="ornl"></div><div class="ornd">&#9670;</div><div class="ornl"></div></div>
-      <form id="frm" onsubmit="go(event)">
-        <div class="fld"><label>E-mail</label><input id="em" type="email" placeholder="seu@email.com" required autocomplete="email"></div>
-        <div class="fld"><label>Senha</label><input id="pw" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required autocomplete="current-password"></div>
-        <button type="submit" class="btn">&#9670; &nbsp; Acessar o ExtratoX</button>
-      </form>
-      ERRO_PLACEHOLDER
-    </div>
-    <div>
-      <div class="grid">
-        <div class="gs"><div class="gsn">10s</div><div class="gsl">An&#225;lise</div></div>
-        <div class="gs"><div class="gsn">19</div><div class="gsl">Rubricas</div></div>
-        <div class="gs"><div class="gsn">Art.42</div><div class="gsl">CDC auto</div></div>
-      </div>
-      <div class="why">
-        <div class="why-lbl">Por que usar</div>
-        <div class="why-row">
-          <div class="wi"><div class="win">100%</div><div class="wil">Precis&#227;o</div></div>
-          <div class="wi"><div class="win">0</div><div class="wil">Esfor&#231;o manual</div></div>
-          <div class="wi"><div class="win">CDC</div><div class="wil">Art. 42 auto</div></div>
-        </div>
-      </div>
-      <div class="status"><div class="sdot"></div>Sistema online &nbsp;&#183;&nbsp; Vers&#227;o 2.0</div>
-    </div>
-  </div>
-</div>
-<div class="seal">
-  <div class="seal-line"></div>
-  <div class="seal-lbl">Fundado por</div>
-  <div class="seal-name">Edson Medeiros</div>
-  <div class="seal-sub">Consultorias &amp; Compliance &#183; 2024</div>
-</div>
-<script>
-function go(e){
-  e.preventDefault();
-  var em=document.getElementById('em').value.trim();
-  var pw=document.getElementById('pw').value;
-  if(!em||!pw)return;
-  var base=window.parent.location.href.split('?')[0];
-  window.parent.location.href=base+'?lge='+encodeURIComponent(em)+'&lgp='+encodeURIComponent(pw);
-}
-</script>
-</body>
-</html>"""
+        with st.form("login_form", clear_on_submit=False):
+            _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
+            _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
+            _submitted = st.form_submit_button("◆  Acessar o ExtratoX")
 
-    # Injeta mensagem de erro se necessário
-    if erro:
-        err_html = '<div class="err">&#10008; Credenciais inv&#225;lidas &#8212; verifique e-mail e senha</div>'
-    else:
-        err_html = ""
-    LOGIN_HTML_FINAL = LOGIN_HTML.replace("ERRO_PLACEHOLDER", err_html)
+        if _submitted:
+            if _check_login(_email, _senha):
+                st.session_state["autenticado"] = True
+                st.rerun()
+            else:
+                st.error("Credenciais inválidas — verifique e-mail e senha")
 
-    # Renderiza o iframe com altura dinâmica
-    components.html(LOGIN_HTML_FINAL, height=1080, scrolling=False)
+        st.markdown('<div class="lp-grid"><div class="lp-gs"><div class="lp-gsn">10s</div><div class="lp-gsl">An&aacute;lise</div></div><div class="lp-gs"><div class="lp-gsn">19</div><div class="lp-gsl">Rubricas</div></div><div class="lp-gs"><div class="lp-gsn">Art.42</div><div class="lp-gsl">CDC auto</div></div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-why"><div class="lp-wlbl">Por que usar</div><div class="lp-wrow"><div class="lp-wi"><div class="lp-win">100%</div><div class="lp-wil">Precis&atilde;o</div></div><div class="lp-wi"><div class="lp-win">0</div><div class="lp-wil">Esfor&ccedil;o manual</div></div><div class="lp-wi"><div class="lp-win">CDC</div><div class="lp-wil">Art. 42 auto</div></div></div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-status"><div class="lp-sdot"></div>Sistema online &nbsp;&middot;&nbsp; Vers&atilde;o 2.0</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="lp-seal"><div class="lp-seal-line"></div><div class="lp-seal-lbl">Fundado por</div><div class="lp-seal-name">Edson Medeiros</div><div class="lp-seal-sub">Consultorias &amp; Compliance &middot; 2024</div></div>', unsafe_allow_html=True)
 
     st.stop()
 
