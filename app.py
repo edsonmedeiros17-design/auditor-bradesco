@@ -764,95 +764,51 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login — Command Center v4
+    # CSS da tela de login — Command Center v5
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
-    /* Oculta toda UI do Streamlit */
     header,footer,[data-testid="stSidebar"],[data-testid="stToolbar"],
     [data-testid="stDecoration"],[data-testid="stStatusWidget"],
-    [data-testid="stHeader"]{display:none!important;height:0!important;}
+    [data-testid="stHeader"]{display:none!important;}
 
-    /* Zera TUDO - o app inteiro */
-    html,body{margin:0!important;padding:0!important;height:100%!important;overflow:hidden!important;}
+    /* Fundo e reset — SEM overflow:hidden no app */
     .stApp{
-        margin:0!important;padding:0!important;
         background:#04060C!important;
-        background-image:radial-gradient(circle,rgba(197,165,102,.04) 1px,transparent 1px)!important;
+        background-image:radial-gradient(circle,rgba(197,165,102,.042) 1px,transparent 1px)!important;
         background-size:28px 28px!important;
-        overflow:hidden!important;
-        height:100vh!important;
     }
 
-    /* O container principal do Streamlit - remove todo padding */
-    .main,.main>div,.block-container{
+    /* Remove padding do container — mas mantém scroll */
+    .block-container{
         padding:0!important;margin:0!important;
         max-width:100%!important;width:100%!important;
-        height:100vh!important;min-height:0!important;
-        overflow:hidden!important;
+        min-height:100vh!important;
     }
+    section[data-testid="stMain"]>div:first-child{padding:0!important;}
+    div[data-testid="stVerticalBlock"]>div{padding:0!important;}
 
-    /* Wrapper interno do Streamlit */
-    section[data-testid="stMain"]{
-        padding:0!important;margin:0!important;
-        overflow:hidden!important;
-    }
-    section[data-testid="stMain"]>div{
-        padding:0!important;margin:0!important;
-        height:100vh!important;overflow:hidden!important;
-    }
+    /* Gap zero nas colunas */
+    [data-testid="stHorizontalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
+    [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
 
-    /* Colunas */
-    [data-testid="stHorizontalBlock"]{
-        gap:0!important;padding:0!important;margin:0!important;
-        height:100vh!important;align-items:stretch!important;
-        overflow:hidden!important;
-    }
-    [data-testid="stHorizontalBlock"]>div{
-        padding:0!important;margin:0!important;
-        height:100vh!important;overflow:hidden!important;
-        flex-shrink:0!important;
-    }
-
-    /* Colunas aninhadas (info+form) */
-    [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"]{
-        height:auto!important;overflow:visible!important;
-    }
-    [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"]>div{
-        height:auto!important;overflow:visible!important;
-    }
-
-    /* Todos os markdowns: sem margin */
-    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;line-height:0;}
+    /* Markdown sem margem */
     [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
-    div.stMarkdown{margin:0!important;padding:0!important;}
+    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
+    [data-testid="stVerticalBlock"]{gap:0!important;}
+    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;}
+    [data-testid="stForm"]>div{padding:0!important;margin:0!important;}
 
-    /* Form sem espaçamento */
-    [data-testid="stForm"],[data-testid="stForm"]>div{
-        background:transparent!important;border:none!important;
-        padding:0!important;margin:0!important;
-    }
-    [data-testid="stVerticalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
-    div[data-testid="stVerticalBlock"]>div{padding:0!important;margin:0!important;}
-
-    /* ════ SIDEBAR ════ */
-    .sb{
-        background:#030508;
-        border-right:1px solid rgba(197,165,102,.14);
-        padding:40px 22px 32px;
-        height:100vh;
-        display:flex;flex-direction:column;
-        overflow:hidden;
-        box-sizing:border-box;
-    }
+    /* ══ SIDEBAR ══ */
+    .sb{background:#030508;border-right:1px solid rgba(197,165,102,.14);padding:40px 22px 32px;min-height:100vh;display:flex;flex-direction:column;}
     .sb-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:rgba(197,165,102,.36);margin-bottom:24px;display:flex;align-items:center;gap:7px;}
     .sb-dot{width:5px;height:5px;border-radius:50%;background:#C5A566;animation:gp 2.5s ease-in-out infinite;flex-shrink:0;}
     @keyframes gp{0%,100%{opacity:.3}50%{opacity:1}}
     .sb-name{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.05;color:#EDE5D4;margin-bottom:4px;}
     .sb-name em{color:#C5A566;font-style:normal;}
-    .sb-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:rgba(197,165,102,.42);letter-spacing:1.5px;margin-bottom:26px;}
-    .sb-orn{width:32px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:22px;}
+    .sb-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:rgba(197,165,102,.42);letter-spacing:1.5px;margin-bottom:24px;}
+    .sb-orn{width:32px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:20px;}
     .sb-item{display:flex;align-items:center;gap:9px;padding:9px 8px;border-left:2px solid transparent;margin-bottom:2px;}
     .sb-item.on{border-left-color:#C5A566;background:rgba(197,165,102,.06);}
     .sb-idot{width:4px;height:4px;border-radius:50%;background:rgba(197,165,102,.22);flex-shrink:0;}
@@ -861,31 +817,20 @@ if not st.session_state["autenticado"]:
     .sb-item.on .sb-ilabel{color:rgba(197,165,102,.85);}
     .sb-tag{margin-left:auto;font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(197,165,102,.5);background:rgba(197,165,102,.08);border:1px solid rgba(197,165,102,.18);border-radius:20px;padding:2px 7px;}
     .sb-sep{height:1px;background:rgba(197,165,102,.08);margin:16px 0;}
-    .sb-foot{font-family:'Inter',sans-serif;font-size:10px;color:rgba(197,165,102,.22);letter-spacing:.8px;line-height:1.9;margin-top:auto;}
+    .sb-foot{font-family:'Inter',sans-serif;font-size:10px;color:rgba(197,165,102,.22);letter-spacing:.8px;line-height:1.9;margin-top:auto;padding-top:16px;}
     .sb-sig{font-family:'Great Vibes',cursive;font-size:26px;color:rgba(197,165,102,.28);line-height:1;margin-top:10px;}
 
-    /* ════ AREA PRINCIPAL ════ */
-    .main-area{
-        background:rgba(5,8,14,.97);
-        height:100vh;
-        display:flex;flex-direction:column;
-        overflow:hidden;
-        box-sizing:border-box;
-    }
-
-    /* Topbar */
-    .topbar{height:48px;min-height:48px;border-bottom:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;background:rgba(3,5,10,.9);flex-shrink:0;}
+    /* ══ ÁREA PRINCIPAL ══ */
+    .main-area{background:rgba(5,8,14,.97);min-height:100vh;display:flex;flex-direction:column;}
+    .topbar{height:48px;border-bottom:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;background:rgba(3,5,10,.9);flex-shrink:0;}
     .topbar-bc{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:rgba(197,165,102,.28);display:flex;align-items:center;gap:10px;}
     .topbar-cur{color:rgba(197,165,102,.58);}
     .topbar-sep{color:rgba(197,165,102,.16);}
 
-    /* Área de conteúdo (ocupa o restante) */
-    .content-area{flex:1;display:flex;overflow:hidden;padding:0;}
-
-    /* Bloco de info */
-    .info{padding:36px 28px 28px 44px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+    /* Info */
+    .info{padding:40px 24px 28px 44px;}
     .info-ey{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:rgba(197,165,102,.3);margin-bottom:10px;}
-    .info-logo{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:600;line-height:.92;color:#EDE5D4;margin-bottom:6px;}
+    .info-logo{font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:600;line-height:.92;color:#EDE5D4;margin-bottom:7px;}
     .info-logo span{color:#C5A566;}
     .info-sub{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(197,165,102,.38);margin-bottom:22px;letter-spacing:1px;}
     .info-orn{display:flex;align-items:center;gap:8px;margin-bottom:18px;}
@@ -901,14 +846,14 @@ if not st.session_state["autenticado"]:
     .feat-d{width:3px;height:3px;border-radius:50%;background:#C5A566;opacity:.4;flex-shrink:0;}
     .feat-t{font-family:'Inter',sans-serif;font-size:12px;color:rgba(237,229,212,.32);}
 
-    /* Bloco do form */
-    .fblock{padding:36px 44px 28px 20px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+    /* Form */
+    .fblock{padding:40px 44px 28px 16px;}
     .fcard{background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.13);border-radius:12px;padding:26px 22px;}
     .fcard-ey{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.3);margin-bottom:5px;}
     .fcard-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#EDE5D4;margin-bottom:3px;line-height:1;}
     .fcard-title span{color:#C5A566;}
-    .fcard-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:rgba(197,165,102,.3);margin-bottom:16px;}
-    .fcard-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:16px;}
+    .fcard-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:rgba(197,165,102,.3);margin-bottom:14px;}
+    .fcard-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:14px;}
 
     /* Inputs */
     [data-testid="stForm"] label{font-family:'Inter',sans-serif!important;font-size:9px!important;font-weight:600!important;letter-spacing:2.5px!important;text-transform:uppercase!important;color:rgba(197,165,102,.36)!important;}
@@ -920,8 +865,8 @@ if not st.session_state["autenticado"]:
     [data-testid="stAlert"]{background:rgba(180,60,60,.06)!important;border:1px solid rgba(180,60,60,.22)!important;border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:11px!important;}
     [data-testid="stAlert"] svg{display:none!important;}
 
-    /* Statusbar */
-    .sbar{height:36px;min-height:36px;border-top:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;gap:20px;background:rgba(3,5,10,.9);flex-shrink:0;}
+    /* Status bar */
+    .sbar{height:36px;border-top:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;gap:20px;background:rgba(3,5,10,.9);flex-shrink:0;}
     .si{font-family:'Inter',sans-serif;font-size:9px;color:rgba(197,165,102,.22);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
     .sdot{width:4px;height:4px;border-radius:50%;background:#4CAF50;opacity:.7;}
 
@@ -937,10 +882,9 @@ if not st.session_state["autenticado"]:
     </style>
     """, unsafe_allow_html=True)
 
-    # ── LAYOUT PRINCIPAL ────────────────────────────────────────────────────
     col_sb, col_main = st.columns([0.7, 2.3])
 
-    # ════ SIDEBAR ════
+    # ══ SIDEBAR ══
     with col_sb:
         st.markdown('<div class="sb">', unsafe_allow_html=True)
         st.markdown('<div class="sb-badge"><div class="sb-dot"></div>Sistema ExtratoX</div>', unsafe_allow_html=True)
@@ -957,12 +901,10 @@ if not st.session_state["autenticado"]:
         st.markdown('<div class="sb-sig">E. Medeiros</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ════ ÁREA PRINCIPAL ════
+    # ══ ÁREA PRINCIPAL ══
     with col_main:
-        # Wrapper + topbar
         st.markdown('<div class="main-area">', unsafe_allow_html=True)
-        st.markdown('<div class="topbar"><div class="topbar-bc"><span>ExtratoX</span><span class="topbar-sep">›</span><span class="topbar-cur">Acesso ao Sistema</span></div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="content-area">', unsafe_allow_html=True)
+        st.markdown('<div class="topbar"><div class="topbar-bc"><span>ExtratoX</span><span class="topbar-sep"> › </span><span class="topbar-cur">Acesso ao Sistema</span></div></div>', unsafe_allow_html=True)
 
         col_info, col_form = st.columns([1.3, 1])
 
@@ -973,7 +915,7 @@ if not st.session_state["autenticado"]:
             st.markdown('<div class="info-sub">O portal seguro para sua auditoria bancária</div>', unsafe_allow_html=True)
             st.markdown('<div class="info-orn"><div class="orn-l"></div><div class="orn-d">◆</div><div class="orn-l"></div></div>', unsafe_allow_html=True)
             st.markdown('<div class="mets"><div class="met"><div class="met-n">19</div><div class="met-l">Rubricas</div></div><div class="met"><div class="met-n">100%</div><div class="met-l">Precisão</div></div><div class="met"><div class="met-n">Art.42</div><div class="met-l">CDC Auto</div></div></div>', unsafe_allow_html=True)
-            for t in ["Extrai débitos indevidos do extrato PDF","Planilhas com cálculo em dobro (Art. 42 CDC)","Relatórios prontos para peticionamento jurídico","Suporta extratos Bradesco com múltiplas páginas"]:
+            for t in ["Extrai débitos indevidos do extrato PDF", "Planilhas com cálculo em dobro (Art. 42 CDC)", "Relatórios prontos para peticionamento jurídico", "Suporta extratos Bradesco com múltiplas páginas"]:
                 st.markdown(f'<div class="feat"><div class="feat-d"></div><div class="feat-t">{t}</div></div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -992,9 +934,8 @@ if not st.session_state["autenticado"]:
                     st.error("Credenciais inválidas — verifique e-mail e senha")
             st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)  # fecha content-area
         st.markdown('<div class="sbar"><div class="si"><div class="sdot"></div>Sistema Online</div><div class="si">Bradesco · Extrato PDF</div><div class="si">Versão 2.0</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)  # fecha main-area
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="lx-footer">Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
     st.markdown('<div class="seal"><div class="seal-line"></div><div class="seal-label">Fundado por</div><div class="seal-name">Edson Medeiros</div><div class="seal-sub">Consultorias &amp; Compliance · 2024</div><div class="seal-orn">◆ &nbsp; ◆ &nbsp; ◆</div></div>', unsafe_allow_html=True)
