@@ -1074,103 +1074,121 @@ if not st.session_state["autenticado"]:
 
     # ── ZONA 1: Identidade ───────────────────────────────────────────────────
     with c1:
+        st.markdown('<div class="z1">', unsafe_allow_html=True)
+
+        # Ícone SVG — balança da justiça
         st.markdown("""
-        <div class="z1">
-            <!-- Ícone SVG animado: balança da justiça + engrenagem -->
-            <div class="z1-icon">
-                <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stop-color="rgba(197,165,102,0.15)"/>
-                            <stop offset="100%" stop-color="rgba(197,165,102,0)"/>
-                        </radialGradient>
-                        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#D4B87A"/>
-                            <stop offset="100%" stop-color="#A8883E"/>
-                        </linearGradient>
-                    </defs>
-                    <!-- Halo de fundo -->
-                    <circle cx="65" cy="65" r="58" fill="url(#glow)"/>
-                    <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(197,165,102,0.18)" stroke-width="1"/>
-                    <circle cx="65" cy="65" r="48" fill="none" stroke="rgba(197,165,102,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
-                    <!-- Coluna central da balança -->
-                    <rect x="63" y="28" width="4" height="50" rx="2" fill="url(#goldGrad)"/>
-                    <!-- Base -->
-                    <rect x="48" y="76" width="34" height="4" rx="2" fill="url(#goldGrad)"/>
-                    <rect x="55" y="80" width="20" height="3" rx="1.5" fill="rgba(197,165,102,0.4)"/>
-                    <rect x="61" y="83" width="8" height="8" rx="1" fill="rgba(197,165,102,0.3)"/>
-                    <!-- Barra horizontal -->
-                    <rect x="30" y="35" width="70" height="3" rx="1.5" fill="url(#goldGrad)"/>
-                    <!-- Correntes -->
-                    <line x1="32" y1="38" x2="32" y2="50" stroke="rgba(197,165,102,0.6)" stroke-width="1.2"/>
-                    <line x1="98" y1="38" x2="98" y2="50" stroke="rgba(197,165,102,0.6)" stroke-width="1.2"/>
-                    <!-- Pratos -->
-                    <ellipse cx="32" cy="52" rx="14" ry="4" fill="none" stroke="url(#goldGrad)" stroke-width="1.8"/>
-                    <ellipse cx="98" cy="52" rx="14" ry="4" fill="none" stroke="url(#goldGrad)" stroke-width="1.8"/>
-                    <!-- Reflexo nos pratos -->
-                    <ellipse cx="32" cy="52" rx="10" ry="2" fill="rgba(197,165,102,0.06)"/>
-                    <ellipse cx="98" cy="52" rx="10" ry="2" fill="rgba(197,165,102,0.06)"/>
-                    <!-- Estrela central -->
-                    <circle cx="65" cy="35" r="5" fill="rgba(197,165,102,0.15)" stroke="rgba(197,165,102,0.6)" stroke-width="1"/>
-                    <circle cx="65" cy="35" r="2" fill="url(#goldGrad)"/>
-                    <!-- Detalhes decorativos -->
-                    <path d="M20 95 Q65 88 110 95" stroke="rgba(197,165,102,0.1)" stroke-width="1" fill="none"/>
-                </svg>
-            </div>
-            <div>
-                <div class="z1-badge">Escritório de Assessoria Jurídica</div>
-                <div class="z1-title">Edson<br><em>Medeiros</em></div>
-                <div class="z1-sub">Consultorias &amp; Compliance</div>
-                <p class="z1-desc">
-                    Sistema especializado em auditoria bancária inteligente.
-                    Identificamos cobranças indevidas com precisão e geramos
-                    relatórios prontos para uso jurídico.
-                </p>
-                <div class="z1-bullets">
-                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Extrai débitos indevidos do extrato PDF</div>
-                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Gera planilhas com cálculos automáticos</div>
-                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Gera relatórios prontos para uso jurídico</div>
-                </div>
-            </div>
+        <div class="z1-icon">
+        <svg width="120" height="120" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(197,165,102,0.15)" stroke-width="1"/>
+        <circle cx="65" cy="65" r="46" fill="none" stroke="rgba(197,165,102,0.07)" stroke-width="1" stroke-dasharray="4 4"/>
+        <rect x="63" y="28" width="4" height="50" rx="2" fill="#C5A566"/>
+        <rect x="48" y="76" width="34" height="4" rx="2" fill="#C5A566"/>
+        <rect x="61" y="80" width="8" height="9" rx="1" fill="rgba(197,165,102,0.35)"/>
+        <rect x="28" y="34" width="74" height="3" rx="1.5" fill="#C5A566"/>
+        <line x1="32" y1="37" x2="32" y2="52" stroke="rgba(197,165,102,0.7)" stroke-width="1.2"/>
+        <line x1="98" y1="37" x2="98" y2="52" stroke="rgba(197,165,102,0.7)" stroke-width="1.2"/>
+        <ellipse cx="32" cy="53" rx="14" ry="4" fill="none" stroke="#C5A566" stroke-width="1.6"/>
+        <ellipse cx="98" cy="53" rx="14" ry="4" fill="none" stroke="#C5A566" stroke-width="1.6"/>
+        <circle cx="65" cy="34" r="5" fill="rgba(197,165,102,0.12)" stroke="rgba(197,165,102,0.55)" stroke-width="1"/>
+        <circle cx="65" cy="34" r="2" fill="#C5A566"/>
+        </svg>
         </div>
         """, unsafe_allow_html=True)
+
+        # Identidade textual
+        st.markdown(
+            '<div class="z1-badge">Escritório de Assessoria Jurídica</div>'
+            '<div class="z1-title">Edson<br>'
+            '<span style="color:#C5A566">Medeiros</span></div>'
+            '<div class="z1-sub">Consultorias &amp; Compliance</div>',
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            '<p class="z1-desc">Sistema especializado em auditoria bancária inteligente. '
+            'Identificamos cobranças indevidas com precisão e geramos relatórios '
+            'prontos para uso jurídico.</p>',
+            unsafe_allow_html=True
+        )
+
+        # Bullets
+        for txt in [
+            "Extrai débitos indevidos do extrato PDF",
+            "Gera planilhas com cálculos automáticos",
+            "Gera relatórios prontos para uso jurídico",
+        ]:
+            st.markdown(
+                f'<div class="z1-bullet"><div class="z1-bullet-dot"></div>{txt}</div>',
+                unsafe_allow_html=True
+            )
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── ZONA 2: Features + Por quê ───────────────────────────────────────────
     with c2:
+        st.markdown('<div class="z2">', unsafe_allow_html=True)
+
+        # Headline
+        st.markdown(
+            '<div class="z2-headline">Nossas <span style="color:#C5A566">Soluções</span>'
+            ' de<br>Auditoria Bancária</div>',
+            unsafe_allow_html=True
+        )
+
+        # Card 1
         st.markdown("""
-        <div class="z2">
-            <div class="z2-headline">Nossas <em>Soluções</em> de<br>Auditoria Bancária</div>
-
-            <div class="z2-cards">
-                <div class="z2-card">
-                    <div class="z2-card-icon">⚖</div>
-                    <div class="z2-card-title">Extrai dados indevidos de extratos PDF</div>
-                    <div class="z2-card-desc">Identifica cobranças abusivas: CESTA, MORA, ANUIDADE, ENCARGOS, parcelas, seguros e mais.</div>
-                </div>
-                <div class="z2-card">
-                    <div class="z2-card-icon">📊</div>
-                    <div class="z2-card-title">Gera planilhas com cálculo em dobro (Art. 42)</div>
-                    <div class="z2-card-desc">Tabela mensal e anual com total em dobro conforme o Código de Defesa do Consumidor.</div>
-                </div>
-            </div>
-
-            <div class="z2-why">Por que o <em>ExtratoX</em>?</div>
-            <div class="z2-pillars">
-                <div class="z2-pillar">
-                    <div class="z2-pillar-title">Precisão e Velocidade</div>
-                    <div class="z2-pillar-desc">Leitura posicional por coluna — distingue débito de crédito com precisão milimétrica.</div>
-                </div>
-                <div class="z2-pillar">
-                    <div class="z2-pillar-title">Suporte Legal</div>
-                    <div class="z2-pillar-desc">Relatórios formatados para peticionamento jurídico e processos consumeristas.</div>
-                </div>
-                <div class="z2-pillar">
-                    <div class="z2-pillar-title">Segurança</div>
-                    <div class="z2-pillar-desc">Acesso restrito por credenciais. Dados processados localmente, sem armazenamento externo.</div>
-                </div>
-            </div>
+        <div class="z2-card">
+            <div class="z2-card-icon">&#9878;</div>
+            <div class="z2-card-title">Extrai dados indevidos de extratos PDF</div>
+            <div class="z2-card-desc">Identifica cobranças abusivas: CESTA, MORA, ANUIDADE,
+            ENCARGOS, parcelas, seguros e mais.</div>
         </div>
         """, unsafe_allow_html=True)
+
+        # Card 2
+        st.markdown("""
+        <div class="z2-card">
+            <div class="z2-card-icon">&#128202;</div>
+            <div class="z2-card-title">Gera planilhas com cálculo em dobro (Art. 42)</div>
+            <div class="z2-card-desc">Tabela mensal e anual com total em dobro conforme
+            o Código de Defesa do Consumidor.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Por quê
+        st.markdown(
+            '<div class="z2-why" style="margin-top:24px;">Por que o '
+            '<span style="color:#C5A566">ExtratoX</span>?</div>',
+            unsafe_allow_html=True
+        )
+
+        # Pilares
+        st.markdown("""
+        <div class="z2-pillar">
+            <div class="z2-pillar-title">Precisão e Velocidade</div>
+            <div class="z2-pillar-desc">Leitura posicional por coluna —
+            distingue débito de crédito com precisão milimétrica.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="z2-pillar">
+            <div class="z2-pillar-title">Suporte Legal</div>
+            <div class="z2-pillar-desc">Relatórios formatados para
+            peticionamento jurídico e processos consumeristas.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="z2-pillar">
+            <div class="z2-pillar-title">Segurança</div>
+            <div class="z2-pillar-desc">Acesso restrito por credenciais.
+            Dados processados localmente, sem armazenamento externo.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── ZONA 3+4: Login + Métricas ───────────────────────────────────────────
     with c3:
