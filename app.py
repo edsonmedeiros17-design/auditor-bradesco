@@ -764,475 +764,454 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login — v3: layout 4 zonas inspirado na referência
+    # CSS da tela de login — Command Center
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
-    header, footer, [data-testid="stSidebar"],
-    [data-testid="stToolbar"], [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"] { display: none !important; }
+    header,footer,[data-testid="stSidebar"],[data-testid="stToolbar"],
+    [data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none!important}
 
-    .stApp {
-        background: #05080E !important;
-        background-image: radial-gradient(circle, rgba(197,165,102,0.04) 1px, transparent 1px) !important;
-        background-size: 28px 28px !important;
+    /* Fundo grade dourada */
+    .stApp{
+        background:#04060C!important;
+        background-image:radial-gradient(circle,rgba(197,165,102,.042) 1px,transparent 1px)!important;
+        background-size:28px 28px!important;
+    }
+    /* Vinheta radial sutil */
+    .stApp::after{
+        content:'';position:fixed;inset:0;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(4,6,12,.7) 100%);
+        z-index:0;
     }
 
     /* Container: ocupa tela toda */
-    .block-container {
-        max-width: 100vw !important;
-        width: 100vw !important;
-        min-height: 100vh !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    .block-container{
+        max-width:100vw!important;width:100vw!important;
+        min-height:100vh!important;padding:0!important;margin:0!important;
+        position:relative;z-index:1;
     }
 
-    /* Row de colunas: altura total */
-    [data-testid="stHorizontalBlock"] {
-        gap: 0 !important;
-        min-height: 100vh !important;
-        width: 100% !important;
-        align-items: stretch !important;
+    /* Layout: sidebar(240px) | conteúdo principal */
+    [data-testid="stHorizontalBlock"]{
+        gap:0!important;min-height:100vh!important;
+        width:100%!important;align-items:stretch!important;
     }
-    [data-testid="stHorizontalBlock"] > div {
-        padding: 0 !important;
-        min-height: 100vh !important;
+    [data-testid="stHorizontalBlock"]>div{
+        padding:0!important;min-height:100vh!important;
     }
 
-    /* ── ZONA 1: Identidade visual ─────────────────────────────────── */
-    .z1 {
-        background: linear-gradient(160deg, #0A0F1A 0%, #060910 60%, #04060D 100%);
-        border-right: 1px solid rgba(197,165,102,0.1);
-        padding: 52px 32px 48px;
-        display: flex; flex-direction: column; justify-content: space-between;
-        min-height: 100vh; position: relative; overflow: hidden;
+    /* ── SIDEBAR ─────────────────────────────────────────────────── */
+    .sb{
+        background:#030508;
+        border-right:1px solid rgba(197,165,102,.1);
+        padding:52px 28px 40px;
+        display:flex;flex-direction:column;
+        min-height:100vh;position:relative;overflow:hidden;
     }
-    .z1::before {
-        content: '';
-        position: absolute; top: -120px; left: -120px;
-        width: 420px; height: 420px; border-radius: 50%;
-        border: 1px solid rgba(197,165,102,0.05);
-        pointer-events: none;
+    /* Círculo decorativo de fundo */
+    .sb::before{
+        content:'';position:absolute;bottom:-80px;left:-80px;
+        width:280px;height:280px;border-radius:50%;
+        border:1px solid rgba(197,165,102,.05);pointer-events:none;
     }
-    /* SVG do robô / escudo animado */
-    .z1-icon {
-        display: flex; justify-content: center;
-        margin-bottom: 28px;
+    .sb::after{
+        content:'';position:absolute;top:-60px;right:-60px;
+        width:200px;height:200px;border-radius:50%;
+        border:1px solid rgba(197,165,102,.03);pointer-events:none;
     }
-    .z1-icon svg { filter: drop-shadow(0 0 18px rgba(197,165,102,0.2)); }
-    @keyframes floatIcon {
-        0%,100%{ transform: translateY(0); }
-        50%{ transform: translateY(-8px); }
+    /* Badge sistema */
+    .sb-sys{
+        font-family:'Inter',sans-serif;font-size:.52rem;font-weight:600;
+        letter-spacing:4px;text-transform:uppercase;
+        color:rgba(197,165,102,.32);margin-bottom:28px;
+        display:flex;align-items:center;gap:8px;
     }
-    .z1-icon svg { animation: floatIcon 4s ease-in-out infinite; }
-
-    .z1-badge {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.55rem; font-weight: 600;
-        letter-spacing: 4px; text-transform: uppercase;
-        color: rgba(197,165,102,0.45); margin-bottom: 14px;
+    .sb-sys-dot{
+        width:5px;height:5px;border-radius:50%;
+        background:#C5A566;opacity:.6;
+        animation:pulse 2.5s ease-in-out infinite;
     }
-    .z1-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.1rem; font-weight: 600; line-height: 1.15;
-        color: #EDE5D4; margin-bottom: 6px;
+    @keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+    /* Nome da marca */
+    .sb-name{
+        font-family:'Cormorant Garamond',serif;
+        font-size:2.4rem;font-weight:600;line-height:1.0;
+        color:#EDE5D4;letter-spacing:.5px;margin-bottom:5px;
     }
-    .z1-title em { color: #C5A566; font-style: normal; }
-    .z1-sub {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 0.88rem; font-style: italic;
-        color: rgba(197,165,102,0.45); margin-bottom: 24px;
-        letter-spacing: 1.5px;
+    .sb-name em{color:#C5A566;font-style:normal}
+    .sb-role{
+        font-family:'Cormorant Garamond',serif;
+        font-size:.88rem;font-style:italic;
+        color:rgba(197,165,102,.42);letter-spacing:2px;margin-bottom:36px;
     }
-    .z1-desc {
-        font-size: 0.78rem; font-family: 'Inter', sans-serif;
-        color: rgba(237,229,212,0.3); line-height: 1.7;
-        margin-bottom: 24px;
+    /* Linha ornamental */
+    .sb-orn{width:40px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:28px;}
+    /* Menu de navegação */
+    .sb-nav{display:flex;flex-direction:column;gap:2px;margin-bottom:auto;}
+    .sb-item{
+        display:flex;align-items:center;gap:10px;
+        padding:9px 12px;border-radius:0;
+        border-left:2px solid transparent;
+        transition:all .18s ease;cursor:default;
     }
-    .z1-bullets { display: flex; flex-direction: column; gap: 9px; }
-    .z1-bullet {
-        display: flex; align-items: center; gap: 9px;
-        font-family: 'Inter', sans-serif;
-        font-size: 0.75rem; color: rgba(237,229,212,0.35);
+    .sb-item.active{
+        border-left-color:#C5A566;
+        background:rgba(197,165,102,.06);
     }
-    .z1-bullet-dot {
-        width: 4px; height: 4px; border-radius: 50%;
-        background: #C5A566; opacity: 0.5; flex-shrink: 0;
+    .sb-item-dot{
+        width:4px;height:4px;border-radius:50%;
+        background:rgba(197,165,102,.3);flex-shrink:0;
     }
-
-    /* ── ZONA 2: Features / Por quê ────────────────────────────────── */
-    .z2 {
-        background: linear-gradient(180deg, #070B14 0%, #050810 100%);
-        border-right: 1px solid rgba(197,165,102,0.08);
-        padding: 52px 28px 48px;
-        display: flex; flex-direction: column; justify-content: flex-start;
-        min-height: 100vh;
+    .sb-item.active .sb-item-dot{background:#C5A566;opacity:1;}
+    .sb-item-label{
+        font-family:'Inter',sans-serif;
+        font-size:.68rem;font-weight:500;
+        letter-spacing:1.5px;text-transform:uppercase;
+        color:rgba(237,229,212,.22);
     }
-    .z2-headline {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.7rem; font-weight: 600; line-height: 1.2;
-        color: #EDE5D4; margin-bottom: 24px;
+    .sb-item.active .sb-item-label{color:rgba(197,165,102,.8);}
+    .sb-item-tag{
+        margin-left:auto;font-size:.5rem;font-weight:600;
+        letter-spacing:1px;text-transform:uppercase;
+        color:rgba(197,165,102,.4);
+        background:rgba(197,165,102,.08);
+        border:1px solid rgba(197,165,102,.15);
+        border-radius:20px;padding:2px 7px;
     }
-    .z2-headline em { color: #C5A566; font-style: normal; }
-    .z2-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
-    .z2-card {
-        background: rgba(197,165,102,0.04);
-        border: 1px solid rgba(197,165,102,0.12);
-        border-radius: 10px;
-        padding: 14px 16px;
-        transition: all 0.25s ease;
+    /* Separador */
+    .sb-divider{
+        height:1px;background:rgba(197,165,102,.08);
+        margin:20px 0;
     }
-    .z2-card:hover {
-        background: rgba(197,165,102,0.08);
-        border-color: rgba(197,165,102,0.28);
+    /* Contatos no rodapé da sidebar */
+    .sb-contact{
+        font-family:'Inter',sans-serif;
+        font-size:.58rem;color:rgba(197,165,102,.25);
+        letter-spacing:.8px;line-height:1.8;
     }
-    .z2-card-icon {
-        font-size: 1.1rem; margin-bottom: 6px;
-        color: rgba(197,165,102,0.7);
-    }
-    .z2-card-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.72rem; font-weight: 600;
-        color: rgba(237,229,212,0.75);
-        margin-bottom: 4px; letter-spacing: 0.3px;
-    }
-    .z2-card-desc {
-        font-size: 0.68rem; font-family: 'Inter', sans-serif;
-        color: rgba(237,229,212,0.3); line-height: 1.55;
-    }
-    /* Seção "Por quê" */
-    .z2-why {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.2rem; font-weight: 600;
-        color: #EDE5D4; margin-bottom: 16px;
-    }
-    .z2-why em { color: #C5A566; font-style: normal; }
-    .z2-pillars { display: flex; flex-direction: column; gap: 12px; }
-    .z2-pillar {}
-    .z2-pillar-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.68rem; font-weight: 600;
-        color: rgba(197,165,102,0.7); margin-bottom: 3px;
-    }
-    .z2-pillar-desc {
-        font-size: 0.64rem; font-family: 'Inter', sans-serif;
-        color: rgba(237,229,212,0.28); line-height: 1.5;
+    /* Assinatura cursiva */
+    .sb-sig{
+        font-family:'Great Vibes',cursive;
+        font-size:1.8rem;color:rgba(197,165,102,.28);
+        line-height:1;margin-top:14px;
     }
 
-    /* ── ZONA 3 e 4: Login ─────────────────────────────────────────── */
-    .z34 {
-        background: rgba(4,6,12,0.97);
-        padding: 52px 36px 48px;
-        display: flex; flex-direction: column; justify-content: space-between;
-        min-height: 100vh;
+    /* ── PAINEL PRINCIPAL ─────────────────────────────────────────── */
+    .main{
+        background:rgba(5,8,14,.96);
+        padding:0 0 0 0;
+        display:flex;flex-direction:column;
+        min-height:100vh;
     }
-    .z34-top {}
-    .z34-eyebrow {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.55rem; font-weight: 600;
-        letter-spacing: 4px; text-transform: uppercase;
-        color: rgba(197,165,102,0.38); margin-bottom: 10px;
+    /* Barra superior */
+    .main-topbar{
+        height:52px;
+        border-bottom:1px solid rgba(197,165,102,.08);
+        display:flex;align-items:center;
+        padding:0 52px;
+        gap:16px;
+        background:rgba(3,5,10,.8);
+        backdrop-filter:blur(12px);
     }
-    .z34-logo {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.8rem; font-weight: 600; line-height: 1;
-        color: #EDE5D4; margin-bottom: 6px;
+    .topbar-breadcrumb{
+        font-family:'Inter',sans-serif;font-size:.58rem;
+        font-weight:500;letter-spacing:3px;text-transform:uppercase;
+        color:rgba(197,165,102,.28);display:flex;align-items:center;gap:10px;
     }
-    .z34-logo span { color: #C5A566; }
-    .z34-tagline {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 0.9rem; font-style: italic;
-        color: rgba(197,165,102,0.42); margin-bottom: 32px;
+    .topbar-sep{color:rgba(197,165,102,.15);}
+    .topbar-current{color:rgba(197,165,102,.55);}
+
+    /* Área de conteúdo central */
+    .main-content{
+        flex:1;display:flex;align-items:center;
+        padding:48px 52px;
+        gap:72px;
     }
-    .z34-orn {
-        display: flex; align-items: center; gap: 10px;
-        margin-bottom: 28px;
+
+    /* Bloco de apresentação do sistema */
+    .sys-block{flex:1;min-width:0;}
+    .sys-eyebrow{
+        font-family:'Inter',sans-serif;font-size:.55rem;font-weight:600;
+        letter-spacing:5px;text-transform:uppercase;
+        color:rgba(197,165,102,.35);margin-bottom:14px;
     }
-    .z34-orn-l { flex: 1; height: 1px; background: rgba(197,165,102,0.14); }
-    .z34-orn-d { font-size: 0.35rem; color: rgba(197,165,102,0.3); }
+    .sys-title{
+        font-family:'Cormorant Garamond',serif;
+        font-size:3.8rem;font-weight:600;line-height:.95;
+        color:#EDE5D4;letter-spacing:.5px;margin-bottom:10px;
+    }
+    .sys-title span{color:#C5A566;}
+    .sys-sub{
+        font-family:'Cormorant Garamond',serif;
+        font-size:1rem;font-style:italic;
+        color:rgba(197,165,102,.4);letter-spacing:1px;margin-bottom:32px;
+    }
+    /* Divisor ornamental */
+    .sys-orn{
+        display:flex;align-items:center;gap:12px;margin-bottom:28px;
+    }
+    .orn-l{flex:1;height:1px;background:rgba(197,165,102,.14);}
+    .orn-d{font-size:.4rem;color:rgba(197,165,102,.3);}
+    /* Métricas de impacto */
+    .sys-metrics{display:flex;gap:0;margin-bottom:28px;}
+    .met{flex:1;padding:18px 20px;background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.1);border-right:none;}
+    .met:first-child{border-radius:8px 0 0 8px;}
+    .met:last-child{border-right:1px solid rgba(197,165,102,.1);border-radius:0 8px 8px 0;}
+    .met-n{
+        font-family:'Cormorant Garamond',serif;
+        font-size:2rem;font-weight:600;color:#C5A566;line-height:1;
+    }
+    .met-l{
+        font-family:'Inter',sans-serif;font-size:.52rem;font-weight:600;
+        letter-spacing:2px;text-transform:uppercase;
+        color:rgba(237,229,212,.22);margin-top:4px;
+    }
+    /* Features */
+    .sys-feats{display:flex;flex-direction:column;gap:9px;}
+    .feat-row{display:flex;align-items:center;gap:10px;}
+    .feat-d{width:4px;height:4px;border-radius:50%;background:#C5A566;opacity:.4;flex-shrink:0;}
+    .feat-t{font-family:'Inter',sans-serif;font-size:.76rem;color:rgba(237,229,212,.32);}
+
+    /* Bloco do formulário */
+    .form-block{
+        width:340px;flex-shrink:0;
+        background:rgba(197,165,102,.025);
+        border:1px solid rgba(197,165,102,.12);
+        border-radius:12px;
+        padding:32px 28px;
+    }
+    .form-label{
+        font-family:'Inter',sans-serif;font-size:.58rem;font-weight:600;
+        letter-spacing:3.5px;text-transform:uppercase;
+        color:rgba(197,165,102,.35);margin-bottom:6px;
+    }
+    .form-title-sm{
+        font-family:'Cormorant Garamond',serif;
+        font-size:1.5rem;font-weight:600;color:#EDE5D4;
+        margin-bottom:5px;line-height:1;
+    }
+    .form-title-sm span{color:#C5A566;}
+    .form-sub-sm{
+        font-family:'Cormorant Garamond',serif;font-style:italic;
+        font-size:.82rem;color:rgba(197,165,102,.35);margin-bottom:24px;
+    }
+    .form-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:22px;}
 
     /* Inputs */
-    [data-testid="stForm"] {
-        background: transparent !important;
-        border: none !important; padding: 0 !important;
+    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;}
+    [data-testid="stForm"] label{
+        font-family:'Inter',sans-serif!important;font-size:.58rem!important;
+        font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;
+        color:rgba(197,165,102,.38)!important;
     }
-    [data-testid="stForm"] label {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.6rem !important; font-weight: 600 !important;
-        letter-spacing: 3px !important; text-transform: uppercase !important;
-        color: rgba(197,165,102,0.4) !important;
+    [data-testid="stForm"] label span{display:none!important;}
+    [data-testid="stForm"] input{
+        background:transparent!important;
+        border:none!important;border-bottom:1px solid rgba(197,165,102,.18)!important;
+        border-radius:0!important;color:#EDE5D4!important;
+        font-family:'Inter',sans-serif!important;
+        font-size:.88rem!important;font-weight:300!important;
+        padding:10px 0!important;
+        caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;
+        transition:border-color .25s ease!important;
     }
-    [data-testid="stForm"] label span { display: none !important; }
-    [data-testid="stForm"] input {
-        background: rgba(197,165,102,0.04) !important;
-        border: 1px solid rgba(197,165,102,0.16) !important;
-        border-radius: 8px !important;
-        color: #EDE5D4 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.88rem !important; font-weight: 300 !important;
-        padding: 12px 16px !important;
-        caret-color: #C5A566 !important;
-        outline: none !important; box-shadow: none !important;
-        transition: all 0.25s ease !important;
+    [data-testid="stForm"] input:focus{
+        border-bottom-color:#C5A566!important;box-shadow:none!important;
     }
-    [data-testid="stForm"] input:focus {
-        border-color: rgba(197,165,102,0.5) !important;
-        background: rgba(197,165,102,0.07) !important;
-        box-shadow: 0 0 0 3px rgba(197,165,102,0.06) !important;
+    [data-testid="stFormSubmitButton"]>button{
+        width:100%!important;background:rgba(197,165,102,.1)!important;
+        border:1px solid rgba(197,165,102,.35)!important;border-radius:8px!important;
+        color:#C5A566!important;font-family:'Inter',sans-serif!important;
+        font-size:.68rem!important;font-weight:600!important;
+        letter-spacing:3px!important;text-transform:uppercase!important;
+        padding:13px!important;margin-top:10px!important;transition:all .3s ease!important;
     }
-    [data-testid="stFormSubmitButton"] > button {
-        width: 100% !important;
-        background: rgba(197,165,102,0.12) !important;
-        border: 1px solid rgba(197,165,102,0.4) !important;
-        border-radius: 8px !important;
-        color: #C5A566 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.7rem !important; font-weight: 600 !important;
-        letter-spacing: 3px !important; text-transform: uppercase !important;
-        padding: 14px !important; margin-top: 10px !important;
-        transition: all 0.3s ease !important;
+    [data-testid="stFormSubmitButton"]>button:hover{
+        background:rgba(197,165,102,.18)!important;border-color:#C5A566!important;
+        transform:translateY(-2px)!important;box-shadow:0 8px 24px rgba(197,165,102,.12)!important;
     }
-    [data-testid="stFormSubmitButton"] > button:hover {
-        background: rgba(197,165,102,0.2) !important;
-        border-color: #C5A566 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(197,165,102,0.14) !important;
+    [data-testid="stAlert"]{
+        background:rgba(180,60,60,.06)!important;border:1px solid rgba(180,60,60,.22)!important;
+        border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:.75rem!important;
     }
-    [data-testid="stAlert"] {
-        background: rgba(180,60,60,0.06) !important;
-        border: 1px solid rgba(180,60,60,0.22) !important;
-        border-radius: 8px !important;
-        color: rgba(220,110,110,0.8) !important;
-        font-size: 0.75rem !important;
-    }
-    [data-testid="stAlert"] svg { display: none !important; }
+    [data-testid="stAlert"] svg{display:none!important;}
 
-    /* Métricas de impacto */
-    .z34-metrics {
-        display: flex; gap: 20px;
-        margin-top: 28px;
-        padding-top: 24px;
-        border-top: 1px solid rgba(197,165,102,0.1);
+    /* Barra de status inferior */
+    .main-statusbar{
+        height:40px;border-top:1px solid rgba(197,165,102,.08);
+        display:flex;align-items:center;padding:0 52px;
+        gap:24px;background:rgba(3,5,10,.8);
     }
-    .z34-metric { flex: 1; }
-    .z34-metric-num {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2rem; font-weight: 600;
-        color: #C5A566; line-height: 1;
+    .status-item{
+        display:flex;align-items:center;gap:6px;
+        font-family:'Inter',sans-serif;font-size:.52rem;
+        color:rgba(197,165,102,.22);letter-spacing:1.5px;text-transform:uppercase;
     }
-    .z34-metric-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.58rem; font-weight: 500;
-        color: rgba(237,229,212,0.28);
-        letter-spacing: 1.5px; text-transform: uppercase;
-        margin-top: 4px;
-    }
+    .status-dot{width:4px;height:4px;border-radius:50%;background:#4CAF50;opacity:.7;}
 
     /* Rodapé */
-    .lx-footer {
-        position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
-        font-family: 'Inter', sans-serif;
-        font-size: 0.58rem; letter-spacing: 2.5px;
-        text-transform: uppercase; color: rgba(197,165,102,0.18);
-        white-space: nowrap; pointer-events: none; z-index: 100;
+    .lx-footer{
+        position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+        font-family:'Inter',sans-serif;font-size:.52rem;
+        letter-spacing:2px;text-transform:uppercase;
+        color:rgba(197,165,102,.15);white-space:nowrap;
+        pointer-events:none;z-index:100;
     }
-
     /* Selo */
-    .em-founder-seal {
-        position: fixed; bottom: 48px; right: 28px; z-index: 9999;
-        display: flex; flex-direction: column; align-items: flex-end;
-        gap: 2px; pointer-events: none; opacity: 0.6;
-        transition: opacity 0.4s ease;
+    .em-founder-seal{
+        position:fixed;bottom:44px;right:24px;z-index:9999;
+        display:flex;flex-direction:column;align-items:flex-end;
+        gap:2px;pointer-events:none;opacity:.6;transition:opacity .4s ease;
     }
-    .em-founder-seal:hover { opacity: 1; pointer-events: auto; }
-    .em-seal-line {
-        width: 100%; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
-        margin-bottom: 5px;
-    }
-    .em-seal-label {
-        font-family: 'Inter', sans-serif; font-size: 0.44rem; font-weight: 600;
-        letter-spacing: 3px; text-transform: uppercase;
-        color: rgba(197,165,102,0.32); text-align: right;
-    }
-    .em-seal-name {
-        font-family: 'Great Vibes', cursive; font-size: 1.5rem;
-        color: rgba(197,165,102,0.55); line-height: 1; text-align: right;
-    }
-    .em-seal-sub {
-        font-family: 'Inter', sans-serif; font-size: 0.4rem; font-weight: 500;
-        letter-spacing: 2px; text-transform: uppercase;
-        color: rgba(197,165,102,0.2); text-align: right; margin-top: 1px;
-    }
-    .em-seal-ornament { font-size: 0.33rem; color: rgba(197,165,102,0.25); letter-spacing: 4px; margin-top: 3px; }
+    .em-founder-seal:hover{opacity:1;pointer-events:auto;}
+    .em-seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:5px;}
+    .em-seal-label{font-family:'Inter',sans-serif;font-size:.44rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.32);text-align:right;}
+    .em-seal-name{font-family:'Great Vibes',cursive;font-size:1.5rem;color:rgba(197,165,102,.55);line-height:1;text-align:right;}
+    .em-seal-sub{font-family:'Inter',sans-serif;font-size:.4rem;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.2);text-align:right;margin-top:1px;}
+    .em-seal-ornament{font-size:.33rem;color:rgba(197,165,102,.25);letter-spacing:4px;margin-top:3px;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ── LAYOUT 3 COLUNAS (zona1 | zona2 | zona3+4) ──────────────────────────
-    c1, c2, c3 = st.columns([0.85, 0.9, 1.25])
+    # ── LAYOUT: sidebar (230px) | área principal ─────────────────────────────
+    col_sb, col_main = st.columns([0.65, 2.35])
 
-    # ── ZONA 1: Identidade ───────────────────────────────────────────────────
-    with c1:
-        st.markdown('<div class="z1">', unsafe_allow_html=True)
-
-        # Ícone SVG — balança da justiça
+    # ════════════════════ SIDEBAR ════════════════════
+    with col_sb:
         st.markdown("""
-        <div class="z1-icon">
-        <svg width="120" height="120" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(197,165,102,0.15)" stroke-width="1"/>
-        <circle cx="65" cy="65" r="46" fill="none" stroke="rgba(197,165,102,0.07)" stroke-width="1" stroke-dasharray="4 4"/>
-        <rect x="63" y="28" width="4" height="50" rx="2" fill="#C5A566"/>
-        <rect x="48" y="76" width="34" height="4" rx="2" fill="#C5A566"/>
-        <rect x="61" y="80" width="8" height="9" rx="1" fill="rgba(197,165,102,0.35)"/>
-        <rect x="28" y="34" width="74" height="3" rx="1.5" fill="#C5A566"/>
-        <line x1="32" y1="37" x2="32" y2="52" stroke="rgba(197,165,102,0.7)" stroke-width="1.2"/>
-        <line x1="98" y1="37" x2="98" y2="52" stroke="rgba(197,165,102,0.7)" stroke-width="1.2"/>
-        <ellipse cx="32" cy="53" rx="14" ry="4" fill="none" stroke="#C5A566" stroke-width="1.6"/>
-        <ellipse cx="98" cy="53" rx="14" ry="4" fill="none" stroke="#C5A566" stroke-width="1.6"/>
-        <circle cx="65" cy="34" r="5" fill="rgba(197,165,102,0.12)" stroke="rgba(197,165,102,0.55)" stroke-width="1"/>
-        <circle cx="65" cy="34" r="2" fill="#C5A566"/>
-        </svg>
+        <div class="sb">
+            <div class="sb-sys">
+                <div class="sb-sys-dot"></div>
+                Sistema ExtratoX
+            </div>
+
+            <div class="sb-name">Edson<br><em>Medeiros</em></div>
+            <div class="sb-role">Consultorias &amp; Compliance</div>
+            <div class="sb-orn"></div>
+
+            <nav class="sb-nav">
+                <div class="sb-item active">
+                    <div class="sb-item-dot"></div>
+                    <div class="sb-item-label">Auditoria</div>
+                    <div class="sb-item-tag">Ativo</div>
+                </div>
+                <div class="sb-item">
+                    <div class="sb-item-dot"></div>
+                    <div class="sb-item-label">Extratos PDF</div>
+                </div>
+                <div class="sb-item">
+                    <div class="sb-item-dot"></div>
+                    <div class="sb-item-label">Planilhas</div>
+                </div>
+                <div class="sb-item">
+                    <div class="sb-item-dot"></div>
+                    <div class="sb-item-label">Relatórios</div>
+                </div>
+                <div class="sb-item">
+                    <div class="sb-item-dot"></div>
+                    <div class="sb-item-label">CDC Art. 42</div>
+                </div>
+            </nav>
+
+            <div class="sb-divider"></div>
+
+            <div class="sb-contact">
+                (92) 99508-7379<br>
+                edson.senabr@gmail.com
+            </div>
+            <div class="sb-sig">E. Medeiros</div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Identidade textual
-        st.markdown(
-            '<div class="z1-badge">Escritório de Assessoria Jurídica</div>'
-            '<div class="z1-title">Edson<br>'
-            '<span style="color:#C5A566">Medeiros</span></div>'
-            '<div class="z1-sub">Consultorias &amp; Compliance</div>',
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            '<p class="z1-desc">Sistema especializado em auditoria bancária inteligente. '
-            'Identificamos cobranças indevidas com precisão e geramos relatórios '
-            'prontos para uso jurídico.</p>',
-            unsafe_allow_html=True
-        )
-
-        # Bullets
-        for txt in [
-            "Extrai débitos indevidos do extrato PDF",
-            "Gera planilhas com cálculos automáticos",
-            "Gera relatórios prontos para uso jurídico",
-        ]:
-            st.markdown(
-                f'<div class="z1-bullet"><div class="z1-bullet-dot"></div>{txt}</div>',
-                unsafe_allow_html=True
-            )
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── ZONA 2: Features + Por quê ───────────────────────────────────────────
-    with c2:
-        st.markdown('<div class="z2">', unsafe_allow_html=True)
-
-        # Headline
-        st.markdown(
-            '<div class="z2-headline">Nossas <span style="color:#C5A566">Soluções</span>'
-            ' de<br>Auditoria Bancária</div>',
-            unsafe_allow_html=True
-        )
-
-        # Card 1
+    # ════════════════════ ÁREA PRINCIPAL ════════════════════
+    with col_main:
+        # Barra superior
         st.markdown("""
-        <div class="z2-card">
-            <div class="z2-card-icon">&#9878;</div>
-            <div class="z2-card-title">Extrai dados indevidos de extratos PDF</div>
-            <div class="z2-card-desc">Identifica cobranças abusivas: CESTA, MORA, ANUIDADE,
-            ENCARGOS, parcelas, seguros e mais.</div>
+        <div class="main">
+        <div class="main-topbar">
+            <div class="topbar-breadcrumb">
+                <span>ExtratoX</span>
+                <span class="topbar-sep">›</span>
+                <span class="topbar-current">Acesso ao Sistema</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Card 2
-        st.markdown("""
-        <div class="z2-card">
-            <div class="z2-card-icon">&#128202;</div>
-            <div class="z2-card-title">Gera planilhas com cálculo em dobro (Art. 42)</div>
-            <div class="z2-card-desc">Tabela mensal e anual com total em dobro conforme
-            o Código de Defesa do Consumidor.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Conteúdo dividido: apresentação | formulário
+        col_info, col_form = st.columns([1.3, 1])
 
-        # Por quê
-        st.markdown(
-            '<div class="z2-why" style="margin-top:24px;">Por que o '
-            '<span style="color:#C5A566">ExtratoX</span>?</div>',
-            unsafe_allow_html=True
-        )
+        with col_info:
+            st.markdown("""
+            <div style="padding:48px 0 48px 52px;">
+                <div class="sys-eyebrow">Conheça o Sistema de Auditoria</div>
+                <div class="sys-title">Extrato<span>X</span></div>
+                <div class="sys-sub">O portal seguro para sua auditoria bancária</div>
 
-        # Pilares
-        st.markdown("""
-        <div class="z2-pillar">
-            <div class="z2-pillar-title">Precisão e Velocidade</div>
-            <div class="z2-pillar-desc">Leitura posicional por coluna —
-            distingue débito de crédito com precisão milimétrica.</div>
-        </div>
-        """, unsafe_allow_html=True)
+                <div class="sys-orn">
+                    <div class="orn-l"></div>
+                    <div class="orn-d">◆</div>
+                    <div class="orn-l"></div>
+                </div>
 
-        st.markdown("""
-        <div class="z2-pillar">
-            <div class="z2-pillar-title">Suporte Legal</div>
-            <div class="z2-pillar-desc">Relatórios formatados para
-            peticionamento jurídico e processos consumeristas.</div>
-        </div>
-        """, unsafe_allow_html=True)
+                <div class="sys-metrics">
+                    <div class="met">
+                        <div class="met-n">19</div>
+                        <div class="met-l">Rubricas</div>
+                    </div>
+                    <div class="met">
+                        <div class="met-n">100%</div>
+                        <div class="met-l">Precisão</div>
+                    </div>
+                    <div class="met">
+                        <div class="met-n">Art.42</div>
+                        <div class="met-l">CDC Auto</div>
+                    </div>
+                </div>
 
-        st.markdown("""
-        <div class="z2-pillar">
-            <div class="z2-pillar-title">Segurança</div>
-            <div class="z2-pillar-desc">Acesso restrito por credenciais.
-            Dados processados localmente, sem armazenamento externo.</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── ZONA 3+4: Login + Métricas ───────────────────────────────────────────
-    with c3:
-        st.markdown("""
-        <div class="z34">
-            <div class="z34-top">
-                <div class="z34-eyebrow">Conheça o Sistema ExtratoX</div>
-                <div class="z34-logo">Extrato<span>X</span></div>
-                <div class="z34-tagline">O portal seguro para sua auditoria.</div>
-                <div class="z34-orn">
-                    <div class="z34-orn-l"></div>
-                    <div class="z34-orn-d">◆</div>
-                    <div class="z34-orn-l"></div>
+                <div class="sys-feats">
+                    <div class="feat-row"><div class="feat-d"></div>
+                        <div class="feat-t">Extrai débitos indevidos do extrato PDF</div></div>
+                    <div class="feat-row"><div class="feat-d"></div>
+                        <div class="feat-t">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div></div>
+                    <div class="feat-row"><div class="feat-d"></div>
+                        <div class="feat-t">Relatórios prontos para peticionamento jurídico</div></div>
+                    <div class="feat-row"><div class="feat-d"></div>
+                        <div class="feat-t">Suporta extratos Bradesco com múltiplas páginas</div></div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        with st.form("login_form", clear_on_submit=False):
-            _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
-            _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
-            _submitted = st.form_submit_button("◆  Acessar o Portal")
+        with col_form:
+            st.markdown("""
+            <div style="padding:48px 52px 48px 0;display:flex;align-items:center;min-height:calc(100vh - 92px);">
+            <div class="form-block">
+                <div class="form-label">Acesso ao Portal</div>
+                <div class="form-title-sm">Entrar no <span>Sistema</span></div>
+                <div class="form-sub-sm">Acesse sua conta para continuar</div>
+                <div class="form-sep"></div>
+            </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        if _submitted:
-            if _check_login(_email, _senha):
-                st.session_state["autenticado"] = True
-                st.rerun()
-            else:
-                st.error("Credenciais inválidas — verifique e-mail e senha")
+            with st.form("login_form", clear_on_submit=False):
+                _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
+                _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
+                _submitted = st.form_submit_button("◆  Acessar o Portal")
 
+            if _submitted:
+                if _check_login(_email, _senha):
+                    st.session_state["autenticado"] = True
+                    st.rerun()
+                else:
+                    st.error("Credenciais inválidas — verifique e-mail e senha")
+
+        # Barra de status inferior
         st.markdown("""
-        <div class="z34-metrics">
-            <div class="z34-metric">
-                <div class="z34-metric-num">19</div>
-                <div class="z34-metric-label">Rubricas<br>Monitoradas</div>
-            </div>
-            <div class="z34-metric">
-                <div class="z34-metric-num">100%</div>
-                <div class="z34-metric-label">Precisão<br>Posicional</div>
-            </div>
-            <div class="z34-metric">
-                <div class="z34-metric-num">Art.42</div>
-                <div class="z34-metric-label">CDC<br>Automatizado</div>
-            </div>
+        <div class="main-statusbar">
+            <div class="status-item"><div class="status-dot"></div>Sistema Online</div>
+            <div class="status-item">Bradesco · Extrato PDF</div>
+            <div class="status-item">Versão 2.0</div>
+        </div>
         </div>
         """, unsafe_allow_html=True)
 
