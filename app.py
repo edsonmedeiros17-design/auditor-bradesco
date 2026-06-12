@@ -764,7 +764,7 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login — Hero Editorial
+    # CSS da tela de login — Painel Completo v1
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap');
@@ -773,22 +773,20 @@ if not st.session_state["autenticado"]:
     [data-testid="stDecoration"],[data-testid="stStatusWidget"],
     [data-testid="stHeader"]{display:none!important;}
 
+    /* Fundo */
     .stApp{
-        background:#03050A!important;
+        background:#030508!important;
         background-image:
-            linear-gradient(rgba(197,165,102,.018) 1px,transparent 1px),
-            linear-gradient(90deg,rgba(197,165,102,.018) 1px,transparent 1px)!important;
-        background-size:60px 60px!important;
+            linear-gradient(rgba(197,165,102,.016) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(197,165,102,.016) 1px,transparent 1px)!important;
+        background-size:56px 56px!important;
     }
-    /* Reset COMPLETO de todos os seletores internos do Streamlit */
-    .block-container,
-    .main .block-container,
-    div.block-container{
+
+    /* Reset de padding — todos os seletores do Streamlit */
+    .block-container,.main .block-container,div.block-container{
         padding:0!important;margin:0!important;
-        max-width:100%!important;width:100%!important;
-        min-height:0!important;
+        max-width:100%!important;width:100%!important;min-height:0!important;
     }
-    /* Zera o padding-top do container principal — responsável pelo espaço em branco no topo */
     section[data-testid="stMain"],
     section[data-testid="stMain"]>div,
     section[data-testid="stMain"]>div>div,
@@ -799,276 +797,180 @@ if not st.session_state["autenticado"]:
         padding:0!important;margin:0!important;
         max-width:100%!important;width:100%!important;
     }
-    /* Colunas sem gap */
     [data-testid="stHorizontalBlock"]{
         gap:0!important;padding:0!important;margin:0!important;
         align-items:stretch!important;
     }
     [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
-    /* Blocos verticais sem gap */
     [data-testid="stVerticalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
     [data-testid="stVerticalBlock"]>div,
     [data-testid="stVerticalBlock"]>div>div{padding:0!important;margin:0!important;}
-    /* Markdowns sem margem */
     [data-testid="stMarkdown"]{margin:0!important;padding:0!important;line-height:normal!important;}
     [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
     div.stMarkdown,div.stMarkdown>div{margin:0!important;padding:0!important;}
-    /* Form sem espaçamento */
     [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;margin:0!important;}
     [data-testid="stForm"]>div,[data-testid="stForm"]>div>div{padding:0!important;margin:0!important;}
-    /* Elementos de input sem margem extra */
     div[data-testid="stTextInput"]{margin-bottom:8px!important;}
     div[data-testid="stTextInput"]>div{padding:0!important;}
 
     /* ══ ANIMAÇÕES ══ */
-    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
-    @keyframes pulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
-    @keyframes lineGrow{from{width:0}to{width:100%}}
+    @keyframes pulseDot{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+    @keyframes shimmer{0%{background-position:-500px 0}100%{background-position:500px 0}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes glowLine{0%,100%{opacity:.3}50%{opacity:.8}}
 
-    /* ══ HERO ESQUERDO ══ */
-    .hero{
-        background:
-            linear-gradient(135deg,rgba(197,165,102,.07) 0%,transparent 40%),
-            linear-gradient(180deg,#060A14 0%,#03050A 100%);
-        border-right:1px solid rgba(197,165,102,.12);
-        padding:56px 52px 52px 56px;
+    /* ══ COLUNA ESQUERDA — Produto ══ */
+    .lp-left{
+        background:linear-gradient(150deg,rgba(197,165,102,.065) 0%,rgba(3,5,8,.02) 50%,rgba(3,5,8,0) 100%);
+        border-right:1px solid rgba(197,165,102,.1);
+        padding:48px 36px 40px 44px;
         min-height:100vh;
         display:flex;flex-direction:column;
         justify-content:space-between;
         position:relative;overflow:hidden;
     }
-    /* Ornamento de canto - círculo grande */
-    .hero::before{
+    .lp-left::after{
         content:'';position:absolute;
-        bottom:-180px;right:-180px;
-        width:500px;height:500px;border-radius:50%;
-        border:1px solid rgba(197,165,102,.06);
-        pointer-events:none;
-    }
-    .hero::after{
-        content:'';position:absolute;
-        bottom:-260px;right:-260px;
-        width:660px;height:660px;border-radius:50%;
-        border:1px solid rgba(197,165,102,.03);
-        pointer-events:none;
+        bottom:-100px;right:-100px;
+        width:320px;height:320px;border-radius:50%;
+        border:1px solid rgba(197,165,102,.06);pointer-events:none;
     }
 
-    /* Topo do hero: logo em texto */
-    .hero-top{
-        display:flex;align-items:center;gap:14px;
-        animation:fadeIn .8s ease both;
-    }
-    .hero-brand-mark{
-        width:38px;height:38px;border-radius:8px;
-        background:rgba(197,165,102,.1);
-        border:1px solid rgba(197,165,102,.25);
+    /* Marca */
+    .lp-brand{display:flex;align-items:center;gap:11px;margin-bottom:32px;animation:fadeUp .6s ease both;}
+    .lp-mark{
+        width:36px;height:36px;background:rgba(197,165,102,.1);
+        border:1px solid rgba(197,165,102,.24);border-radius:8px;
         display:flex;align-items:center;justify-content:center;
-        font-family:'Cormorant Garamond',serif;font-size:16px;
-        font-weight:700;color:#C5A566;letter-spacing:-0.5px;
+        font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:700;color:#C5A566;
     }
-    .hero-brand-name{
-        font-family:'Inter',sans-serif;font-size:10px;font-weight:600;
-        letter-spacing:3px;text-transform:uppercase;
-        color:rgba(237,229,212,.4);
+    .lp-bname{font-family:'Inter',sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(237,229,212,.25);font-weight:600;}
+
+    /* Nome e tagline do produto */
+    .lp-pname{
+        font-family:'Cormorant Garamond',serif;
+        font-size:54px;font-weight:600;line-height:.92;
+        color:#EDE5D4;margin-bottom:6px;
+        animation:fadeUp .6s .1s ease both;
+    }
+    .lp-pname span{
+        background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
+        background-size:500px;
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        animation:shimmer 5s linear infinite;
+    }
+    .lp-ptag{
+        font-family:'Cormorant Garamond',serif;font-style:italic;
+        font-size:15px;color:rgba(197,165,102,.42);
+        margin-bottom:24px;letter-spacing:.5px;
+        animation:fadeUp .6s .15s ease both;
     }
 
-    /* Headline principal */
-    .hero-headline{
-        flex:1;display:flex;flex-direction:column;
-        justify-content:center;
-        padding:48px 0 40px;
+    /* Badge de velocidade */
+    .lp-speed{
+        display:flex;align-items:center;gap:12px;
+        padding:12px 16px;
+        background:rgba(197,165,102,.05);
+        border:1px solid rgba(197,165,102,.15);
+        border-left:3px solid rgba(197,165,102,.6);
+        margin-bottom:24px;
+        animation:fadeUp .6s .2s ease both;
     }
-    .hero-tag{
-        display:inline-flex;align-items:center;gap:7px;
-        font-family:'Inter',sans-serif;font-size:9px;font-weight:600;
-        letter-spacing:3px;text-transform:uppercase;
-        color:rgba(197,165,102,.5);
-        margin-bottom:22px;
-        animation:fadeUp .7s .1s ease both;
-    }
-    .hero-tag-dot{
-        width:5px;height:5px;border-radius:50%;background:#C5A566;
-        animation:pulse 2.5s ease-in-out infinite;
-    }
-    .hero-h1{
+    .lp-speed-n{
         font-family:'Cormorant Garamond',serif;
-        font-size:clamp(36px,4.2vw,64px);
-        font-weight:600;line-height:1.05;
-        color:#EDE5D4;
-        margin-bottom:8px;
-        animation:fadeUp .7s .2s ease both;
+        font-size:36px;font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
     }
-    .hero-h1 em{
-        font-style:italic;color:#C5A566;
-        background:linear-gradient(110deg,#D4B87A 20%,#C5A566 40%,#D4B87A 60%);
-        background-size:300px;
-        background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-        animation:shimmer 4s linear infinite;
-    }
-    .hero-h2{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(22px,2.5vw,36px);
-        font-weight:300;line-height:1.1;
-        color:rgba(237,229,212,.45);
-        margin-bottom:32px;
-        animation:fadeUp .7s .3s ease both;
-    }
-    .hero-desc{
-        font-family:'Inter',sans-serif;font-size:13px;font-weight:300;
-        color:rgba(237,229,212,.28);line-height:1.8;
-        max-width:440px;
-        animation:fadeUp .7s .35s ease both;
-    }
+    .lp-speed-t{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:rgba(237,229,212,.55);}
+    .lp-speed-s{font-family:'Inter',sans-serif;font-size:10px;color:rgba(237,229,212,.25);margin-top:3px;line-height:1.5;}
 
-    /* Pilares */
-    .hero-pillars{
-        display:flex;flex-direction:column;gap:0;
-        border-top:1px solid rgba(197,165,102,.1);
-        margin-top:36px;
-        animation:fadeUp .7s .4s ease both;
-    }
-    .pillar{
-        display:flex;align-items:center;gap:16px;
-        padding:16px 0;
+    /* Vantagens numeradas */
+    .lp-bens{display:flex;flex-direction:column;gap:0;animation:fadeUp .6s .25s ease both;}
+    .lp-ben{
+        display:flex;align-items:flex-start;gap:12px;
+        padding:12px 0;
         border-bottom:1px solid rgba(197,165,102,.07);
     }
-    .pillar-num{
-        font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;
-        color:rgba(197,165,102,.2);min-width:28px;
+    .lp-ben:last-child{border-bottom:none;}
+    .lp-bnum{
+        font-family:'Cormorant Garamond',serif;
+        font-size:18px;font-weight:300;
+        color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;
     }
-    .pillar-info{}
-    .pillar-title{
-        font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
-        color:rgba(237,229,212,.55);letter-spacing:.5px;margin-bottom:2px;
+    .lp-btitle{
+        font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+        color:rgba(237,229,212,.55);margin-bottom:3px;letter-spacing:.2px;
     }
-    .pillar-desc{
-        font-family:'Inter',sans-serif;font-size:10px;
-        color:rgba(237,229,212,.22);line-height:1.5;
-    }
-    .pillar-arr{
-        margin-left:auto;font-size:14px;color:rgba(197,165,102,.2);
-    }
+    .lp-bdesc{font-family:'Inter',sans-serif;font-size:11px;color:rgba(237,229,212,.24);line-height:1.55;}
 
-    /* Rodapé do hero */
-    .hero-foot{
-        display:flex;align-items:center;justify-content:space-between;
-        padding-top:28px;
-        border-top:1px solid rgba(197,165,102,.08);
-        animation:fadeIn 1s .5s ease both;
-    }
-    .hero-contact{
+    /* Rodapé esquerdo */
+    .lp-lfoot{
         font-family:'Inter',sans-serif;font-size:9px;
-        color:rgba(197,165,102,.22);letter-spacing:1px;line-height:1.8;
-    }
-    .hero-sig{
-        font-family:'Great Vibes',cursive;font-size:28px;
-        color:rgba(197,165,102,.25);line-height:1;
+        color:rgba(197,165,102,.18);letter-spacing:.8px;line-height:1.9;
+        margin-top:auto;padding-top:20px;
+        animation:fadeUp .6s .3s ease both;
     }
 
-    /* ══ PAINEL DIREITO: LOGIN ══ */
-    .panel{
-        background:rgba(4,6,12,.98);
-        padding:56px 52px 52px 48px;
+    /* ══ COLUNA DIREITA — Login ══ */
+    .lp-right{
+        background:rgba(4,6,12,.97);
+        padding:48px 44px 40px 40px;
         min-height:100vh;
         display:flex;flex-direction:column;
         justify-content:space-between;
     }
 
-    /* Logo ExtratoX */
-    .panel-logo-row{
-        display:flex;align-items:flex-start;justify-content:space-between;
-        margin-bottom:52px;
-        animation:fadeIn .8s ease both;
-    }
-    .panel-logo{
+    /* Logo */
+    .lp-r-logo{
         font-family:'Cormorant Garamond',serif;
-        font-size:clamp(28px,3.2vw,48px);
-        font-weight:600;line-height:.95;color:#EDE5D4;
+        font-size:38px;font-weight:600;color:#EDE5D4;line-height:1;
+        margin-bottom:4px;animation:fadeUp .6s .1s ease both;
     }
-    .panel-logo span{color:#C5A566;}
-    .panel-logo-sub{
+    .lp-r-logo span{color:#C5A566;}
+    .lp-r-sub{
         font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:12px;color:rgba(197,165,102,.35);
-        margin-top:5px;letter-spacing:1.5px;
+        font-size:13px;color:rgba(197,165,102,.32);
+        margin-bottom:28px;letter-spacing:.8px;
+        animation:fadeUp .6s .15s ease both;
     }
-    .panel-version{
-        font-family:'Inter',sans-serif;font-size:8px;font-weight:600;
-        letter-spacing:2px;text-transform:uppercase;
-        color:rgba(197,165,102,.28);
-        background:rgba(197,165,102,.07);
-        border:1px solid rgba(197,165,102,.15);
-        border-radius:20px;padding:4px 10px;
-        align-self:flex-start;margin-top:4px;
+    .lp-r-orn{
+        display:flex;align-items:center;gap:10px;margin-bottom:24px;
+        animation:fadeUp .6s .2s ease both;
     }
+    .lp-r-ol{flex:1;height:1px;background:rgba(197,165,102,.1);}
+    .lp-r-od{font-size:7px;color:rgba(197,165,102,.24);}
 
-    /* Headline do form */
-    .form-headline{
-        margin-bottom:8px;
-        animation:fadeUp .7s .15s ease both;
-    }
-    .form-eyebrow{
-        font-family:'Inter',sans-serif;font-size:9px;font-weight:600;
-        letter-spacing:4px;text-transform:uppercase;
-        color:rgba(197,165,102,.32);margin-bottom:8px;
-    }
-    .form-title{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(22px,2.5vw,36px);
-        font-weight:600;color:#EDE5D4;line-height:1.05;margin-bottom:5px;
-    }
-    .form-title span{color:#C5A566;}
-    .form-sub{
-        font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:13px;color:rgba(197,165,102,.35);margin-bottom:28px;letter-spacing:.5px;
-    }
-    .form-divider{
-        display:flex;align-items:center;gap:12px;margin-bottom:28px;
-        animation:fadeUp .7s .2s ease both;
-    }
-    .fdiv-line{flex:1;height:1px;background:rgba(197,165,102,.12);}
-    .fdiv-d{font-size:7px;color:rgba(197,165,102,.28);}
-
-    /* Inputs */
+    /* Inputs Streamlit */
     [data-testid="stForm"] label{
         font-family:'Inter',sans-serif!important;font-size:9px!important;
         font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;
-        color:rgba(197,165,102,.35)!important;
+        color:rgba(197,165,102,.36)!important;
     }
     [data-testid="stForm"] label span{display:none!important;}
     [data-testid="stForm"] input{
-        background:rgba(197,165,102,.03)!important;
-        border:none!important;
-        border:1px solid rgba(197,165,102,.14)!important;
-        border-radius:8px!important;
-        color:#EDE5D4!important;
+        background:rgba(197,165,102,.04)!important;
+        border:1px solid rgba(197,165,102,.15)!important;
+        border-radius:8px!important;color:#EDE5D4!important;
         font-family:'Inter',sans-serif!important;font-size:14px!important;font-weight:300!important;
-        padding:12px 16px!important;
-        caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;
-        transition:all .25s!important;
+        padding:12px 16px!important;caret-color:#C5A566!important;
+        outline:none!important;box-shadow:none!important;transition:all .25s!important;
     }
     [data-testid="stForm"] input:focus{
-        border-color:rgba(197,165,102,.45)!important;
-        background:rgba(197,165,102,.06)!important;
+        border-color:rgba(197,165,102,.5)!important;
+        background:rgba(197,165,102,.07)!important;
         box-shadow:0 0 0 3px rgba(197,165,102,.06)!important;
     }
     [data-testid="stFormSubmitButton"]>button{
-        width:100%!important;
-        background:rgba(197,165,102,.12)!important;
-        border:1px solid rgba(197,165,102,.4)!important;
-        border-radius:8px!important;
-        color:#C5A566!important;
-        font-family:'Inter',sans-serif!important;font-size:10px!important;
-        font-weight:700!important;letter-spacing:3.5px!important;text-transform:uppercase!important;
-        padding:14px!important;margin-top:12px!important;
-        transition:all .3s!important;position:relative!important;overflow:hidden!important;
+        width:100%!important;background:rgba(197,165,102,.11)!important;
+        border:1px solid rgba(197,165,102,.4)!important;border-radius:8px!important;
+        color:#C5A566!important;font-family:'Inter',sans-serif!important;
+        font-size:10px!important;font-weight:700!important;
+        letter-spacing:3.5px!important;text-transform:uppercase!important;
+        padding:14px!important;margin-top:12px!important;transition:all .3s!important;
     }
     [data-testid="stFormSubmitButton"]>button:hover{
-        background:rgba(197,165,102,.2)!important;
-        border-color:#C5A566!important;
+        background:rgba(197,165,102,.2)!important;border-color:#C5A566!important;
         transform:translateY(-2px)!important;
-        box-shadow:0 10px 30px rgba(197,165,102,.15)!important;
+        box-shadow:0 10px 28px rgba(197,165,102,.14)!important;
     }
     [data-testid="stAlert"]{
         background:rgba(180,60,60,.05)!important;border:1px solid rgba(180,60,60,.2)!important;
@@ -1076,103 +978,112 @@ if not st.session_state["autenticado"]:
     }
     [data-testid="stAlert"] svg{display:none!important;}
 
-    /* Stats no rodapé do painel */
-    .panel-stats{
-        display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;
-        background:rgba(197,165,102,.08);
-        border-radius:10px;overflow:hidden;
-        margin-top:36px;
-        animation:fadeUp .7s .4s ease both;
+    /* Grid de stats */
+    .lp-r-grid{
+        display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+        background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;
+        margin-top:20px;animation:fadeUp .6s .35s ease both;
     }
-    .stat{
-        background:#04060C;padding:18px 16px;
-        display:flex;flex-direction:column;gap:4px;
-        transition:background .2s;
+    .lp-gs{background:#04060C;padding:14px 14px;}
+    .lp-gsn{
+        font-family:'Cormorant Garamond',serif;
+        font-size:22px;font-weight:600;color:#C5A566;line-height:1;
     }
-    .stat:hover{background:#070A14;}
-    .stat-n{
-        font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;
-        color:#C5A566;line-height:1;
-    }
-    .stat-l{
+    .lp-gsl{
         font-family:'Inter',sans-serif;font-size:8px;font-weight:600;
-        letter-spacing:2px;text-transform:uppercase;color:rgba(237,229,212,.2);
+        letter-spacing:2px;text-transform:uppercase;
+        color:rgba(237,229,212,.18);margin-top:4px;
     }
 
-    /* Panel footer */
-    .panel-foot{
-        display:flex;align-items:center;justify-content:space-between;
-        padding-top:20px;margin-top:8px;
+    /* Por que usar — rodapé direito */
+    .lp-r-why{
+        margin-top:16px;padding-top:14px;
         border-top:1px solid rgba(197,165,102,.07);
-        animation:fadeIn 1s .6s ease both;
+        animation:fadeUp .6s .4s ease both;
     }
-    .panel-foot-copy{
+    .lp-r-why-label{
+        font-family:'Inter',sans-serif;font-size:8px;font-weight:600;
+        letter-spacing:3px;text-transform:uppercase;
+        color:rgba(197,165,102,.22);margin-bottom:10px;
+    }
+    .lp-r-why-row{display:flex;gap:0;}
+    .lp-r-wi{
+        flex:1;padding:0 10px;
+        border-right:1px solid rgba(197,165,102,.07);text-align:center;
+    }
+    .lp-r-wi:first-child{padding-left:0;text-align:left;}
+    .lp-r-wi:last-child{border-right:none;}
+    .lp-r-win{
+        font-family:'Cormorant Garamond',serif;
+        font-size:16px;font-weight:600;color:#C5A566;line-height:1;
+    }
+    .lp-r-wil{
         font-family:'Inter',sans-serif;font-size:8px;
-        color:rgba(197,165,102,.18);letter-spacing:1px;
-        text-transform:uppercase;
+        color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;
     }
-    .panel-foot-status{
-        display:flex;align-items:center;gap:6px;
+
+    /* Status */
+    .lp-r-status{
+        display:flex;align-items:center;gap:6px;margin-top:14px;
         font-family:'Inter',sans-serif;font-size:8px;
-        color:rgba(197,165,102,.2);letter-spacing:1px;text-transform:uppercase;
+        color:rgba(197,165,102,.18);letter-spacing:1.5px;text-transform:uppercase;
     }
-    .status-dot{width:5px;height:5px;border-radius:50%;background:#4CAF50;animation:pulse 2s infinite;}
+    .lp-r-sdot{
+        width:5px;height:5px;border-radius:50%;background:#4CAF50;
+        animation:pulseDot 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseDot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
 
     /* Selo */
-    .seal{position:fixed;bottom:38px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.55;transition:opacity .4s;}
+    .seal{position:fixed;bottom:40px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.55;transition:opacity .4s;}
     .seal:hover{opacity:1;pointer-events:auto;}
     .seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
-    .seal-label{font-family:'Inter',sans-serif;font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.3);text-align:right;}
-    .seal-name{font-family:'Great Vibes',cursive;font-size:20px;color:rgba(197,165,102,.55);line-height:1;text-align:right;}
+    .seal-label{font-family:'Inter',sans-serif;font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);text-align:right;}
+    .seal-name{font-family:'Great Vibes',cursive;font-size:20px;color:rgba(197,165,102,.52);line-height:1;text-align:right;}
     .seal-sub{font-family:'Inter',sans-serif;font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.18);text-align:right;margin-top:1px;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ══ LAYOUT: hero (55%) | painel (45%) ══
-    col_hero, col_panel = st.columns([1.2, 1.0])
+    # ══ LAYOUT: esquerda (produto) | direita (login) ══
+    col_l, col_r = st.columns([1.15, 1.0])
 
-    # ════════════════ HERO (ESQUERDO) ════════════════
-    with col_hero:
-        # Topo — marca
-        st.markdown('<div class="hero">', unsafe_allow_html=True)
-        st.markdown('<div class="hero-top"><div class="hero-brand-mark">EM</div><div class="hero-brand-name">Edson Medeiros · Consultorias</div></div>', unsafe_allow_html=True)
+    # ════════ COLUNA ESQUERDA — PRODUTO ════════
+    with col_l:
+        st.markdown('<div class="lp-left">', unsafe_allow_html=True)
 
-        # Headline
-        st.markdown('<div class="hero-headline">', unsafe_allow_html=True)
-        st.markdown('<div class="hero-tag"><div class="hero-tag-dot"></div>Sistema de Auditoria Bancária</div>', unsafe_allow_html=True)
-        st.markdown('<div class="hero-h1">Auditoria <em>inteligente</em><br>para sua defesa.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="hero-h2">Identificamos cobranças indevidas<br>com precisão e rigor jurídico.</div>', unsafe_allow_html=True)
-        st.markdown('<p class="hero-desc">Sistema especializado em análise de extratos bancários Bradesco. Geramos relatórios e planilhas prontos para peticionamento conforme o Art. 42 do CDC.</p>', unsafe_allow_html=True)
+        # Marca
+        st.markdown('<div class="lp-brand"><div class="lp-mark">EM</div><div class="lp-bname">Edson Medeiros · Consultorias</div></div>', unsafe_allow_html=True)
+
+        # Nome + tagline
+        st.markdown('<div class="lp-pname">Extrato<span>X</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-ptag">O robô que audita seu extrato em 10 segundos.</div>', unsafe_allow_html=True)
+
+        # Badge de velocidade
+        st.markdown('<div class="lp-speed"><div class="lp-speed-n">10s</div><div><div class="lp-speed-t">Análise completa do extrato</div><div class="lp-speed-s">Do upload ao relatório pronto —<br>sem nenhum esforço manual</div></div></div>', unsafe_allow_html=True)
+
+        # Vantagens numeradas — cada uma separada
+        st.markdown('<div class="lp-bens">', unsafe_allow_html=True)
+        vantagens = [
+            ("01", "Precisão de 100%",          "Leitura posicional por coluna X — distingue débito de crédito sem falhas e sem interpretação errada"),
+            ("02", "19 rubricas monitoradas",    "CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO, SAQUE e mais — todas detectadas automaticamente"),
+            ("03", "Relatório jurídico pronto",  "Planilha com valor em dobro (Art. 42 CDC) gerada instantaneamente, pronta para peticionamento"),
+        ]
+        for num, titulo, desc in vantagens:
+            st.markdown(f'<div class="lp-ben"><div class="lp-bnum">{num}</div><div><div class="lp-btitle">{titulo}</div><div class="lp-bdesc">{desc}</div></div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Pilares
-        st.markdown('<div class="hero-pillars">', unsafe_allow_html=True)
-        for num, title, desc in [
-            ("01", "Extração Posicional de Débitos", "Lê o PDF coluna por coluna — distingue débito de crédito com precisão milimétrica"),
-            ("02", "Planilhas com Art. 42 CDC",       "Cálculo em dobro automático, tabela mensal e anual prontas para uso jurídico"),
-            ("03", "19 Rubricas Monitoradas",          "CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO e muito mais"),
-        ]:
-            st.markdown(f'<div class="pillar"><div class="pillar-num">{num}</div><div class="pillar-info"><div class="pillar-title">{title}</div><div class="pillar-desc">{desc}</div></div><div class="pillar-arr">→</div></div>', unsafe_allow_html=True)
+        # Rodapé
+        st.markdown('<div class="lp-lfoot">(92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Footer do hero
-        st.markdown('<div class="hero-foot"><div class="hero-contact">(92) 99508-7379<br>edson.senabr@gmail.com</div><div class="hero-sig">E. Medeiros</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # ════════ COLUNA DIREITA — LOGIN ════════
+    with col_r:
+        st.markdown('<div class="lp-right">', unsafe_allow_html=True)
 
-    # ════════════════ PAINEL LOGIN (DIREITO) ════════════════
-    with col_panel:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-
-        # Logo + versão
-        st.markdown('<div class="panel-logo-row"><div><div class="panel-logo">Extrato<span>X</span></div><div class="panel-logo-sub">Portal seguro de auditoria</div></div><div class="panel-version">v 2.0</div></div>', unsafe_allow_html=True)
-
-        # Headline do form
-        st.markdown('<div class="form-headline">', unsafe_allow_html=True)
-        st.markdown('<div class="form-eyebrow">Acesso ao Sistema</div>', unsafe_allow_html=True)
-        st.markdown('<div class="form-title">Bem-vindo de <span>volta</span></div>', unsafe_allow_html=True)
-        st.markdown('<div class="form-sub">Entre com suas credenciais para continuar</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('<div class="form-divider"><div class="fdiv-line"></div><div class="fdiv-d">◆</div><div class="fdiv-line"></div></div>', unsafe_allow_html=True)
+        # Logo
+        st.markdown('<div class="lp-r-logo">Extrato<span>X</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-r-sub">Acesse o portal de auditoria</div>', unsafe_allow_html=True)
+        st.markdown('<div class="lp-r-orn"><div class="lp-r-ol"></div><div class="lp-r-od">◆</div><div class="lp-r-ol"></div></div>', unsafe_allow_html=True)
 
         # Formulário
         with st.form("login_form", clear_on_submit=False):
@@ -1187,17 +1098,17 @@ if not st.session_state["autenticado"]:
             else:
                 st.error("Credenciais inválidas — verifique e-mail e senha")
 
-        # Stats grid
-        st.markdown('<div class="panel-stats">', unsafe_allow_html=True)
-        for n, l in [("19","Rubricas"),("100%","Precisão"),("Art.42","CDC Auto")]:
-            st.markdown(f'<div class="stat"><div class="stat-n">{n}</div><div class="stat-l">{l}</div></div>', unsafe_allow_html=True)
+        # Grid de stats
+        st.markdown('<div class="lp-r-grid"><div class="lp-gs"><div class="lp-gsn">10s</div><div class="lp-gsl">Análise</div></div><div class="lp-gs"><div class="lp-gsn">19</div><div class="lp-gsl">Rubricas</div></div><div class="lp-gs"><div class="lp-gsn">Art.42</div><div class="lp-gsl">CDC auto</div></div></div>', unsafe_allow_html=True)
+
+        # Por que usar
+        st.markdown('<div class="lp-r-why"><div class="lp-r-why-label">Por que usar</div><div class="lp-r-why-row"><div class="lp-r-wi"><div class="lp-r-win">100%</div><div class="lp-r-wil">Precisão</div></div><div class="lp-r-wi"><div class="lp-r-win">0</div><div class="lp-r-wil">Esforço manual</div></div><div class="lp-r-wi"><div class="lp-r-win">CDC</div><div class="lp-r-wil">Art. 42 auto</div></div></div></div>', unsafe_allow_html=True)
+
+        # Status
+        st.markdown('<div class="lp-r-status"><div class="lp-r-sdot"></div>Sistema online &nbsp;·&nbsp; Versão 2.0</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Footer do painel
-        st.markdown('<div class="panel-foot"><div class="panel-foot-copy">© 2024 Edson Medeiros</div><div class="panel-foot-status"><div class="status-dot"></div>Sistema online</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Selo fundador
+    # Selo
     st.markdown('<div class="seal"><div class="seal-line"></div><div class="seal-label">Fundado por</div><div class="seal-name">Edson Medeiros</div><div class="seal-sub">Consultorias &amp; Compliance · 2024</div></div>', unsafe_allow_html=True)
 
     st.stop()
