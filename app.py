@@ -764,412 +764,391 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login — Painel Completo v1
+    # CSS da tela de login — iframe fullscreen
+    import streamlit.components.v1 as components
+
+    # Oculta a UI do Streamlit
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap');
-
     header,footer,[data-testid="stSidebar"],[data-testid="stToolbar"],
     [data-testid="stDecoration"],[data-testid="stStatusWidget"],
     [data-testid="stHeader"]{display:none!important;}
-
-    /* Fundo */
-    .stApp{
-        background:#030508!important;
-        background-image:
-            linear-gradient(rgba(197,165,102,.016) 1px,transparent 1px),
-            linear-gradient(90deg,rgba(197,165,102,.016) 1px,transparent 1px)!important;
-        background-size:56px 56px!important;
-    }
-
-    /* ══ RESET COMPLETO DE PADDING — todos os seletores do Streamlit ══ */
-
-    /* 1. O container principal — remove o padding-top que cria o espaço vazio */
-    .block-container,.main .block-container,div.block-container{
-        padding:0!important;margin:0!important;
-        max-width:100%!important;width:100%!important;min-height:0!important;
-    }
-
-    /* 2. Seções e wrappers internos do Streamlit — versões antigas e novas */
-    section[data-testid="stMain"],
-    section[data-testid="stMain"]>div,
+    .stApp{background:#030508!important;}
+    .block-container,.main .block-container,div.block-container,
+    section[data-testid="stMain"],section[data-testid="stMain"]>div,
     section[data-testid="stMain"]>div>div,
-    section[data-testid="stMain"]>div>div>div,
     [data-testid="stAppViewBlockContainer"],
-    [data-testid="stAppViewBlockContainer"]>div,
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stMainBlockContainer"]>div,
-    .appview-container .main,
-    .appview-container .main>div,
-    .appview-container section,
-    .css-z5fcl4,.css-1d391kg,
-    .main>div,.main>div>div{
+    [data-testid="stMainBlockContainer"]{
         padding:0!important;margin:0!important;
         max-width:100%!important;width:100%!important;
     }
-
-    /* 3. Margem negativa no primeiro filho — garante que começa no topo */
-    [data-testid="stVerticalBlock"]:first-child{
-        margin-top:0!important;padding-top:0!important;
-    }
-
-    /* 4. Colunas sem gap */
-    [data-testid="stHorizontalBlock"]{
-        gap:0!important;padding:0!important;margin:0!important;
-        align-items:stretch!important;
-    }
-    [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
-
-    /* 5. Blocos verticais sem gap */
     [data-testid="stVerticalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
-    [data-testid="stVerticalBlock"]>div,
-    [data-testid="stVerticalBlock"]>div>div{padding:0!important;margin:0!important;}
-
-    /* 6. Markdown sem margem */
-    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;line-height:normal!important;}
+    [data-testid="stVerticalBlock"]>div{padding:0!important;margin:0!important;}
+    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
     [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
-    div.stMarkdown,div.stMarkdown>div{margin:0!important;padding:0!important;}
-
-    /* 7. Form sem espaçamento */
-    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;margin:0!important;}
-    [data-testid="stForm"]>div,[data-testid="stForm"]>div>div{padding:0!important;margin:0!important;}
-    div[data-testid="stTextInput"]{margin-bottom:8px!important;}
-    div[data-testid="stTextInput"]>div{padding:0!important;}
-
-    /* 8. Iframe e root — garantia extra para o topo */
-    html,body{padding:0!important;margin:0!important;}
-    #root>div{padding:0!important;margin:0!important;}
-
-    /* ══ ANIMAÇÕES ══ */
-    @keyframes pulseDot{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
-    @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-
-    /* ══ COLUNA ESQUERDA — Produto ══ */
-    .lp-left{
-        background:linear-gradient(150deg,rgba(197,165,102,.065) 0%,rgba(3,5,8,.02) 50%,rgba(3,5,8,0) 100%);
-        border-right:1px solid rgba(197,165,102,.1);
-        padding:clamp(28px,5vh,56px) clamp(20px,3.5vw,44px) clamp(24px,4vh,48px) clamp(20px,3.5vw,48px);
-        min-height:100vh;
-        display:flex;flex-direction:column;
-        justify-content:space-between;
-        position:relative;overflow:hidden;
-    }
-    .lp-left::after{
-        content:'';position:absolute;
-        bottom:-100px;right:-100px;
-        width:clamp(200px,28vw,360px);height:clamp(200px,28vw,360px);border-radius:50%;
-        border:1px solid rgba(197,165,102,.06);pointer-events:none;
-    }
-
-    /* Marca */
-    .lp-brand{display:flex;align-items:center;gap:11px;margin-bottom:clamp(20px,3vh,36px);animation:fadeUp .6s ease both;}
-    .lp-mark{
-        width:clamp(30px,3.2vw,40px);height:clamp(30px,3.2vw,40px);
-        background:rgba(197,165,102,.1);border:1px solid rgba(197,165,102,.24);border-radius:8px;
-        display:flex;align-items:center;justify-content:center;
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(11px,1.2vw,15px);font-weight:700;color:#C5A566;
-    }
-    .lp-bname{
-        font-family:'Inter',sans-serif;
-        font-size:clamp(8px,.65vw,10px);letter-spacing:3px;text-transform:uppercase;
-        color:rgba(237,229,212,.25);font-weight:600;
-    }
-
-    /* Nome e tagline do produto */
-    .lp-pname{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(36px,5.5vw,72px);font-weight:600;line-height:.92;
-        color:#EDE5D4;margin-bottom:clamp(4px,.5vh,8px);
-        animation:fadeUp .6s .1s ease both;
-    }
-    .lp-pname span{
-        background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
-        background-size:600px;
-        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-        animation:shimmer 5s linear infinite;
-    }
-    .lp-ptag{
-        font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:clamp(12px,1.3vw,17px);color:rgba(197,165,102,.42);
-        margin-bottom:clamp(16px,2.5vh,28px);letter-spacing:.5px;
-        animation:fadeUp .6s .15s ease both;
-    }
-
-    /* Badge de velocidade */
-    .lp-speed{
-        display:flex;align-items:center;gap:clamp(8px,1.2vw,14px);
-        padding:clamp(10px,1.4vh,14px) clamp(12px,1.5vw,18px);
-        background:rgba(197,165,102,.05);
-        border:1px solid rgba(197,165,102,.15);
-        border-left:3px solid rgba(197,165,102,.6);
-        margin-bottom:clamp(16px,2.5vh,28px);
-        animation:fadeUp .6s .2s ease both;
-        border-radius:0 6px 6px 0;
-    }
-    .lp-speed-n{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(24px,3.5vw,44px);font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
-    }
-    .lp-speed-t{font-family:'Inter',sans-serif;font-size:clamp(11px,1vw,13px);font-weight:600;color:rgba(237,229,212,.55);}
-    .lp-speed-s{font-family:'Inter',sans-serif;font-size:clamp(9px,.85vw,11px);color:rgba(237,229,212,.25);margin-top:3px;line-height:1.55;}
-
-    /* Vantagens numeradas */
-    .lp-bens{display:flex;flex-direction:column;gap:0;animation:fadeUp .6s .25s ease both;}
-    .lp-ben{
-        display:flex;align-items:flex-start;gap:clamp(8px,1.2vw,14px);
-        padding:clamp(10px,1.4vh,14px) 0;
-        border-bottom:1px solid rgba(197,165,102,.07);
-    }
-    .lp-ben:last-child{border-bottom:none;}
-    .lp-bnum{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(15px,1.6vw,20px);font-weight:300;
-        color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;
-    }
-    .lp-btitle{
-        font-family:'Inter',sans-serif;font-size:clamp(11px,1vw,13px);font-weight:600;
-        color:rgba(237,229,212,.58);margin-bottom:3px;letter-spacing:.2px;
-    }
-    .lp-bdesc{font-family:'Inter',sans-serif;font-size:clamp(10px,.88vw,12px);color:rgba(237,229,212,.28);line-height:1.6;}
-
-    /* Rodapé esquerdo */
-    .lp-lfoot{
-        font-family:'Inter',sans-serif;font-size:clamp(8px,.7vw,10px);
-        color:rgba(197,165,102,.2);letter-spacing:.8px;line-height:1.9;
-        margin-top:auto;padding-top:clamp(14px,2vh,22px);
-        animation:fadeUp .6s .3s ease both;
-    }
-
-    /* ══ COLUNA DIREITA — Login ══ */
-    .lp-right{
-        background:rgba(4,6,12,.97);
-        padding:clamp(28px,5vh,56px) clamp(20px,3.8vw,48px) clamp(24px,4vh,44px) clamp(20px,3.2vw,44px);
-        min-height:100vh;
-        display:flex;flex-direction:column;
-        justify-content:space-between;
-    }
-
-    /* Logo */
-    .lp-r-logo{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(26px,3.8vw,48px);font-weight:600;color:#EDE5D4;line-height:1;
-        margin-bottom:4px;animation:fadeUp .6s .1s ease both;
-    }
-    .lp-r-logo span{color:#C5A566;}
-    .lp-r-sub{
-        font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:clamp(11px,1.1vw,14px);color:rgba(197,165,102,.32);
-        margin-bottom:clamp(18px,2.8vh,30px);letter-spacing:.8px;
-        animation:fadeUp .6s .15s ease both;
-    }
-    .lp-r-orn{
-        display:flex;align-items:center;gap:10px;margin-bottom:clamp(16px,2.5vh,26px);
-        animation:fadeUp .6s .2s ease both;
-    }
-    .lp-r-ol{flex:1;height:1px;background:rgba(197,165,102,.1);}
-    .lp-r-od{font-size:7px;color:rgba(197,165,102,.24);}
-
-    /* ══ RESPONSIVO MOBILE ══ */
-    @media(max-width:768px){
-        .lp-left{
-            min-height:auto;
-            border-right:none;
-            border-bottom:1px solid rgba(197,165,102,.1);
-            padding:36px 24px 32px;
-        }
-        .lp-right{
-            min-height:auto;
-            padding:32px 24px 36px;
-        }
-        .lp-pname{font-size:clamp(40px,10vw,56px);}
-        .lp-speed-n{font-size:clamp(28px,7vw,38px);}
-        .lp-r-logo{font-size:clamp(30px,8vw,42px);}
-    }
-
-    /* Inputs Streamlit */
-    [data-testid="stForm"] label{
-        font-family:'Inter',sans-serif!important;font-size:9px!important;
-        font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;
-        color:rgba(197,165,102,.36)!important;
-    }
-    [data-testid="stForm"] label span{display:none!important;}
-    [data-testid="stForm"] input{
-        background:rgba(197,165,102,.04)!important;
-        border:1px solid rgba(197,165,102,.15)!important;
-        border-radius:8px!important;color:#EDE5D4!important;
-        font-family:'Inter',sans-serif!important;font-size:14px!important;font-weight:300!important;
-        padding:12px 16px!important;caret-color:#C5A566!important;
-        outline:none!important;box-shadow:none!important;transition:all .25s!important;
-    }
-    [data-testid="stForm"] input:focus{
-        border-color:rgba(197,165,102,.5)!important;
-        background:rgba(197,165,102,.07)!important;
-        box-shadow:0 0 0 3px rgba(197,165,102,.06)!important;
-    }
-    [data-testid="stFormSubmitButton"]>button{
-        width:100%!important;background:rgba(197,165,102,.11)!important;
-        border:1px solid rgba(197,165,102,.4)!important;border-radius:8px!important;
-        color:#C5A566!important;font-family:'Inter',sans-serif!important;
-        font-size:10px!important;font-weight:700!important;
-        letter-spacing:3.5px!important;text-transform:uppercase!important;
-        padding:14px!important;margin-top:12px!important;transition:all .3s!important;
-    }
-    [data-testid="stFormSubmitButton"]>button:hover{
-        background:rgba(197,165,102,.2)!important;border-color:#C5A566!important;
-        transform:translateY(-2px)!important;
-        box-shadow:0 10px 28px rgba(197,165,102,.14)!important;
-    }
-    [data-testid="stAlert"]{
-        background:rgba(180,60,60,.05)!important;border:1px solid rgba(180,60,60,.2)!important;
-        border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:11px!important;
-    }
-    [data-testid="stAlert"] svg{display:none!important;}
-
-    /* Grid de stats */
-    .lp-r-grid{
-        display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
-        background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;
-        margin-top:clamp(14px,2vh,22px);animation:fadeUp .6s .35s ease both;
-    }
-    .lp-gs{background:#04060C;padding:clamp(10px,1.5vh,16px) clamp(10px,1.3vw,16px);}
-    .lp-gsn{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(16px,2vw,26px);font-weight:600;color:#C5A566;line-height:1;
-    }
-    .lp-gsl{
-        font-family:'Inter',sans-serif;font-size:clamp(7px,.65vw,9px);font-weight:600;
-        letter-spacing:2px;text-transform:uppercase;
-        color:rgba(237,229,212,.18);margin-top:4px;
-    }
-
-    /* Por que usar — rodapé direito */
-    .lp-r-why{
-        margin-top:clamp(12px,1.8vh,18px);padding-top:clamp(10px,1.5vh,16px);
-        border-top:1px solid rgba(197,165,102,.07);
-        animation:fadeUp .6s .4s ease both;
-    }
-    .lp-r-why-label{
-        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);font-weight:600;
-        letter-spacing:3px;text-transform:uppercase;
-        color:rgba(197,165,102,.22);margin-bottom:10px;
-    }
-    .lp-r-why-row{display:flex;gap:0;}
-    .lp-r-wi{
-        flex:1;padding:0 10px;
-        border-right:1px solid rgba(197,165,102,.07);text-align:center;
-    }
-    .lp-r-wi:first-child{padding-left:0;text-align:left;}
-    .lp-r-wi:last-child{border-right:none;}
-    .lp-r-win{
-        font-family:'Cormorant Garamond',serif;
-        font-size:clamp(13px,1.4vw,18px);font-weight:600;color:#C5A566;line-height:1;
-    }
-    .lp-r-wil{
-        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);
-        color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;
-    }
-
-    /* Status */
-    .lp-r-status{
-        display:flex;align-items:center;gap:6px;margin-top:clamp(10px,1.5vh,16px);
-        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);
-        color:rgba(197,165,102,.18);letter-spacing:1.5px;text-transform:uppercase;
-    }
-    .lp-r-sdot{
-        width:5px;height:5px;border-radius:50%;background:#4CAF50;
-        animation:pulseDot 2.5s ease-in-out infinite;
-    }
-    @keyframes pulseDot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
-
-    /* ══ MOBILE: colunas viram blocos empilhados ══ */
-    @media(max-width:768px){
-        .lp-r-grid{margin-top:20px;}
-        .lp-gs{padding:12px 10px;}
-        .lp-gsn{font-size:20px;}
-        .lp-r-win{font-size:15px;}
-        .lp-r-why-label{font-size:8px;}
-        .lp-r-wil{font-size:8px;}
-        .lp-r-status{font-size:8px;}
-    }
-
-    /* Selo */
-    .seal{position:fixed;bottom:40px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.55;transition:opacity .4s;}
-    .seal:hover{opacity:1;pointer-events:auto;}
-    .seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
-    .seal-label{font-family:'Inter',sans-serif;font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);text-align:right;}
-    .seal-name{font-family:'Great Vibes',cursive;font-size:20px;color:rgba(197,165,102,.52);line-height:1;text-align:right;}
-    .seal-sub{font-family:'Inter',sans-serif;font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.18);text-align:right;margin-top:1px;}
+    iframe{display:block;border:none;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ══ LAYOUT: esquerda (produto) | direita (login) ══
-    col_l, col_r = st.columns([1.1, 1.0])
+    # HTML completo da tela de login — roda dentro do iframe
+    LOGIN_HTML = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{
+    font-family:'Inter',sans-serif;
+    background:#030508;
+    color:#EDE5D4;
+    background-image:
+        linear-gradient(rgba(197,165,102,.016) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(197,165,102,.016) 1px,transparent 1px);
+    background-size:56px 56px;
+}
 
-    # ════════ COLUNA ESQUERDA — PRODUTO ════════
-    with col_l:
-        st.markdown('<div class="lp-left">', unsafe_allow_html=True)
+/* Layout principal */
+.wrap{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+}
 
-        # Marca
-        st.markdown('<div class="lp-brand"><div class="lp-mark">EM</div><div class="lp-bname">Edson Medeiros · Consultorias</div></div>', unsafe_allow_html=True)
+/* ══ COLUNA ESQUERDA ══ */
+.left{
+    background:linear-gradient(150deg,rgba(197,165,102,.07) 0%,rgba(3,5,8,.02) 55%,transparent 100%);
+    border-right:1px solid rgba(197,165,102,.1);
+    padding:clamp(28px,5vh,56px) clamp(24px,3.5vw,48px);
+    display:flex;flex-direction:column;justify-content:space-between;
+    overflow:hidden;position:relative;
+}
+.left::after{
+    content:'';position:absolute;bottom:-100px;right:-100px;
+    width:clamp(200px,28vw,360px);height:clamp(200px,28vw,360px);
+    border-radius:50%;border:1px solid rgba(197,165,102,.06);
+    pointer-events:none;
+}
+.brand{display:flex;align-items:center;gap:11px;}
+.mark{
+    width:clamp(30px,2.8vw,38px);height:clamp(30px,2.8vw,38px);
+    background:rgba(197,165,102,.1);border:1px solid rgba(197,165,102,.24);
+    border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.1vw,15px);
+    font-weight:700;color:#C5A566;flex-shrink:0;
+}
+.bname{
+    font-size:clamp(7px,.65vw,10px);letter-spacing:3px;text-transform:uppercase;
+    color:rgba(237,229,212,.25);font-weight:600;
+}
+.product-block{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(16px,2.5vh,32px) 0;}
+.pname{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(38px,5.8vw,80px);font-weight:600;line-height:.9;
+    color:#EDE5D4;margin-bottom:clamp(4px,.5vh,8px);
+}
+.pname .x{
+    background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
+    background-size:600px;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    animation:sh 5s linear infinite;
+}
+@keyframes sh{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.ptag{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:clamp(12px,1.2vw,17px);color:rgba(197,165,102,.42);
+    margin-bottom:clamp(14px,2vh,24px);letter-spacing:.5px;
+}
+.speed{
+    display:flex;align-items:center;gap:clamp(8px,1.2vw,14px);
+    padding:clamp(10px,1.2vh,14px) clamp(12px,1.5vw,18px);
+    background:rgba(197,165,102,.05);
+    border:1px solid rgba(197,165,102,.14);
+    border-left:3px solid rgba(197,165,102,.6);
+    border-radius:0 6px 6px 0;
+    margin-bottom:clamp(14px,2vh,24px);
+}
+.speed-n{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(26px,3.5vw,48px);font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
+}
+.speed-t{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.55);}
+.speed-s{font-size:clamp(9px,.75vw,11px);color:rgba(237,229,212,.25);margin-top:3px;line-height:1.55;}
+.bens{display:flex;flex-direction:column;}
+.ben{
+    display:flex;align-items:flex-start;gap:clamp(8px,1vw,14px);
+    padding:clamp(9px,1.2vh,13px) 0;
+    border-bottom:1px solid rgba(197,165,102,.07);
+}
+.ben:last-child{border-bottom:none;}
+.bnum{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(14px,1.4vw,19px);font-weight:300;
+    color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;
+}
+.btitle{font-size:clamp(11px,.9vw,13px);font-weight:600;color:rgba(237,229,212,.58);margin-bottom:2px;}
+.bdesc{font-size:clamp(9px,.78vw,11px);color:rgba(237,229,212,.26);line-height:1.6;}
+.lfoot{
+    font-size:clamp(8px,.65vw,10px);color:rgba(197,165,102,.2);
+    letter-spacing:.8px;line-height:1.9;
+}
 
-        # Nome + tagline
-        st.markdown('<div class="lp-pname">Extrato<span>X</span></div>', unsafe_allow_html=True)
-        st.markdown('<div class="lp-ptag">O robô que audita seu extrato em 10 segundos.</div>', unsafe_allow_html=True)
+/* ══ COLUNA DIREITA ══ */
+.right{
+    background:rgba(4,6,12,.97);
+    padding:clamp(28px,5vh,56px) clamp(24px,3.8vw,52px);
+    display:flex;flex-direction:column;justify-content:space-between;
+    overflow:hidden;
+}
+.r-logo{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(26px,3.5vw,52px);font-weight:600;color:#EDE5D4;line-height:1;margin-bottom:4px;
+}
+.r-logo .x{color:#C5A566;}
+.r-sub{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:clamp(11px,1vw,14px);color:rgba(197,165,102,.32);
+    margin-bottom:clamp(18px,2.8vh,32px);letter-spacing:.8px;
+}
+.orn{display:flex;align-items:center;gap:10px;margin-bottom:clamp(16px,2.5vh,28px);}
+.orn-l{flex:1;height:1px;background:rgba(197,165,102,.1);}
+.orn-d{font-size:7px;color:rgba(197,165,102,.24);}
+/* Formulário */
+.field{margin-bottom:clamp(10px,1.5vh,16px);}
+.field label{
+    display:block;font-size:clamp(8px,.65vw,10px);font-weight:600;
+    letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.36);
+    margin-bottom:5px;
+}
+.field input{
+    width:100%;background:rgba(197,165,102,.04);
+    border:1px solid rgba(197,165,102,.15);border-radius:8px;
+    color:#EDE5D4;font-family:'Inter',sans-serif;
+    font-size:clamp(13px,1.1vw,16px);font-weight:300;
+    padding:clamp(10px,1.3vh,14px) 16px;
+    caret-color:#C5A566;outline:none;transition:all .25s;
+}
+.field input:focus{
+    border-color:rgba(197,165,102,.5);
+    background:rgba(197,165,102,.07);
+    box-shadow:0 0 0 3px rgba(197,165,102,.06);
+}
+.field input::placeholder{color:rgba(197,165,102,.22);}
+.btn{
+    width:100%;background:rgba(197,165,102,.11);
+    border:1px solid rgba(197,165,102,.4);border-radius:8px;
+    color:#C5A566;font-family:'Inter',sans-serif;
+    font-size:clamp(9px,.75vw,11px);font-weight:700;
+    letter-spacing:3.5px;text-transform:uppercase;
+    padding:clamp(11px,1.5vh,16px);margin-top:clamp(8px,1.2vh,14px);
+    cursor:pointer;transition:all .3s;
+}
+.btn:hover{
+    background:rgba(197,165,102,.2);border-color:#C5A566;
+    transform:translateY(-2px);
+    box-shadow:0 10px 28px rgba(197,165,102,.14);
+}
+.err{
+    color:rgba(220,110,110,.8);font-size:clamp(10px,.85vw,12px);
+    padding:8px 12px;margin-top:8px;
+    background:rgba(180,60,60,.06);border:1px solid rgba(180,60,60,.2);
+    border-radius:8px;display:none;
+}
+/* Grid de stats */
+.grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;
+    margin-top:clamp(14px,2vh,22px);
+}
+.gs{background:#04060C;padding:clamp(10px,1.4vh,16px) clamp(10px,1.2vw,16px);}
+.gsn{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(16px,1.8vw,26px);font-weight:600;color:#C5A566;line-height:1;
+}
+.gsl{
+    font-size:clamp(7px,.58vw,9px);font-weight:600;
+    letter-spacing:2px;text-transform:uppercase;
+    color:rgba(237,229,212,.18);margin-top:4px;
+}
+/* Por que usar */
+.why{margin-top:clamp(10px,1.5vh,16px);padding-top:clamp(10px,1.4vh,14px);border-top:1px solid rgba(197,165,102,.07);}
+.why-lbl{
+    font-size:clamp(7px,.6vw,9px);font-weight:600;letter-spacing:3px;
+    text-transform:uppercase;color:rgba(197,165,102,.22);margin-bottom:10px;
+}
+.why-row{display:flex;gap:0;}
+.wi{flex:1;padding:0 10px;border-right:1px solid rgba(197,165,102,.07);text-align:center;}
+.wi:first-child{padding-left:0;text-align:left;}
+.wi:last-child{border-right:none;}
+.win{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(13px,1.3vw,18px);font-weight:600;color:#C5A566;line-height:1;
+}
+.wil{font-size:clamp(7px,.6vw,9px);color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;}
+/* Status */
+.status{
+    display:flex;align-items:center;gap:6px;margin-top:clamp(10px,1.4vh,14px);
+    font-size:clamp(7px,.6vw,9px);color:rgba(197,165,102,.18);
+    letter-spacing:1.5px;text-transform:uppercase;
+}
+.sdot{width:5px;height:5px;border-radius:50%;background:#4CAF50;animation:pd 2.5s ease-in-out infinite;}
+@keyframes pd{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
 
-        # Badge de velocidade
-        st.markdown('<div class="lp-speed"><div class="lp-speed-n">10s</div><div><div class="lp-speed-t">Análise completa do extrato</div><div class="lp-speed-s">Do upload ao relatório pronto —<br>sem nenhum esforço manual</div></div></div>', unsafe_allow_html=True)
+/* Selo */
+.seal{
+    position:fixed;bottom:40px;right:24px;
+    display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+    opacity:.55;transition:opacity .4s;z-index:10;
+}
+.seal:hover{opacity:1;}
+.seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
+.seal-lbl{font-size:7px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);text-align:right;}
+.seal-name{font-family:'Great Vibes',cursive;font-size:20px;color:rgba(197,165,102,.52);line-height:1;text-align:right;}
+.seal-sub{font-size:6px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.18);text-align:right;margin-top:1px;}
 
-        # Vantagens numeradas — cada uma separada
-        st.markdown('<div class="lp-bens">', unsafe_allow_html=True)
-        vantagens = [
-            ("01", "Precisão de 100%",          "Leitura posicional por coluna X — distingue débito de crédito sem falhas e sem interpretação errada"),
-            ("02", "19 rubricas monitoradas",    "CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO, SAQUE e mais — todas detectadas automaticamente"),
-            ("03", "Relatório jurídico pronto",  "Planilha com valor em dobro (Art. 42 CDC) gerada instantaneamente, pronta para peticionamento"),
-        ]
-        for num, titulo, desc in vantagens:
-            st.markdown(f'<div class="lp-ben"><div class="lp-bnum">{num}</div><div><div class="lp-btitle">{titulo}</div><div class="lp-bdesc">{desc}</div></div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+/* ══ MOBILE ══ */
+@media(max-width:768px){
+    body{overflow-y:auto;}
+    .wrap{grid-template-columns:1fr;height:auto;min-height:100vh;}
+    .left{border-right:none;border-bottom:1px solid rgba(197,165,102,.1);min-height:auto;}
+    .right{min-height:auto;}
+    .pname{font-size:clamp(44px,12vw,64px);}
+    .speed-n{font-size:clamp(30px,8vw,42px);}
+    .r-logo{font-size:clamp(30px,9vw,44px);}
+    .seal{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <div class="brand">
+      <div class="mark">EM</div>
+      <div class="bname">Edson Medeiros · Consultorias</div>
+    </div>
+    <div class="product-block">
+      <div class="pname">Extrato<span class="x">X</span></div>
+      <div class="ptag">O robô que audita seu extrato em 10 segundos.</div>
+      <div class="speed">
+        <div class="speed-n">10s</div>
+        <div>
+          <div class="speed-t">Análise completa do extrato</div>
+          <div class="speed-s">Do upload ao relatório pronto — sem esforço manual</div>
+        </div>
+      </div>
+      <div class="bens">
+        <div class="ben"><div class="bnum">01</div><div><div class="btitle">Precisão de 100%</div><div class="bdesc">Leitura posicional por coluna X — distingue débito de crédito sem falhas</div></div></div>
+        <div class="ben"><div class="bnum">02</div><div><div class="btitle">19 rubricas monitoradas</div><div class="bdesc">CESTA, MORA, ANUIDADE, ENCARGOS, PARCELA, SEGURO e mais — detectadas automaticamente</div></div></div>
+        <div class="ben"><div class="bnum">03</div><div><div class="btitle">Relatório jurídico pronto</div><div class="bdesc">Planilha com Art. 42 CDC em dobro, pronta para peticionamento instantaneamente</div></div></div>
+      </div>
+    </div>
+    <div class="lfoot">(92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>
+  </div>
+  <div class="right">
+    <div>
+      <div class="r-logo">Extrato<span class="x">X</span></div>
+      <div class="r-sub">Acesse o portal de auditoria</div>
+      <div class="orn"><div class="orn-l"></div><div class="orn-d">◆</div><div class="orn-l"></div></div>
+      <div class="field"><label>E-mail</label><input id="em" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div class="field"><label>Senha</label><input id="pw" type="password" placeholder="••••••••••" autocomplete="current-password"></div>
+      <div id="err" class="err">Credenciais inválidas — verifique e-mail e senha</div>
+      <button class="btn" onclick="doLogin()">◆ &nbsp; Acessar o ExtratoX</button>
+      <input id="pw" type="text" style="display:none" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div>
+      <div class="grid">
+        <div class="gs"><div class="gsn">10s</div><div class="gsl">Análise</div></div>
+        <div class="gs"><div class="gsn">19</div><div class="gsl">Rubricas</div></div>
+        <div class="gs"><div class="gsn">Art.42</div><div class="gsl">CDC auto</div></div>
+      </div>
+      <div class="why">
+        <div class="why-lbl">Por que usar</div>
+        <div class="why-row">
+          <div class="wi"><div class="win">100%</div><div class="wil">Precisão</div></div>
+          <div class="wi"><div class="win">0</div><div class="wil">Esforço manual</div></div>
+          <div class="wi"><div class="win">CDC</div><div class="wil">Art. 42 auto</div></div>
+        </div>
+      </div>
+      <div class="status"><div class="sdot"></div>Sistema online &nbsp;·&nbsp; Versão 2.0</div>
+    </div>
+  </div>
+</div>
+<div class="seal">
+  <div class="seal-line"></div>
+  <div class="seal-lbl">Fundado por</div>
+  <div class="seal-name">Edson Medeiros</div>
+  <div class="seal-sub">Consultorias &amp; Compliance · 2024</div>
+</div>
+<script>
+function doLogin(){
+    var em=document.getElementById('em').value.trim();
+    var pw=document.getElementById('pw').value;
+    window.parent.postMessage({type:'login',email:em,password:pw},'*');
+}
+document.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){doLogin();}
+});
+</script>
+</body>
+</html>"""
 
-        # Rodapé
-        st.markdown('<div class="lp-lfoot">(92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Captura a mensagem do iframe via query params
+    if "login_attempt" not in st.session_state:
+        st.session_state["login_attempt"] = None
 
-    # ════════ COLUNA DIREITA — LOGIN ════════
-    with col_r:
-        st.markdown('<div class="lp-right">', unsafe_allow_html=True)
+    # CSS extra para remover qualquer scroll e espaço ao redor do iframe
+    st.markdown("""
+    <style>
+    html,body,[data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"]>section,
+    [data-testid="stMain"],[data-testid="stMain"]>div,
+    [data-testid="stMainBlockContainer"],[data-testid="stMainBlockContainer"]>div,
+    .block-container,div.block-container{
+        padding:0!important;margin:0!important;overflow:hidden!important;
+        height:100vh!important;max-height:100vh!important;
+    }
+    iframe{width:100%!important;height:100vh!important;border:none!important;display:block!important;}
+    </style>
+    """, unsafe_allow_html=True)
 
-        # Logo
-        st.markdown('<div class="lp-r-logo">Extrato<span>X</span></div>', unsafe_allow_html=True)
-        st.markdown('<div class="lp-r-sub">Acesse o portal de auditoria</div>', unsafe_allow_html=True)
-        st.markdown('<div class="lp-r-orn"><div class="lp-r-ol"></div><div class="lp-r-od">◆</div><div class="lp-r-ol"></div></div>', unsafe_allow_html=True)
+    # Renderiza o iframe fullscreen
+    components.html(
+        LOGIN_HTML,
+        height=900,
+        scrolling=False,
+    )
 
-        # Formulário
-        with st.form("login_form", clear_on_submit=False):
-            _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
-            _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
-            _submitted = st.form_submit_button("◆  Acessar o ExtratoX")
+    # JavaScript para capturar o postMessage e redirecionar com query params
+    st.markdown("""
+    <script>
+    window.addEventListener('message', function(e){
+        if(e.data && e.data.type === 'login'){
+            var url = new URL(window.location.href);
+            url.searchParams.set('login_email', e.data.email);
+            url.searchParams.set('login_pwd', e.data.password);
+            window.location.href = url.toString();
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
 
-        if _submitted:
-            if _check_login(_email, _senha):
-                st.session_state["autenticado"] = True
-                st.rerun()
-            else:
-                st.error("Credenciais inválidas — verifique e-mail e senha")
-
-        # Grid de stats
-        st.markdown('<div class="lp-r-grid"><div class="lp-gs"><div class="lp-gsn">10s</div><div class="lp-gsl">Análise</div></div><div class="lp-gs"><div class="lp-gsn">19</div><div class="lp-gsl">Rubricas</div></div><div class="lp-gs"><div class="lp-gsn">Art.42</div><div class="lp-gsl">CDC auto</div></div></div>', unsafe_allow_html=True)
-
-        # Por que usar
-        st.markdown('<div class="lp-r-why"><div class="lp-r-why-label">Por que usar</div><div class="lp-r-why-row"><div class="lp-r-wi"><div class="lp-r-win">100%</div><div class="lp-r-wil">Precisão</div></div><div class="lp-r-wi"><div class="lp-r-win">0</div><div class="lp-r-wil">Esforço manual</div></div><div class="lp-r-wi"><div class="lp-r-win">CDC</div><div class="lp-r-wil">Art. 42 auto</div></div></div></div>', unsafe_allow_html=True)
-
-        # Status
-        st.markdown('<div class="lp-r-status"><div class="lp-r-sdot"></div>Sistema online &nbsp;·&nbsp; Versão 2.0</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Selo
-    st.markdown('<div class="seal"><div class="seal-line"></div><div class="seal-label">Fundado por</div><div class="seal-name">Edson Medeiros</div><div class="seal-sub">Consultorias &amp; Compliance · 2024</div></div>', unsafe_allow_html=True)
+    # Verificar se há credenciais nos query params
+    params = st.query_params
+    if "login_email" in params and "login_pwd" in params:
+        email_q = params["login_email"]
+        pwd_q   = params["login_pwd"]
+        if _check_login(email_q, pwd_q):
+            st.query_params.clear()
+            st.session_state["autenticado"] = True
+            st.rerun()
+        else:
+            st.query_params.clear()
+            st.error("Credenciais inválidas — verifique e-mail e senha")
 
     st.stop()
 
