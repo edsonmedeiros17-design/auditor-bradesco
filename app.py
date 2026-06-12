@@ -815,15 +815,14 @@ if not st.session_state["autenticado"]:
 
     /* ══ ANIMAÇÕES ══ */
     @keyframes pulseDot{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
-    @keyframes shimmer{0%{background-position:-500px 0}100%{background-position:500px 0}}
+    @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes glowLine{0%,100%{opacity:.3}50%{opacity:.8}}
 
     /* ══ COLUNA ESQUERDA — Produto ══ */
     .lp-left{
         background:linear-gradient(150deg,rgba(197,165,102,.065) 0%,rgba(3,5,8,.02) 50%,rgba(3,5,8,0) 100%);
         border-right:1px solid rgba(197,165,102,.1);
-        padding:48px 36px 40px 44px;
+        padding:clamp(28px,5vh,56px) clamp(20px,3.5vw,44px) clamp(24px,4vh,48px) clamp(20px,3.5vw,48px);
         min-height:100vh;
         display:flex;flex-direction:column;
         justify-content:space-between;
@@ -832,88 +831,94 @@ if not st.session_state["autenticado"]:
     .lp-left::after{
         content:'';position:absolute;
         bottom:-100px;right:-100px;
-        width:320px;height:320px;border-radius:50%;
+        width:clamp(200px,28vw,360px);height:clamp(200px,28vw,360px);border-radius:50%;
         border:1px solid rgba(197,165,102,.06);pointer-events:none;
     }
 
     /* Marca */
-    .lp-brand{display:flex;align-items:center;gap:11px;margin-bottom:32px;animation:fadeUp .6s ease both;}
+    .lp-brand{display:flex;align-items:center;gap:11px;margin-bottom:clamp(20px,3vh,36px);animation:fadeUp .6s ease both;}
     .lp-mark{
-        width:36px;height:36px;background:rgba(197,165,102,.1);
-        border:1px solid rgba(197,165,102,.24);border-radius:8px;
+        width:clamp(30px,3.2vw,40px);height:clamp(30px,3.2vw,40px);
+        background:rgba(197,165,102,.1);border:1px solid rgba(197,165,102,.24);border-radius:8px;
         display:flex;align-items:center;justify-content:center;
-        font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:700;color:#C5A566;
+        font-family:'Cormorant Garamond',serif;
+        font-size:clamp(11px,1.2vw,15px);font-weight:700;color:#C5A566;
     }
-    .lp-bname{font-family:'Inter',sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(237,229,212,.25);font-weight:600;}
+    .lp-bname{
+        font-family:'Inter',sans-serif;
+        font-size:clamp(8px,.65vw,10px);letter-spacing:3px;text-transform:uppercase;
+        color:rgba(237,229,212,.25);font-weight:600;
+    }
 
     /* Nome e tagline do produto */
     .lp-pname{
         font-family:'Cormorant Garamond',serif;
-        font-size:54px;font-weight:600;line-height:.92;
-        color:#EDE5D4;margin-bottom:6px;
+        font-size:clamp(36px,5.5vw,72px);font-weight:600;line-height:.92;
+        color:#EDE5D4;margin-bottom:clamp(4px,.5vh,8px);
         animation:fadeUp .6s .1s ease both;
     }
     .lp-pname span{
         background:linear-gradient(110deg,#EDE5D4 10%,#C5A566 35%,#D4B87A 55%,#EDE5D4 75%);
-        background-size:500px;
+        background-size:600px;
         -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
         animation:shimmer 5s linear infinite;
     }
     .lp-ptag{
         font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:15px;color:rgba(197,165,102,.42);
-        margin-bottom:24px;letter-spacing:.5px;
+        font-size:clamp(12px,1.3vw,17px);color:rgba(197,165,102,.42);
+        margin-bottom:clamp(16px,2.5vh,28px);letter-spacing:.5px;
         animation:fadeUp .6s .15s ease both;
     }
 
     /* Badge de velocidade */
     .lp-speed{
-        display:flex;align-items:center;gap:12px;
-        padding:12px 16px;
+        display:flex;align-items:center;gap:clamp(8px,1.2vw,14px);
+        padding:clamp(10px,1.4vh,14px) clamp(12px,1.5vw,18px);
         background:rgba(197,165,102,.05);
         border:1px solid rgba(197,165,102,.15);
         border-left:3px solid rgba(197,165,102,.6);
-        margin-bottom:24px;
+        margin-bottom:clamp(16px,2.5vh,28px);
         animation:fadeUp .6s .2s ease both;
+        border-radius:0 6px 6px 0;
     }
     .lp-speed-n{
         font-family:'Cormorant Garamond',serif;
-        font-size:36px;font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
+        font-size:clamp(24px,3.5vw,44px);font-weight:600;color:#C5A566;line-height:1;flex-shrink:0;
     }
-    .lp-speed-t{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:rgba(237,229,212,.55);}
-    .lp-speed-s{font-family:'Inter',sans-serif;font-size:10px;color:rgba(237,229,212,.25);margin-top:3px;line-height:1.5;}
+    .lp-speed-t{font-family:'Inter',sans-serif;font-size:clamp(11px,1vw,13px);font-weight:600;color:rgba(237,229,212,.55);}
+    .lp-speed-s{font-family:'Inter',sans-serif;font-size:clamp(9px,.85vw,11px);color:rgba(237,229,212,.25);margin-top:3px;line-height:1.55;}
 
     /* Vantagens numeradas */
     .lp-bens{display:flex;flex-direction:column;gap:0;animation:fadeUp .6s .25s ease both;}
     .lp-ben{
-        display:flex;align-items:flex-start;gap:12px;
-        padding:12px 0;
+        display:flex;align-items:flex-start;gap:clamp(8px,1.2vw,14px);
+        padding:clamp(10px,1.4vh,14px) 0;
         border-bottom:1px solid rgba(197,165,102,.07);
     }
     .lp-ben:last-child{border-bottom:none;}
     .lp-bnum{
         font-family:'Cormorant Garamond',serif;
-        font-size:18px;font-weight:300;
+        font-size:clamp(15px,1.6vw,20px);font-weight:300;
         color:rgba(197,165,102,.22);min-width:22px;line-height:1.3;flex-shrink:0;
     }
     .lp-btitle{
-        font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
-        color:rgba(237,229,212,.55);margin-bottom:3px;letter-spacing:.2px;
+        font-family:'Inter',sans-serif;font-size:clamp(11px,1vw,13px);font-weight:600;
+        color:rgba(237,229,212,.58);margin-bottom:3px;letter-spacing:.2px;
     }
-    .lp-bdesc{font-family:'Inter',sans-serif;font-size:11px;color:rgba(237,229,212,.24);line-height:1.55;}
+    .lp-bdesc{font-family:'Inter',sans-serif;font-size:clamp(10px,.88vw,12px);color:rgba(237,229,212,.28);line-height:1.6;}
 
     /* Rodapé esquerdo */
     .lp-lfoot{
-        font-family:'Inter',sans-serif;font-size:9px;
-        color:rgba(197,165,102,.18);letter-spacing:.8px;line-height:1.9;
-        margin-top:auto;padding-top:20px;
+        font-family:'Inter',sans-serif;font-size:clamp(8px,.7vw,10px);
+        color:rgba(197,165,102,.2);letter-spacing:.8px;line-height:1.9;
+        margin-top:auto;padding-top:clamp(14px,2vh,22px);
         animation:fadeUp .6s .3s ease both;
     }
 
     /* ══ COLUNA DIREITA — Login ══ */
     .lp-right{
         background:rgba(4,6,12,.97);
-        padding:48px 44px 40px 40px;
+        padding:clamp(28px,5vh,56px) clamp(20px,3.8vw,48px) clamp(24px,4vh,44px) clamp(20px,3.2vw,44px);
         min-height:100vh;
         display:flex;flex-direction:column;
         justify-content:space-between;
@@ -922,22 +927,39 @@ if not st.session_state["autenticado"]:
     /* Logo */
     .lp-r-logo{
         font-family:'Cormorant Garamond',serif;
-        font-size:38px;font-weight:600;color:#EDE5D4;line-height:1;
+        font-size:clamp(26px,3.8vw,48px);font-weight:600;color:#EDE5D4;line-height:1;
         margin-bottom:4px;animation:fadeUp .6s .1s ease both;
     }
     .lp-r-logo span{color:#C5A566;}
     .lp-r-sub{
         font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:13px;color:rgba(197,165,102,.32);
-        margin-bottom:28px;letter-spacing:.8px;
+        font-size:clamp(11px,1.1vw,14px);color:rgba(197,165,102,.32);
+        margin-bottom:clamp(18px,2.8vh,30px);letter-spacing:.8px;
         animation:fadeUp .6s .15s ease both;
     }
     .lp-r-orn{
-        display:flex;align-items:center;gap:10px;margin-bottom:24px;
+        display:flex;align-items:center;gap:10px;margin-bottom:clamp(16px,2.5vh,26px);
         animation:fadeUp .6s .2s ease both;
     }
     .lp-r-ol{flex:1;height:1px;background:rgba(197,165,102,.1);}
     .lp-r-od{font-size:7px;color:rgba(197,165,102,.24);}
+
+    /* ══ RESPONSIVO MOBILE ══ */
+    @media(max-width:768px){
+        .lp-left{
+            min-height:auto;
+            border-right:none;
+            border-bottom:1px solid rgba(197,165,102,.1);
+            padding:36px 24px 32px;
+        }
+        .lp-right{
+            min-height:auto;
+            padding:32px 24px 36px;
+        }
+        .lp-pname{font-size:clamp(40px,10vw,56px);}
+        .lp-speed-n{font-size:clamp(28px,7vw,38px);}
+        .lp-r-logo{font-size:clamp(30px,8vw,42px);}
+    }
 
     /* Inputs Streamlit */
     [data-testid="stForm"] label{
@@ -982,27 +1004,27 @@ if not st.session_state["autenticado"]:
     .lp-r-grid{
         display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
         background:rgba(197,165,102,.09);border-radius:10px;overflow:hidden;
-        margin-top:20px;animation:fadeUp .6s .35s ease both;
+        margin-top:clamp(14px,2vh,22px);animation:fadeUp .6s .35s ease both;
     }
-    .lp-gs{background:#04060C;padding:14px 14px;}
+    .lp-gs{background:#04060C;padding:clamp(10px,1.5vh,16px) clamp(10px,1.3vw,16px);}
     .lp-gsn{
         font-family:'Cormorant Garamond',serif;
-        font-size:22px;font-weight:600;color:#C5A566;line-height:1;
+        font-size:clamp(16px,2vw,26px);font-weight:600;color:#C5A566;line-height:1;
     }
     .lp-gsl{
-        font-family:'Inter',sans-serif;font-size:8px;font-weight:600;
+        font-family:'Inter',sans-serif;font-size:clamp(7px,.65vw,9px);font-weight:600;
         letter-spacing:2px;text-transform:uppercase;
         color:rgba(237,229,212,.18);margin-top:4px;
     }
 
     /* Por que usar — rodapé direito */
     .lp-r-why{
-        margin-top:16px;padding-top:14px;
+        margin-top:clamp(12px,1.8vh,18px);padding-top:clamp(10px,1.5vh,16px);
         border-top:1px solid rgba(197,165,102,.07);
         animation:fadeUp .6s .4s ease both;
     }
     .lp-r-why-label{
-        font-family:'Inter',sans-serif;font-size:8px;font-weight:600;
+        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);font-weight:600;
         letter-spacing:3px;text-transform:uppercase;
         color:rgba(197,165,102,.22);margin-bottom:10px;
     }
@@ -1015,17 +1037,17 @@ if not st.session_state["autenticado"]:
     .lp-r-wi:last-child{border-right:none;}
     .lp-r-win{
         font-family:'Cormorant Garamond',serif;
-        font-size:16px;font-weight:600;color:#C5A566;line-height:1;
+        font-size:clamp(13px,1.4vw,18px);font-weight:600;color:#C5A566;line-height:1;
     }
     .lp-r-wil{
-        font-family:'Inter',sans-serif;font-size:8px;
+        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);
         color:rgba(237,229,212,.18);margin-top:3px;line-height:1.4;
     }
 
     /* Status */
     .lp-r-status{
-        display:flex;align-items:center;gap:6px;margin-top:14px;
-        font-family:'Inter',sans-serif;font-size:8px;
+        display:flex;align-items:center;gap:6px;margin-top:clamp(10px,1.5vh,16px);
+        font-family:'Inter',sans-serif;font-size:clamp(7px,.62vw,9px);
         color:rgba(197,165,102,.18);letter-spacing:1.5px;text-transform:uppercase;
     }
     .lp-r-sdot{
@@ -1033,6 +1055,17 @@ if not st.session_state["autenticado"]:
         animation:pulseDot 2.5s ease-in-out infinite;
     }
     @keyframes pulseDot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
+
+    /* ══ MOBILE: colunas viram blocos empilhados ══ */
+    @media(max-width:768px){
+        .lp-r-grid{margin-top:20px;}
+        .lp-gs{padding:12px 10px;}
+        .lp-gsn{font-size:20px;}
+        .lp-r-win{font-size:15px;}
+        .lp-r-why-label{font-size:8px;}
+        .lp-r-wil{font-size:8px;}
+        .lp-r-status{font-size:8px;}
+    }
 
     /* Selo */
     .seal{position:fixed;bottom:40px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.55;transition:opacity .4s;}
@@ -1045,7 +1078,7 @@ if not st.session_state["autenticado"]:
     """, unsafe_allow_html=True)
 
     # ══ LAYOUT: esquerda (produto) | direita (login) ══
-    col_l, col_r = st.columns([1.15, 1.0])
+    col_l, col_r = st.columns([1.1, 1.0])
 
     # ════════ COLUNA ESQUERDA — PRODUTO ════════
     with col_l:
