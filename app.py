@@ -764,7 +764,7 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login — Command Center v5
+    # CSS da tela de login — Magazine 3 colunas
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
@@ -773,90 +773,100 @@ if not st.session_state["autenticado"]:
     [data-testid="stDecoration"],[data-testid="stStatusWidget"],
     [data-testid="stHeader"]{display:none!important;}
 
-    /* Fundo e reset — SEM overflow:hidden no app */
     .stApp{
         background:#04060C!important;
-        background-image:radial-gradient(circle,rgba(197,165,102,.042) 1px,transparent 1px)!important;
+        background-image:radial-gradient(circle,rgba(197,165,102,.04) 1px,transparent 1px)!important;
         background-size:28px 28px!important;
     }
-
-    /* Remove padding do container — mas mantém scroll */
-    .block-container{
-        padding:0!important;margin:0!important;
-        max-width:100%!important;width:100%!important;
-        min-height:100vh!important;
-    }
+    .block-container{padding:0!important;margin:0!important;max-width:100%!important;width:100%!important;min-height:100vh!important;}
     section[data-testid="stMain"]>div:first-child{padding:0!important;}
-    div[data-testid="stVerticalBlock"]>div{padding:0!important;}
-
-    /* Gap zero nas colunas */
     [data-testid="stHorizontalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
     [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
-
-    /* Markdown sem margem */
-    [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
-    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
     [data-testid="stVerticalBlock"]{gap:0!important;}
+    [data-testid="stVerticalBlock"]>div{padding:0!important;margin:0!important;}
+    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
+    [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
     [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;}
     [data-testid="stForm"]>div{padding:0!important;margin:0!important;}
 
-    /* ══ SIDEBAR ══ */
-    .sb{background:#030508;border-right:1px solid rgba(197,165,102,.14);padding:40px 22px 32px;min-height:100vh;display:flex;flex-direction:column;}
-    .sb-badge{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:rgba(197,165,102,.36);margin-bottom:24px;display:flex;align-items:center;gap:7px;}
-    .sb-dot{width:5px;height:5px;border-radius:50%;background:#C5A566;animation:gp 2.5s ease-in-out infinite;flex-shrink:0;}
-    @keyframes gp{0%,100%{opacity:.3}50%{opacity:1}}
-    .sb-name{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.05;color:#EDE5D4;margin-bottom:4px;}
-    .sb-name em{color:#C5A566;font-style:normal;}
-    .sb-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:rgba(197,165,102,.42);letter-spacing:1.5px;margin-bottom:24px;}
-    .sb-orn{width:32px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:20px;}
-    .sb-item{display:flex;align-items:center;gap:9px;padding:9px 8px;border-left:2px solid transparent;margin-bottom:2px;}
-    .sb-item.on{border-left-color:#C5A566;background:rgba(197,165,102,.06);}
-    .sb-idot{width:4px;height:4px;border-radius:50%;background:rgba(197,165,102,.22);flex-shrink:0;}
-    .sb-item.on .sb-idot{background:#C5A566;}
-    .sb-ilabel{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:rgba(237,229,212,.2);}
-    .sb-item.on .sb-ilabel{color:rgba(197,165,102,.85);}
-    .sb-tag{margin-left:auto;font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(197,165,102,.5);background:rgba(197,165,102,.08);border:1px solid rgba(197,165,102,.18);border-radius:20px;padding:2px 7px;}
-    .sb-sep{height:1px;background:rgba(197,165,102,.08);margin:16px 0;}
-    .sb-foot{font-family:'Inter',sans-serif;font-size:10px;color:rgba(197,165,102,.22);letter-spacing:.8px;line-height:1.9;margin-top:auto;padding-top:16px;}
-    .sb-sig{font-family:'Great Vibes',cursive;font-size:26px;color:rgba(197,165,102,.28);line-height:1;margin-top:10px;}
+    /* ══ COLUNA 1: IDENTIDADE ══ */
+    .c1{
+        background:linear-gradient(160deg,#0C1120 0%,#060910 55%,#040710 100%);
+        border-right:1px solid rgba(197,165,102,.1);
+        padding:52px 28px 48px 32px;
+        min-height:100vh;
+        display:flex;flex-direction:column;
+        justify-content:space-between;
+        position:relative;overflow:hidden;
+    }
+    .c1::before{content:'';position:absolute;top:-100px;left:-100px;width:350px;height:350px;border-radius:50%;border:1px solid rgba(197,165,102,.05);pointer-events:none;}
+    .c1-orn{width:36px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:18px;}
+    .c1-eyebrow{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:rgba(197,165,102,.38);margin-bottom:14px;}
+    .c1-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;line-height:1.0;color:#EDE5D4;margin-bottom:6px;}
+    .c1-name em{color:#C5A566;font-style:normal;}
+    .c1-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(197,165,102,.45);letter-spacing:2px;margin-bottom:28px;}
+    .c1-sig{font-family:'Great Vibes',cursive;font-size:32px;color:rgba(197,165,102,.28);line-height:1;margin-bottom:24px;}
+    .c1-sep{width:36px;height:1px;background:linear-gradient(90deg,rgba(197,165,102,.4),transparent);margin-bottom:20px;}
+    .c1-desc{font-family:'Inter',sans-serif;font-size:12px;font-weight:300;color:rgba(237,229,212,.28);line-height:1.75;margin-bottom:28px;}
+    .c1-feat{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+    .c1-dot{width:3px;height:3px;border-radius:50%;background:#C5A566;opacity:.45;flex-shrink:0;}
+    .c1-ft{font-family:'Inter',sans-serif;font-size:11px;color:rgba(237,229,212,.3);}
+    .c1-foot{font-family:'Inter',sans-serif;font-size:9px;color:rgba(197,165,102,.2);letter-spacing:1px;line-height:1.9;margin-top:auto;padding-top:24px;}
 
-    /* ══ ÁREA PRINCIPAL ══ */
-    .main-area{background:rgba(5,8,14,.97);min-height:100vh;display:flex;flex-direction:column;}
-    .topbar{height:48px;border-bottom:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;background:rgba(3,5,10,.9);flex-shrink:0;}
-    .topbar-bc{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:rgba(197,165,102,.28);display:flex;align-items:center;gap:10px;}
-    .topbar-cur{color:rgba(197,165,102,.58);}
-    .topbar-sep{color:rgba(197,165,102,.16);}
+    /* ══ COLUNA 2: EDITORIAL ══ */
+    .c2{
+        background:linear-gradient(180deg,#070B15 0%,#050810 100%);
+        border-right:1px solid rgba(197,165,102,.08);
+        padding:52px 28px 48px 28px;
+        min-height:100vh;
+        display:flex;flex-direction:column;
+    }
+    .c2-headline{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1.15;color:#EDE5D4;margin-bottom:28px;}
+    .c2-headline em{color:#C5A566;font-style:normal;}
+    .c2-card{background:rgba(197,165,102,.04);border:1px solid rgba(197,165,102,.12);border-radius:10px;padding:16px;margin-bottom:10px;transition:background .25s;}
+    .c2-icon{font-size:16px;margin-bottom:7px;color:rgba(197,165,102,.7);}
+    .c2-ct{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:rgba(237,229,212,.7);margin-bottom:4px;letter-spacing:.3px;}
+    .c2-cd{font-family:'Inter',sans-serif;font-size:10px;color:rgba(237,229,212,.28);line-height:1.55;}
+    .c2-why{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#EDE5D4;margin-top:26px;margin-bottom:16px;}
+    .c2-why em{color:#C5A566;font-style:normal;}
+    .c2-pillar{margin-bottom:13px;}
+    .c2-pt{font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:rgba(197,165,102,.65);margin-bottom:3px;letter-spacing:.4px;}
+    .c2-pd{font-family:'Inter',sans-serif;font-size:10px;color:rgba(237,229,212,.25);line-height:1.55;}
+    .c2-metrics{display:flex;gap:0;margin-top:auto;padding-top:28px;border-top:1px solid rgba(197,165,102,.08);}
+    .c2-met{flex:1;padding-right:14px;border-right:1px solid rgba(197,165,102,.07);}
+    .c2-met:last-child{border-right:none;padding-right:0;padding-left:14px;}
+    .c2-mn{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#C5A566;line-height:1;}
+    .c2-ml{font-family:'Inter',sans-serif;font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(237,229,212,.2);margin-top:3px;}
 
-    /* Info */
-    .info{padding:40px 24px 28px 44px;}
-    .info-ey{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:rgba(197,165,102,.3);margin-bottom:10px;}
-    .info-logo{font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:600;line-height:.92;color:#EDE5D4;margin-bottom:7px;}
-    .info-logo span{color:#C5A566;}
-    .info-sub{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(197,165,102,.38);margin-bottom:22px;letter-spacing:1px;}
-    .info-orn{display:flex;align-items:center;gap:8px;margin-bottom:18px;}
+    /* ══ COLUNA 3: LOGIN ══ */
+    .c3{
+        background:#04060D;
+        padding:52px 36px 48px 28px;
+        min-height:100vh;
+        display:flex;flex-direction:column;
+        justify-content:center;
+    }
+    .c3-eyebrow{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:rgba(197,165,102,.32);margin-bottom:8px;}
+    .c3-logo{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;line-height:.92;color:#EDE5D4;margin-bottom:5px;}
+    .c3-logo span{color:#C5A566;}
+    .c3-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(197,165,102,.38);margin-bottom:24px;letter-spacing:1px;}
+    .c3-orn{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
     .orn-l{flex:1;height:1px;background:rgba(197,165,102,.12);}
     .orn-d{font-size:7px;color:rgba(197,165,102,.28);}
-    .mets{display:flex;gap:0;margin-bottom:20px;}
-    .met{flex:1;padding:14px 16px;background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.1);border-right:none;}
-    .met:first-child{border-radius:8px 0 0 8px;}
-    .met:last-child{border-right:1px solid rgba(197,165,102,.1);border-radius:0 8px 8px 0;}
-    .met-n{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#C5A566;line-height:1;}
-    .met-l{font-family:'Inter',sans-serif;font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(237,229,212,.2);margin-top:3px;}
-    .feat{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-    .feat-d{width:3px;height:3px;border-radius:50%;background:#C5A566;opacity:.4;flex-shrink:0;}
-    .feat-t{font-family:'Inter',sans-serif;font-size:12px;color:rgba(237,229,212,.32);}
-
-    /* Form */
-    .fblock{padding:40px 44px 28px 16px;}
-    .fcard{background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.13);border-radius:12px;padding:26px 22px;}
-    .fcard-ey{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.3);margin-bottom:5px;}
-    .fcard-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#EDE5D4;margin-bottom:3px;line-height:1;}
-    .fcard-title span{color:#C5A566;}
-    .fcard-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:rgba(197,165,102,.3);margin-bottom:14px;}
-    .fcard-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:14px;}
+    .c3-card{background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.12);border-radius:12px;padding:22px 20px;margin-bottom:0;}
+    .c3-fy{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);margin-bottom:5px;}
+    .c3-ft{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#EDE5D4;margin-bottom:3px;line-height:1;}
+    .c3-ft span{color:#C5A566;}
+    .c3-fs{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:rgba(197,165,102,.28);margin-bottom:14px;}
+    .c3-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:14px;}
+    .c3-impact{display:flex;gap:0;margin-top:24px;padding-top:18px;border-top:1px solid rgba(197,165,102,.08);}
+    .c3-imp{flex:1;padding-right:12px;border-right:1px solid rgba(197,165,102,.07);}
+    .c3-imp:last-child{border-right:none;padding-right:0;padding-left:12px;}
+    .c3-in{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#C5A566;line-height:1;}
+    .c3-il{font-family:'Inter',sans-serif;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(237,229,212,.2);margin-top:2px;}
 
     /* Inputs */
-    [data-testid="stForm"] label{font-family:'Inter',sans-serif!important;font-size:9px!important;font-weight:600!important;letter-spacing:2.5px!important;text-transform:uppercase!important;color:rgba(197,165,102,.36)!important;}
+    [data-testid="stForm"] label{font-family:'Inter',sans-serif!important;font-size:9px!important;font-weight:600!important;letter-spacing:2.5px!important;text-transform:uppercase!important;color:rgba(197,165,102,.35)!important;}
     [data-testid="stForm"] label span{display:none!important;}
     [data-testid="stForm"] input{background:transparent!important;border:none!important;border-bottom:1px solid rgba(197,165,102,.2)!important;border-radius:0!important;color:#EDE5D4!important;font-family:'Inter',sans-serif!important;font-size:14px!important;font-weight:300!important;padding:9px 0!important;caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;transition:border-color .25s!important;}
     [data-testid="stForm"] input:focus{border-bottom-color:#C5A566!important;box-shadow:none!important;}
@@ -865,13 +875,8 @@ if not st.session_state["autenticado"]:
     [data-testid="stAlert"]{background:rgba(180,60,60,.06)!important;border:1px solid rgba(180,60,60,.22)!important;border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:11px!important;}
     [data-testid="stAlert"] svg{display:none!important;}
 
-    /* Status bar */
-    .sbar{height:36px;border-top:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 44px;gap:20px;background:rgba(3,5,10,.9);flex-shrink:0;}
-    .si{font-family:'Inter',sans-serif;font-size:9px;color:rgba(197,165,102,.22);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
-    .sdot{width:4px;height:4px;border-radius:50%;background:#4CAF50;opacity:.7;}
-
-    /* Selo e rodapé */
-    .lx-footer{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.14);white-space:nowrap;pointer-events:none;z-index:100;}
+    /* Rodapé / Selo */
+    .mag-footer{text-align:center;padding:14px 0 4px;font-family:'Inter',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.16);border-top:1px solid rgba(197,165,102,.07);}
     .seal{position:fixed;bottom:42px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.6;transition:opacity .4s;}
     .seal:hover{opacity:1;pointer-events:auto;}
     .seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:4px;}
@@ -882,62 +887,68 @@ if not st.session_state["autenticado"]:
     </style>
     """, unsafe_allow_html=True)
 
-    col_sb, col_main = st.columns([0.7, 2.3])
+    # ══ LAYOUT: 3 colunas ══
+    c1, c2, c3 = st.columns([1.0, 1.05, 1.05])
 
-    # ══ SIDEBAR ══
-    with col_sb:
-        st.markdown('<div class="sb">', unsafe_allow_html=True)
-        st.markdown('<div class="sb-badge"><div class="sb-dot"></div>Sistema ExtratoX</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-name">Edson<br><em>Medeiros</em></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-role">Consultorias &amp; Compliance</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-orn"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-item on"><div class="sb-idot"></div><div class="sb-ilabel">Auditoria</div><div class="sb-tag">Ativo</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Extratos PDF</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Planilhas</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Relatórios</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">CDC Art. 42</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-sep"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-foot">(92) 99508-7379<br>edson.senabr@gmail.com</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sb-sig">E. Medeiros</div>', unsafe_allow_html=True)
+    # ════════ COLUNA 1: IDENTIDADE ════════
+    with c1:
+        st.markdown('<div class="c1">', unsafe_allow_html=True)
+        st.markdown('<div class="c1-orn"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-eyebrow">Escritório de Assessoria Jurídica</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-name">Edson<br><em>Medeiros</em></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-role">Consultorias &amp; Compliance</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-sig">E. Medeiros</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-sep"></div>', unsafe_allow_html=True)
+        st.markdown('<p class="c1-desc">Sistema especializado em auditoria bancária inteligente. Identificamos cobranças indevidas com precisão e geramos relatórios prontos para uso jurídico.</p>', unsafe_allow_html=True)
+        for t in ["Extrai débitos indevidos do extrato PDF", "Gera planilhas com cálculos automáticos", "Relatórios prontos para uso jurídico"]:
+            st.markdown(f'<div class="c1-feat"><div class="c1-dot"></div><div class="c1-ft">{t}</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c1-foot">(92) 99508-7379<br>edson.senabr@gmail.com</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ══ ÁREA PRINCIPAL ══
-    with col_main:
-        st.markdown('<div class="main-area">', unsafe_allow_html=True)
-        st.markdown('<div class="topbar"><div class="topbar-bc"><span>ExtratoX</span><span class="topbar-sep"> › </span><span class="topbar-cur">Acesso ao Sistema</span></div></div>', unsafe_allow_html=True)
+    # ════════ COLUNA 2: EDITORIAL ════════
+    with c2:
+        st.markdown('<div class="c2">', unsafe_allow_html=True)
+        st.markdown('<div class="c2-headline">Nossas <em>Soluções</em> de<br>Auditoria Bancária</div>', unsafe_allow_html=True)
 
-        col_info, col_form = st.columns([1.3, 1])
+        st.markdown('<div class="c2-card"><div class="c2-icon">&#9878;</div><div class="c2-ct">Extrai dados indevidos de PDFs</div><div class="c2-cd">CESTA, MORA, ANUIDADE, ENCARGOS e mais — identificados com precisão posicional por coluna.</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-card"><div class="c2-icon">&#128202;</div><div class="c2-ct">Cálculo em dobro (Art. 42 CDC)</div><div class="c2-cd">Planilha mensal e anual gerada automaticamente com total em dobro para uso jurídico.</div></div>', unsafe_allow_html=True)
 
-        with col_info:
-            st.markdown('<div class="info">', unsafe_allow_html=True)
-            st.markdown('<div class="info-ey">Conheça o Sistema de Auditoria</div>', unsafe_allow_html=True)
-            st.markdown('<div class="info-logo">Extrato<span>X</span></div>', unsafe_allow_html=True)
-            st.markdown('<div class="info-sub">O portal seguro para sua auditoria bancária</div>', unsafe_allow_html=True)
-            st.markdown('<div class="info-orn"><div class="orn-l"></div><div class="orn-d">◆</div><div class="orn-l"></div></div>', unsafe_allow_html=True)
-            st.markdown('<div class="mets"><div class="met"><div class="met-n">19</div><div class="met-l">Rubricas</div></div><div class="met"><div class="met-n">100%</div><div class="met-l">Precisão</div></div><div class="met"><div class="met-n">Art.42</div><div class="met-l">CDC Auto</div></div></div>', unsafe_allow_html=True)
-            for t in ["Extrai débitos indevidos do extrato PDF", "Planilhas com cálculo em dobro (Art. 42 CDC)", "Relatórios prontos para peticionamento jurídico", "Suporta extratos Bradesco com múltiplas páginas"]:
-                st.markdown(f'<div class="feat"><div class="feat-d"></div><div class="feat-t">{t}</div></div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-why">Por que o <em>ExtratoX</em>?</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-pillar"><div class="c2-pt">Precisão e Velocidade</div><div class="c2-pd">Leitura por coluna X — distingue débito de crédito com precisão milimétrica.</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-pillar"><div class="c2-pt">Suporte Legal</div><div class="c2-pd">Relatórios prontos para peticionamento e processos consumeristas.</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-pillar"><div class="c2-pt">Segurança</div><div class="c2-pd">Acesso restrito por credenciais. Dados processados localmente.</div></div>', unsafe_allow_html=True)
 
-        with col_form:
-            st.markdown('<div class="fblock">', unsafe_allow_html=True)
-            st.markdown('<div class="fcard"><div class="fcard-ey">Acesso ao Portal</div><div class="fcard-title">Entrar no <span>Sistema</span></div><div class="fcard-sub">Acesse sua conta para continuar</div><div class="fcard-sep"></div></div>', unsafe_allow_html=True)
-            with st.form("login_form", clear_on_submit=False):
-                _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
-                _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
-                _submitted = st.form_submit_button("◆  Acessar o Portal")
-            if _submitted:
-                if _check_login(_email, _senha):
-                    st.session_state["autenticado"] = True
-                    st.rerun()
-                else:
-                    st.error("Credenciais inválidas — verifique e-mail e senha")
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="sbar"><div class="si"><div class="sdot"></div>Sistema Online</div><div class="si">Bradesco · Extrato PDF</div><div class="si">Versão 2.0</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c2-metrics"><div class="c2-met"><div class="c2-mn">19</div><div class="c2-ml">Rubricas</div></div><div class="c2-met"><div class="c2-mn">100%</div><div class="c2-ml">Precisão</div></div><div class="c2-met"><div class="c2-mn">Art.42</div><div class="c2-ml">CDC Auto</div></div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="lx-footer">Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
+    # ════════ COLUNA 3: LOGIN ════════
+    with c3:
+        st.markdown('<div class="c3">', unsafe_allow_html=True)
+        st.markdown('<div class="c3-eyebrow">Sistema de Auditoria Bancária</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c3-logo">Extrato<span>X</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="c3-sub">Portal seguro para sua auditoria</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c3-orn"><div class="orn-l"></div><div class="orn-d">◆</div><div class="orn-l"></div></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="c3-card"><div class="c3-fy">Acesso ao Portal</div><div class="c3-ft">Entrar no <span>Sistema</span></div><div class="c3-fs">Acesse sua conta para continuar</div><div class="c3-sep"></div></div>', unsafe_allow_html=True)
+
+        with st.form("login_form", clear_on_submit=False):
+            _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
+            _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
+            _submitted = st.form_submit_button("◆  Acessar o Portal")
+
+        if _submitted:
+            if _check_login(_email, _senha):
+                st.session_state["autenticado"] = True
+                st.rerun()
+            else:
+                st.error("Credenciais inválidas — verifique e-mail e senha")
+
+        st.markdown('<div class="c3-impact"><div class="c3-imp"><div class="c3-in">19</div><div class="c3-il">Rubricas</div></div><div class="c3-imp"><div class="c3-in">100%</div><div class="c3-il">Precisão</div></div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Rodapé inline
+    st.markdown('<div class="mag-footer">Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
+
     st.markdown('<div class="seal"><div class="seal-line"></div><div class="seal-label">Fundado por</div><div class="seal-name">Edson Medeiros</div><div class="seal-sub">Consultorias &amp; Compliance · 2024</div><div class="seal-orn">◆ &nbsp; ◆ &nbsp; ◆</div></div>', unsafe_allow_html=True)
 
     st.stop()
