@@ -780,16 +780,45 @@ if not st.session_state["autenticado"]:
             linear-gradient(90deg,rgba(197,165,102,.018) 1px,transparent 1px)!important;
         background-size:60px 60px!important;
     }
-    .block-container{padding:0!important;margin:0!important;max-width:100%!important;width:100%!important;}
-    section[data-testid="stMain"]>div:first-child{padding:0!important;}
-    [data-testid="stHorizontalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
+    /* Reset COMPLETO de todos os seletores internos do Streamlit */
+    .block-container,
+    .main .block-container,
+    div.block-container{
+        padding:0!important;margin:0!important;
+        max-width:100%!important;width:100%!important;
+        min-height:0!important;
+    }
+    /* Zera o padding-top do container principal — responsável pelo espaço em branco no topo */
+    section[data-testid="stMain"],
+    section[data-testid="stMain"]>div,
+    section[data-testid="stMain"]>div>div,
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stMainBlockContainer"],
+    .appview-container .main,
+    .appview-container section{
+        padding:0!important;margin:0!important;
+        max-width:100%!important;width:100%!important;
+    }
+    /* Colunas sem gap */
+    [data-testid="stHorizontalBlock"]{
+        gap:0!important;padding:0!important;margin:0!important;
+        align-items:stretch!important;
+    }
     [data-testid="stHorizontalBlock"]>div{padding:0!important;margin:0!important;}
-    [data-testid="stVerticalBlock"]{gap:0!important;}
-    [data-testid="stVerticalBlock"]>div{padding:0!important;margin:0!important;}
-    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;}
+    /* Blocos verticais sem gap */
+    [data-testid="stVerticalBlock"]{gap:0!important;padding:0!important;margin:0!important;}
+    [data-testid="stVerticalBlock"]>div,
+    [data-testid="stVerticalBlock"]>div>div{padding:0!important;margin:0!important;}
+    /* Markdowns sem margem */
+    [data-testid="stMarkdown"]{margin:0!important;padding:0!important;line-height:normal!important;}
     [data-testid="stMarkdown"]>div{margin:0!important;padding:0!important;}
-    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;}
-    [data-testid="stForm"]>div{padding:0!important;margin:0!important;}
+    div.stMarkdown,div.stMarkdown>div{margin:0!important;padding:0!important;}
+    /* Form sem espaçamento */
+    [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;margin:0!important;}
+    [data-testid="stForm"]>div,[data-testid="stForm"]>div>div{padding:0!important;margin:0!important;}
+    /* Elementos de input sem margem extra */
+    div[data-testid="stTextInput"]{margin-bottom:8px!important;}
+    div[data-testid="stTextInput"]>div{padding:0!important;}
 
     /* ══ ANIMAÇÕES ══ */
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
