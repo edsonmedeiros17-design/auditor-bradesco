@@ -772,298 +772,93 @@ if not st.session_state["autenticado"]:
     header,footer,[data-testid="stSidebar"],[data-testid="stToolbar"],
     [data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none!important}
 
-    /* Fundo grade dourada */
     .stApp{
         background:#04060C!important;
         background-image:radial-gradient(circle,rgba(197,165,102,.042) 1px,transparent 1px)!important;
         background-size:28px 28px!important;
     }
-    /* Vinheta radial sutil */
-    .stApp::after{
-        content:'';position:fixed;inset:0;pointer-events:none;
-        background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(4,6,12,.7) 100%);
-        z-index:0;
-    }
+    .block-container{max-width:100vw!important;width:100vw!important;min-height:100vh!important;padding:0!important;margin:0!important;}
 
-    /* Container: ocupa tela toda */
-    .block-container{
-        max-width:100vw!important;width:100vw!important;
-        min-height:100vh!important;padding:0!important;margin:0!important;
-        position:relative;z-index:1;
-    }
+    [data-testid="stHorizontalBlock"]{gap:0!important;min-height:100vh!important;width:100%!important;align-items:stretch!important;}
+    [data-testid="stHorizontalBlock"]>div{padding:0!important;min-height:100vh!important;}
 
-    /* Layout: sidebar(240px) | conteúdo principal */
-    [data-testid="stHorizontalBlock"]{
-        gap:0!important;min-height:100vh!important;
-        width:100%!important;align-items:stretch!important;
-    }
-    [data-testid="stHorizontalBlock"]>div{
-        padding:0!important;min-height:100vh!important;
-    }
-
-    /* ── SIDEBAR ─────────────────────────────────────────────────── */
-    .sb{
-        background:#030508;
-        border-right:1px solid rgba(197,165,102,.1);
-        padding:52px 28px 40px;
+    /* ── sidebar ── */
+    .sb-wrap{
+        background:#030508;border-right:1px solid rgba(197,165,102,.12);
+        padding:48px 24px 36px;min-height:100vh;
         display:flex;flex-direction:column;
-        min-height:100vh;position:relative;overflow:hidden;
     }
-    /* Círculo decorativo de fundo */
-    .sb::before{
-        content:'';position:absolute;bottom:-80px;left:-80px;
-        width:280px;height:280px;border-radius:50%;
-        border:1px solid rgba(197,165,102,.05);pointer-events:none;
-    }
-    .sb::after{
-        content:'';position:absolute;top:-60px;right:-60px;
-        width:200px;height:200px;border-radius:50%;
-        border:1px solid rgba(197,165,102,.03);pointer-events:none;
-    }
-    /* Badge sistema */
-    .sb-sys{
-        font-family:'Inter',sans-serif;font-size:.52rem;font-weight:600;
-        letter-spacing:4px;text-transform:uppercase;
-        color:rgba(197,165,102,.32);margin-bottom:28px;
-        display:flex;align-items:center;gap:8px;
-    }
-    .sb-sys-dot{
-        width:5px;height:5px;border-radius:50%;
-        background:#C5A566;opacity:.6;
-        animation:pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
-    /* Nome da marca */
-    .sb-name{
-        font-family:'Cormorant Garamond',serif;
-        font-size:2.4rem;font-weight:600;line-height:1.0;
-        color:#EDE5D4;letter-spacing:.5px;margin-bottom:5px;
-    }
-    .sb-name em{color:#C5A566;font-style:normal}
-    .sb-role{
-        font-family:'Cormorant Garamond',serif;
-        font-size:.88rem;font-style:italic;
-        color:rgba(197,165,102,.42);letter-spacing:2px;margin-bottom:36px;
-    }
-    /* Linha ornamental */
-    .sb-orn{width:40px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:28px;}
-    /* Menu de navegação */
-    .sb-nav{display:flex;flex-direction:column;gap:2px;margin-bottom:auto;}
-    .sb-item{
-        display:flex;align-items:center;gap:10px;
-        padding:9px 12px;border-radius:0;
-        border-left:2px solid transparent;
-        transition:all .18s ease;cursor:default;
-    }
-    .sb-item.active{
-        border-left-color:#C5A566;
-        background:rgba(197,165,102,.06);
-    }
-    .sb-item-dot{
-        width:4px;height:4px;border-radius:50%;
-        background:rgba(197,165,102,.3);flex-shrink:0;
-    }
-    .sb-item.active .sb-item-dot{background:#C5A566;opacity:1;}
-    .sb-item-label{
-        font-family:'Inter',sans-serif;
-        font-size:.68rem;font-weight:500;
-        letter-spacing:1.5px;text-transform:uppercase;
-        color:rgba(237,229,212,.22);
-    }
-    .sb-item.active .sb-item-label{color:rgba(197,165,102,.8);}
-    .sb-item-tag{
-        margin-left:auto;font-size:.5rem;font-weight:600;
-        letter-spacing:1px;text-transform:uppercase;
-        color:rgba(197,165,102,.4);
-        background:rgba(197,165,102,.08);
-        border:1px solid rgba(197,165,102,.15);
-        border-radius:20px;padding:2px 7px;
-    }
-    /* Separador */
-    .sb-divider{
-        height:1px;background:rgba(197,165,102,.08);
-        margin:20px 0;
-    }
-    /* Contatos no rodapé da sidebar */
-    .sb-contact{
-        font-family:'Inter',sans-serif;
-        font-size:.58rem;color:rgba(197,165,102,.25);
-        letter-spacing:.8px;line-height:1.8;
-    }
-    /* Assinatura cursiva */
-    .sb-sig{
-        font-family:'Great Vibes',cursive;
-        font-size:1.8rem;color:rgba(197,165,102,.28);
-        line-height:1;margin-top:14px;
-    }
+    .sb-sys{font-family:'Inter',sans-serif;font-size:.5rem;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:rgba(197,165,102,.35);margin-bottom:26px;display:flex;align-items:center;gap:8px;}
+    .sb-dot{width:5px;height:5px;border-radius:50%;background:#C5A566;animation:pl 2.5s ease-in-out infinite;}
+    @keyframes pl{0%,100%{opacity:.35}50%{opacity:1}}
+    .sb-name{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:600;line-height:1;color:#EDE5D4;margin-bottom:4px;}
+    .sb-name em{color:#C5A566;font-style:normal;}
+    .sb-role{font-family:'Cormorant Garamond',serif;font-size:.82rem;font-style:italic;color:rgba(197,165,102,.4);letter-spacing:2px;margin-bottom:28px;}
+    .sb-orn{width:36px;height:1px;background:linear-gradient(90deg,#C5A566,transparent);margin-bottom:24px;}
+    .sb-nav{display:flex;flex-direction:column;gap:1px;}
+    .sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-left:2px solid transparent;}
+    .sb-item.on{border-left-color:#C5A566;background:rgba(197,165,102,.06);}
+    .sb-idot{width:4px;height:4px;border-radius:50%;background:rgba(197,165,102,.25);flex-shrink:0;}
+    .sb-item.on .sb-idot{background:#C5A566;opacity:1;}
+    .sb-ilabel{font-family:'Inter',sans-serif;font-size:.65rem;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:rgba(237,229,212,.2);}
+    .sb-item.on .sb-ilabel{color:rgba(197,165,102,.8);}
+    .sb-itag{margin-left:auto;font-size:.48rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(197,165,102,.45);background:rgba(197,165,102,.08);border:1px solid rgba(197,165,102,.18);border-radius:20px;padding:2px 7px;}
+    .sb-div{height:1px;background:rgba(197,165,102,.08);margin:18px 0;}
+    .sb-contact{font-family:'Inter',sans-serif;font-size:.55rem;color:rgba(197,165,102,.22);letter-spacing:.8px;line-height:1.9;margin-top:auto;}
+    .sb-sig{font-family:'Great Vibes',cursive;font-size:1.7rem;color:rgba(197,165,102,.26);line-height:1;margin-top:12px;}
 
-    /* ── PAINEL PRINCIPAL ─────────────────────────────────────────── */
-    .main{
-        background:rgba(5,8,14,.96);
-        padding:0 0 0 0;
-        display:flex;flex-direction:column;
-        min-height:100vh;
-    }
-    /* Barra superior */
-    .main-topbar{
-        height:52px;
-        border-bottom:1px solid rgba(197,165,102,.08);
-        display:flex;align-items:center;
-        padding:0 52px;
-        gap:16px;
-        background:rgba(3,5,10,.8);
-        backdrop-filter:blur(12px);
-    }
-    .topbar-breadcrumb{
-        font-family:'Inter',sans-serif;font-size:.58rem;
-        font-weight:500;letter-spacing:3px;text-transform:uppercase;
-        color:rgba(197,165,102,.28);display:flex;align-items:center;gap:10px;
-    }
+    /* ── área principal ── */
+    .main-wrap{background:rgba(5,8,14,.97);min-height:100vh;display:flex;flex-direction:column;}
+    .topbar{height:50px;border-bottom:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 48px;background:rgba(3,5,10,.85);backdrop-filter:blur(12px);}
+    .topbar-bc{font-family:'Inter',sans-serif;font-size:.55rem;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.28);display:flex;align-items:center;gap:10px;}
+    .topbar-cur{color:rgba(197,165,102,.55);}
     .topbar-sep{color:rgba(197,165,102,.15);}
-    .topbar-current{color:rgba(197,165,102,.55);}
 
-    /* Área de conteúdo central */
-    .main-content{
-        flex:1;display:flex;align-items:center;
-        padding:48px 52px;
-        gap:72px;
-    }
-
-    /* Bloco de apresentação do sistema */
-    .sys-block{flex:1;min-width:0;}
-    .sys-eyebrow{
-        font-family:'Inter',sans-serif;font-size:.55rem;font-weight:600;
-        letter-spacing:5px;text-transform:uppercase;
-        color:rgba(197,165,102,.35);margin-bottom:14px;
-    }
-    .sys-title{
-        font-family:'Cormorant Garamond',serif;
-        font-size:3.8rem;font-weight:600;line-height:.95;
-        color:#EDE5D4;letter-spacing:.5px;margin-bottom:10px;
-    }
-    .sys-title span{color:#C5A566;}
-    .sys-sub{
-        font-family:'Cormorant Garamond',serif;
-        font-size:1rem;font-style:italic;
-        color:rgba(197,165,102,.4);letter-spacing:1px;margin-bottom:32px;
-    }
-    /* Divisor ornamental */
-    .sys-orn{
-        display:flex;align-items:center;gap:12px;margin-bottom:28px;
-    }
-    .orn-l{flex:1;height:1px;background:rgba(197,165,102,.14);}
-    .orn-d{font-size:.4rem;color:rgba(197,165,102,.3);}
-    /* Métricas de impacto */
-    .sys-metrics{display:flex;gap:0;margin-bottom:28px;}
-    .met{flex:1;padding:18px 20px;background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.1);border-right:none;}
+    /* info block */
+    .info-wrap{padding:44px 0 44px 48px;}
+    .info-ey{font-family:'Inter',sans-serif;font-size:.52rem;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:rgba(197,165,102,.32);margin-bottom:12px;}
+    .info-logo{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:600;line-height:.95;color:#EDE5D4;margin-bottom:8px;}
+    .info-logo span{color:#C5A566;}
+    .info-sub{font-family:'Cormorant Garamond',serif;font-size:.95rem;font-style:italic;color:rgba(197,165,102,.38);margin-bottom:26px;letter-spacing:1px;}
+    .info-orn{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+    .orn-l{flex:1;height:1px;background:rgba(197,165,102,.12);}
+    .orn-d{font-size:.38rem;color:rgba(197,165,102,.28);}
+    .metrics{display:flex;gap:0;margin-bottom:24px;}
+    .met{flex:1;padding:16px 18px;background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.1);border-right:none;}
     .met:first-child{border-radius:8px 0 0 8px;}
     .met:last-child{border-right:1px solid rgba(197,165,102,.1);border-radius:0 8px 8px 0;}
-    .met-n{
-        font-family:'Cormorant Garamond',serif;
-        font-size:2rem;font-weight:600;color:#C5A566;line-height:1;
-    }
-    .met-l{
-        font-family:'Inter',sans-serif;font-size:.52rem;font-weight:600;
-        letter-spacing:2px;text-transform:uppercase;
-        color:rgba(237,229,212,.22);margin-top:4px;
-    }
-    /* Features */
-    .sys-feats{display:flex;flex-direction:column;gap:9px;}
-    .feat-row{display:flex;align-items:center;gap:10px;}
-    .feat-d{width:4px;height:4px;border-radius:50%;background:#C5A566;opacity:.4;flex-shrink:0;}
-    .feat-t{font-family:'Inter',sans-serif;font-size:.76rem;color:rgba(237,229,212,.32);}
+    .met-n{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:#C5A566;line-height:1;}
+    .met-l{font-family:'Inter',sans-serif;font-size:.5rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(237,229,212,.2);margin-top:3px;}
+    .feat{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+    .feat-d{width:3px;height:3px;border-radius:50%;background:#C5A566;opacity:.4;flex-shrink:0;}
+    .feat-t{font-family:'Inter',sans-serif;font-size:.74rem;color:rgba(237,229,212,.3);}
 
-    /* Bloco do formulário */
-    .form-block{
-        width:340px;flex-shrink:0;
-        background:rgba(197,165,102,.025);
-        border:1px solid rgba(197,165,102,.12);
-        border-radius:12px;
-        padding:32px 28px;
-    }
-    .form-label{
-        font-family:'Inter',sans-serif;font-size:.58rem;font-weight:600;
-        letter-spacing:3.5px;text-transform:uppercase;
-        color:rgba(197,165,102,.35);margin-bottom:6px;
-    }
-    .form-title-sm{
-        font-family:'Cormorant Garamond',serif;
-        font-size:1.5rem;font-weight:600;color:#EDE5D4;
-        margin-bottom:5px;line-height:1;
-    }
-    .form-title-sm span{color:#C5A566;}
-    .form-sub-sm{
-        font-family:'Cormorant Garamond',serif;font-style:italic;
-        font-size:.82rem;color:rgba(197,165,102,.35);margin-bottom:24px;
-    }
-    .form-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:22px;}
+    /* form block */
+    .form-wrap{padding:44px 48px 44px 0;display:flex;align-items:center;}
+    .form-card{width:100%;background:rgba(197,165,102,.03);border:1px solid rgba(197,165,102,.12);border-radius:12px;padding:28px 24px;}
+    .form-ey{font-family:'Inter',sans-serif;font-size:.55rem;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:rgba(197,165,102,.32);margin-bottom:5px;}
+    .form-title{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:600;color:#EDE5D4;margin-bottom:4px;line-height:1;}
+    .form-title span{color:#C5A566;}
+    .form-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.78rem;color:rgba(197,165,102,.32);margin-bottom:18px;}
+    .form-sep{height:1px;background:rgba(197,165,102,.1);margin-bottom:18px;}
 
-    /* Inputs */
+    /* inputs estilo linha */
     [data-testid="stForm"]{background:transparent!important;border:none!important;padding:0!important;}
-    [data-testid="stForm"] label{
-        font-family:'Inter',sans-serif!important;font-size:.58rem!important;
-        font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;
-        color:rgba(197,165,102,.38)!important;
-    }
+    [data-testid="stForm"] label{font-family:'Inter',sans-serif!important;font-size:.55rem!important;font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;color:rgba(197,165,102,.35)!important;}
     [data-testid="stForm"] label span{display:none!important;}
-    [data-testid="stForm"] input{
-        background:transparent!important;
-        border:none!important;border-bottom:1px solid rgba(197,165,102,.18)!important;
-        border-radius:0!important;color:#EDE5D4!important;
-        font-family:'Inter',sans-serif!important;
-        font-size:.88rem!important;font-weight:300!important;
-        padding:10px 0!important;
-        caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;
-        transition:border-color .25s ease!important;
-    }
-    [data-testid="stForm"] input:focus{
-        border-bottom-color:#C5A566!important;box-shadow:none!important;
-    }
-    [data-testid="stFormSubmitButton"]>button{
-        width:100%!important;background:rgba(197,165,102,.1)!important;
-        border:1px solid rgba(197,165,102,.35)!important;border-radius:8px!important;
-        color:#C5A566!important;font-family:'Inter',sans-serif!important;
-        font-size:.68rem!important;font-weight:600!important;
-        letter-spacing:3px!important;text-transform:uppercase!important;
-        padding:13px!important;margin-top:10px!important;transition:all .3s ease!important;
-    }
-    [data-testid="stFormSubmitButton"]>button:hover{
-        background:rgba(197,165,102,.18)!important;border-color:#C5A566!important;
-        transform:translateY(-2px)!important;box-shadow:0 8px 24px rgba(197,165,102,.12)!important;
-    }
-    [data-testid="stAlert"]{
-        background:rgba(180,60,60,.06)!important;border:1px solid rgba(180,60,60,.22)!important;
-        border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:.75rem!important;
-    }
+    [data-testid="stForm"] input{background:transparent!important;border:none!important;border-bottom:1px solid rgba(197,165,102,.18)!important;border-radius:0!important;color:#EDE5D4!important;font-family:'Inter',sans-serif!important;font-size:.86rem!important;font-weight:300!important;padding:9px 0!important;caret-color:#C5A566!important;outline:none!important;box-shadow:none!important;transition:border-color .25s!important;}
+    [data-testid="stForm"] input:focus{border-bottom-color:#C5A566!important;box-shadow:none!important;}
+    [data-testid="stFormSubmitButton"]>button{width:100%!important;background:rgba(197,165,102,.1)!important;border:1px solid rgba(197,165,102,.35)!important;border-radius:8px!important;color:#C5A566!important;font-family:'Inter',sans-serif!important;font-size:.66rem!important;font-weight:600!important;letter-spacing:3px!important;text-transform:uppercase!important;padding:13px!important;margin-top:10px!important;transition:all .3s ease!important;}
+    [data-testid="stFormSubmitButton"]>button:hover{background:rgba(197,165,102,.18)!important;border-color:#C5A566!important;transform:translateY(-2px)!important;box-shadow:0 8px 24px rgba(197,165,102,.12)!important;}
+    [data-testid="stAlert"]{background:rgba(180,60,60,.06)!important;border:1px solid rgba(180,60,60,.22)!important;border-radius:8px!important;color:rgba(220,110,110,.8)!important;font-size:.75rem!important;}
     [data-testid="stAlert"] svg{display:none!important;}
 
-    /* Barra de status inferior */
-    .main-statusbar{
-        height:40px;border-top:1px solid rgba(197,165,102,.08);
-        display:flex;align-items:center;padding:0 52px;
-        gap:24px;background:rgba(3,5,10,.8);
-    }
-    .status-item{
-        display:flex;align-items:center;gap:6px;
-        font-family:'Inter',sans-serif;font-size:.52rem;
-        color:rgba(197,165,102,.22);letter-spacing:1.5px;text-transform:uppercase;
-    }
-    .status-dot{width:4px;height:4px;border-radius:50%;background:#4CAF50;opacity:.7;}
+    .statusbar{height:38px;border-top:1px solid rgba(197,165,102,.08);display:flex;align-items:center;padding:0 48px;gap:22px;background:rgba(3,5,10,.85);}
+    .st-item{font-family:'Inter',sans-serif;font-size:.5rem;color:rgba(197,165,102,.2);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+    .st-green{width:4px;height:4px;border-radius:50%;background:#4CAF50;opacity:.7;}
 
-    /* Rodapé */
-    .lx-footer{
-        position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
-        font-family:'Inter',sans-serif;font-size:.52rem;
-        letter-spacing:2px;text-transform:uppercase;
-        color:rgba(197,165,102,.15);white-space:nowrap;
-        pointer-events:none;z-index:100;
-    }
-    /* Selo */
-    .em-founder-seal{
-        position:fixed;bottom:44px;right:24px;z-index:9999;
-        display:flex;flex-direction:column;align-items:flex-end;
-        gap:2px;pointer-events:none;opacity:.6;transition:opacity .4s ease;
-    }
+    .lx-footer{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:.5rem;letter-spacing:2px;text-transform:uppercase;color:rgba(197,165,102,.14);white-space:nowrap;pointer-events:none;z-index:100;}
+    .em-founder-seal{position:fixed;bottom:44px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;opacity:.6;transition:opacity .4s;}
     .em-founder-seal:hover{opacity:1;pointer-events:auto;}
     .em-seal-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(197,165,102,.5));margin-bottom:5px;}
     .em-seal-label{font-family:'Inter',sans-serif;font-size:.44rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(197,165,102,.32);text-align:right;}
@@ -1073,125 +868,64 @@ if not st.session_state["autenticado"]:
     </style>
     """, unsafe_allow_html=True)
 
-    # ── LAYOUT: sidebar (230px) | área principal ─────────────────────────────
-    col_sb, col_main = st.columns([0.65, 2.35])
+    # ── LAYOUT: sidebar | área principal ────────────────────────────────────
+    col_sb, col_main = st.columns([0.68, 2.32])
 
-    # ════════════════════ SIDEBAR ════════════════════
+    # ════ SIDEBAR ════
     with col_sb:
-        st.markdown("""
-        <div class="sb">
-            <div class="sb-sys">
-                <div class="sb-sys-dot"></div>
-                Sistema ExtratoX
-            </div>
+        # Cada elemento é um st.markdown separado e simples
+        st.markdown('<div class="sb-wrap">', unsafe_allow_html=True)
+        st.markdown('<div class="sb-sys"><div class="sb-dot"></div>Sistema ExtratoX</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-name">Edson<br><em>Medeiros</em></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-role">Consultorias &amp; Compliance</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-orn"></div>', unsafe_allow_html=True)
 
-            <div class="sb-name">Edson<br><em>Medeiros</em></div>
-            <div class="sb-role">Consultorias &amp; Compliance</div>
-            <div class="sb-orn"></div>
+        # Menu — um item por markdown
+        st.markdown('<div class="sb-nav">', unsafe_allow_html=True)
+        st.markdown('<div class="sb-item on"><div class="sb-idot"></div><div class="sb-ilabel">Auditoria</div><div class="sb-itag">Ativo</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Extratos PDF</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Planilhas</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">Relatórios</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-item"><div class="sb-idot"></div><div class="sb-ilabel">CDC Art. 42</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            <nav class="sb-nav">
-                <div class="sb-item active">
-                    <div class="sb-item-dot"></div>
-                    <div class="sb-item-label">Auditoria</div>
-                    <div class="sb-item-tag">Ativo</div>
-                </div>
-                <div class="sb-item">
-                    <div class="sb-item-dot"></div>
-                    <div class="sb-item-label">Extratos PDF</div>
-                </div>
-                <div class="sb-item">
-                    <div class="sb-item-dot"></div>
-                    <div class="sb-item-label">Planilhas</div>
-                </div>
-                <div class="sb-item">
-                    <div class="sb-item-dot"></div>
-                    <div class="sb-item-label">Relatórios</div>
-                </div>
-                <div class="sb-item">
-                    <div class="sb-item-dot"></div>
-                    <div class="sb-item-label">CDC Art. 42</div>
-                </div>
-            </nav>
+        st.markdown('<div class="sb-div"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-contact">(92) 99508-7379<br>edson.senabr@gmail.com</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-sig">E. Medeiros</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            <div class="sb-divider"></div>
-
-            <div class="sb-contact">
-                (92) 99508-7379<br>
-                edson.senabr@gmail.com
-            </div>
-            <div class="sb-sig">E. Medeiros</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ════════════════════ ÁREA PRINCIPAL ════════════════════
+    # ════ ÁREA PRINCIPAL ════
     with col_main:
-        # Barra superior
-        st.markdown("""
-        <div class="main">
-        <div class="main-topbar">
-            <div class="topbar-breadcrumb">
-                <span>ExtratoX</span>
-                <span class="topbar-sep">›</span>
-                <span class="topbar-current">Acesso ao Sistema</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Topbar
+        st.markdown('<div class="main-wrap">', unsafe_allow_html=True)
+        st.markdown('<div class="topbar"><div class="topbar-bc"><span>ExtratoX</span><span class="topbar-sep">›</span><span class="topbar-cur">Acesso ao Sistema</span></div></div>', unsafe_allow_html=True)
 
-        # Conteúdo dividido: apresentação | formulário
+        # Conteúdo: info | formulário
         col_info, col_form = st.columns([1.3, 1])
 
         with col_info:
-            st.markdown("""
-            <div style="padding:48px 0 48px 52px;">
-                <div class="sys-eyebrow">Conheça o Sistema de Auditoria</div>
-                <div class="sys-title">Extrato<span>X</span></div>
-                <div class="sys-sub">O portal seguro para sua auditoria bancária</div>
+            st.markdown('<div class="info-wrap">', unsafe_allow_html=True)
+            st.markdown('<div class="info-ey">Conheça o Sistema de Auditoria</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-logo">Extrato<span>X</span></div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-sub">O portal seguro para sua auditoria</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-orn"><div class="orn-l"></div><div class="orn-d">◆</div><div class="orn-l"></div></div>', unsafe_allow_html=True)
 
-                <div class="sys-orn">
-                    <div class="orn-l"></div>
-                    <div class="orn-d">◆</div>
-                    <div class="orn-l"></div>
-                </div>
+            # Métricas
+            st.markdown('<div class="metrics"><div class="met"><div class="met-n">19</div><div class="met-l">Rubricas</div></div><div class="met"><div class="met-n">100%</div><div class="met-l">Precisão</div></div><div class="met"><div class="met-n">Art.42</div><div class="met-l">CDC Auto</div></div></div>', unsafe_allow_html=True)
 
-                <div class="sys-metrics">
-                    <div class="met">
-                        <div class="met-n">19</div>
-                        <div class="met-l">Rubricas</div>
-                    </div>
-                    <div class="met">
-                        <div class="met-n">100%</div>
-                        <div class="met-l">Precisão</div>
-                    </div>
-                    <div class="met">
-                        <div class="met-n">Art.42</div>
-                        <div class="met-l">CDC Auto</div>
-                    </div>
-                </div>
+            # Features
+            for txt in ["Extrai débitos indevidos do extrato PDF", "Planilhas com cálculo em dobro (Art. 42 CDC)", "Relatórios prontos para peticionamento jurídico", "Suporta extratos Bradesco com múltiplas páginas"]:
+                st.markdown(f'<div class="feat"><div class="feat-d"></div><div class="feat-t">{txt}</div></div>', unsafe_allow_html=True)
 
-                <div class="sys-feats">
-                    <div class="feat-row"><div class="feat-d"></div>
-                        <div class="feat-t">Extrai débitos indevidos do extrato PDF</div></div>
-                    <div class="feat-row"><div class="feat-d"></div>
-                        <div class="feat-t">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div></div>
-                    <div class="feat-row"><div class="feat-d"></div>
-                        <div class="feat-t">Relatórios prontos para peticionamento jurídico</div></div>
-                    <div class="feat-row"><div class="feat-d"></div>
-                        <div class="feat-t">Suporta extratos Bradesco com múltiplas páginas</div></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with col_form:
-            st.markdown("""
-            <div style="padding:48px 52px 48px 0;display:flex;align-items:center;min-height:calc(100vh - 92px);">
-            <div class="form-block">
-                <div class="form-label">Acesso ao Portal</div>
-                <div class="form-title-sm">Entrar no <span>Sistema</span></div>
-                <div class="form-sub-sm">Acesse sua conta para continuar</div>
-                <div class="form-sep"></div>
-            </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="form-wrap"><div class="form-card">', unsafe_allow_html=True)
+            st.markdown('<div class="form-ey">Acesso ao Portal</div>', unsafe_allow_html=True)
+            st.markdown('<div class="form-title">Entrar no <span>Sistema</span></div>', unsafe_allow_html=True)
+            st.markdown('<div class="form-sub">Acesse sua conta para continuar</div>', unsafe_allow_html=True)
+            st.markdown('<div class="form-sep"></div>', unsafe_allow_html=True)
+            st.markdown('</div></div>', unsafe_allow_html=True)
 
             with st.form("login_form", clear_on_submit=False):
                 _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
@@ -1205,31 +939,13 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("Credenciais inválidas — verifique e-mail e senha")
 
-        # Barra de status inferior
-        st.markdown("""
-        <div class="main-statusbar">
-            <div class="status-item"><div class="status-dot"></div>Sistema Online</div>
-            <div class="status-item">Bradesco · Extrato PDF</div>
-            <div class="status-item">Versão 2.0</div>
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Statusbar
+        st.markdown('<div class="statusbar"><div class="st-item"><div class="st-green"></div>Sistema Online</div><div class="st-item">Bradesco · Extrato PDF</div><div class="st-item">Versão 2.0</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="lx-footer">
-        Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="em-founder-seal">
-        <div class="em-seal-line"></div>
-        <div class="em-seal-label">Fundado por</div>
-        <div class="em-seal-name">Edson Medeiros</div>
-        <div class="em-seal-sub">Consultorias &amp; Compliance &nbsp;·&nbsp; 2024</div>
-        <div class="em-seal-ornament">◆ &nbsp; ◆ &nbsp; ◆</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Rodapé e selo
+    st.markdown('<div class="lx-footer">Edson Medeiros Consultorias &nbsp;·&nbsp; (92) 99508-7379 &nbsp;·&nbsp; edson.senabr@gmail.com</div>', unsafe_allow_html=True)
+    st.markdown('<div class="em-founder-seal"><div class="em-seal-line"></div><div class="em-seal-label">Fundado por</div><div class="em-seal-name">Edson Medeiros</div><div class="em-seal-sub">Consultorias &amp; Compliance &nbsp;·&nbsp; 2024</div><div class="em-seal-ornament">◆ &nbsp; ◆ &nbsp; ◆</div></div>', unsafe_allow_html=True)
 
     st.stop()
 
