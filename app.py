@@ -764,24 +764,22 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
 
-    # CSS da tela de login
+    # CSS da tela de login — v3: layout 4 zonas inspirado na referência
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap');
 
-    /* ── Oculta UI padrão ──────────────────────────────────────────────── */
     header, footer, [data-testid="stSidebar"],
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* ── Fundo grade de pontos ─────────────────────────────────────────── */
     .stApp {
-        background: #04060C !important;
-        background-image: radial-gradient(circle, rgba(197,165,102,0.045) 1px, transparent 1px) !important;
+        background: #05080E !important;
+        background-image: radial-gradient(circle, rgba(197,165,102,0.04) 1px, transparent 1px) !important;
         background-size: 28px 28px !important;
     }
 
-    /* ── Reset total do container ──────────────────────────────────────── */
+    /* Container: ocupa tela toda */
     .block-container {
         max-width: 100vw !important;
         width: 100vw !important;
@@ -790,161 +788,190 @@ if not st.session_state["autenticado"]:
         margin: 0 !important;
     }
 
-    /* ── Split 50/50 ocupa a tela toda ────────────────────────────────── */
+    /* Row de colunas: altura total */
     [data-testid="stHorizontalBlock"] {
         gap: 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
         min-height: 100vh !important;
         width: 100% !important;
-        box-shadow: none !important;
-        overflow: visible !important;
+        align-items: stretch !important;
     }
-    /* Cada metade ocupa exatamente 50% */
     [data-testid="stHorizontalBlock"] > div {
         padding: 0 !important;
         min-height: 100vh !important;
-        flex: 1 1 50% !important;
     }
 
-    /* ── PAINEL ESQUERDO ───────────────────────────────────────────────── */
-    .lx-left {
-        padding: 72px 8vw 72px 7vw;
-        background: linear-gradient(150deg,
-            rgba(197,165,102,0.08) 0%,
-            rgba(6,10,16,0.97) 45%,
-            rgba(8,12,20,0.99) 100%);
-        border-right: 1px solid rgba(197,165,102,0.12);
-        min-height: 100vh;
-        display: flex; flex-direction: column; justify-content: center;
-        position: relative; overflow: hidden;
+    /* ── ZONA 1: Identidade visual ─────────────────────────────────── */
+    .z1 {
+        background: linear-gradient(160deg, #0A0F1A 0%, #060910 60%, #04060D 100%);
+        border-right: 1px solid rgba(197,165,102,0.1);
+        padding: 52px 32px 48px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        min-height: 100vh; position: relative; overflow: hidden;
     }
-    /* Círculo decorativo grande de fundo */
-    .lx-left::before {
+    .z1::before {
         content: '';
-        position: absolute; top: -140px; left: -140px;
-        width: 560px; height: 560px; border-radius: 50%;
+        position: absolute; top: -120px; left: -120px;
+        width: 420px; height: 420px; border-radius: 50%;
         border: 1px solid rgba(197,165,102,0.05);
         pointer-events: none;
     }
-    .lx-left::after {
-        content: '';
-        position: absolute; bottom: -100px; right: -80px;
-        width: 380px; height: 380px; border-radius: 50%;
-        border: 1px solid rgba(197,165,102,0.03);
-        pointer-events: none;
+    /* SVG do robô / escudo animado */
+    .z1-icon {
+        display: flex; justify-content: center;
+        margin-bottom: 28px;
+    }
+    .z1-icon svg { filter: drop-shadow(0 0 18px rgba(197,165,102,0.2)); }
+    @keyframes floatIcon {
+        0%,100%{ transform: translateY(0); }
+        50%{ transform: translateY(-8px); }
+    }
+    .z1-icon svg { animation: floatIcon 4s ease-in-out infinite; }
+
+    .z1-badge {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.55rem; font-weight: 600;
+        letter-spacing: 4px; text-transform: uppercase;
+        color: rgba(197,165,102,0.45); margin-bottom: 14px;
+    }
+    .z1-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.1rem; font-weight: 600; line-height: 1.15;
+        color: #EDE5D4; margin-bottom: 6px;
+    }
+    .z1-title em { color: #C5A566; font-style: normal; }
+    .z1-sub {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.88rem; font-style: italic;
+        color: rgba(197,165,102,0.45); margin-bottom: 24px;
+        letter-spacing: 1.5px;
+    }
+    .z1-desc {
+        font-size: 0.78rem; font-family: 'Inter', sans-serif;
+        color: rgba(237,229,212,0.3); line-height: 1.7;
+        margin-bottom: 24px;
+    }
+    .z1-bullets { display: flex; flex-direction: column; gap: 9px; }
+    .z1-bullet {
+        display: flex; align-items: center; gap: 9px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem; color: rgba(237,229,212,0.35);
+    }
+    .z1-bullet-dot {
+        width: 4px; height: 4px; border-radius: 50%;
+        background: #C5A566; opacity: 0.5; flex-shrink: 0;
     }
 
-    /* Eyebrow */
-    .lx-eyebrow {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.65rem; font-weight: 600;
-        letter-spacing: 5.5px; text-transform: uppercase;
-        color: rgba(197,165,102,0.4);
-        margin-bottom: 22px;
-    }
-    /* Nome grande */
-    .lx-name {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: clamp(3.2rem, 4.5vw, 5.5rem);
-        font-weight: 600; line-height: 1.0;
-        color: #EDE5D4; letter-spacing: 1px;
-        margin-bottom: 10px;
-    }
-    .lx-name em { color: #C5A566; font-style: normal; }
-    /* Cargo */
-    .lx-role {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.18rem; font-style: italic;
-        color: rgba(197,165,102,0.5); letter-spacing: 2.5px;
-        margin-bottom: 36px;
-    }
-    /* Assinatura cursiva */
-    .lx-sig {
-        font-family: 'Great Vibes', cursive;
-        font-size: clamp(2.8rem, 3.8vw, 4.2rem);
-        color: rgba(197,165,102,0.3);
-        line-height: 1; margin-bottom: 38px;
-    }
-    /* Separador */
-    .lx-sep {
-        width: 56px; height: 1px;
-        background: linear-gradient(90deg, #C5A566, transparent);
-        margin-bottom: 30px;
-    }
-    /* Descrição */
-    .lx-desc {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.9rem; font-weight: 300;
-        color: rgba(237,229,212,0.32); line-height: 1.85;
-        margin-bottom: 44px;
-        max-width: 520px;
-    }
-    /* Features */
-    .lx-feat { display: flex; flex-direction: column; gap: 14px; }
-    .lx-feat-row { display: flex; align-items: center; gap: 12px; }
-    .lx-dot {
-        width: 5px; height: 5px; border-radius: 50%;
-        background: #C5A566; opacity: 0.45; flex-shrink: 0;
-    }
-    .lx-feat-t {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.83rem; color: rgba(237,229,212,0.35);
-    }
-
-    /* ── PAINEL DIREITO ─────────────────────────────────────────────────── */
-    .lx-right {
-        padding: 72px 7vw 72px 6vw;
-        background: rgba(4,7,12,0.94);
+    /* ── ZONA 2: Features / Por quê ────────────────────────────────── */
+    .z2 {
+        background: linear-gradient(180deg, #070B14 0%, #050810 100%);
+        border-right: 1px solid rgba(197,165,102,0.08);
+        padding: 52px 28px 48px;
+        display: flex; flex-direction: column; justify-content: flex-start;
         min-height: 100vh;
-        display: flex; flex-direction: column; justify-content: center;
-        border-left: 1px solid rgba(197,165,102,0.1);
     }
-    .lx-form-label {
+    .z2-headline {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.7rem; font-weight: 600; line-height: 1.2;
+        color: #EDE5D4; margin-bottom: 24px;
+    }
+    .z2-headline em { color: #C5A566; font-style: normal; }
+    .z2-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .z2-card {
+        background: rgba(197,165,102,0.04);
+        border: 1px solid rgba(197,165,102,0.12);
+        border-radius: 10px;
+        padding: 14px 16px;
+        transition: all 0.25s ease;
+    }
+    .z2-card:hover {
+        background: rgba(197,165,102,0.08);
+        border-color: rgba(197,165,102,0.28);
+    }
+    .z2-card-icon {
+        font-size: 1.1rem; margin-bottom: 6px;
+        color: rgba(197,165,102,0.7);
+    }
+    .z2-card-title {
         font-family: 'Inter', sans-serif;
-        font-size: 0.62rem; font-weight: 600;
+        font-size: 0.72rem; font-weight: 600;
+        color: rgba(237,229,212,0.75);
+        margin-bottom: 4px; letter-spacing: 0.3px;
+    }
+    .z2-card-desc {
+        font-size: 0.68rem; font-family: 'Inter', sans-serif;
+        color: rgba(237,229,212,0.3); line-height: 1.55;
+    }
+    /* Seção "Por quê" */
+    .z2-why {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.2rem; font-weight: 600;
+        color: #EDE5D4; margin-bottom: 16px;
+    }
+    .z2-why em { color: #C5A566; font-style: normal; }
+    .z2-pillars { display: flex; flex-direction: column; gap: 12px; }
+    .z2-pillar {}
+    .z2-pillar-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.68rem; font-weight: 600;
+        color: rgba(197,165,102,0.7); margin-bottom: 3px;
+    }
+    .z2-pillar-desc {
+        font-size: 0.64rem; font-family: 'Inter', sans-serif;
+        color: rgba(237,229,212,0.28); line-height: 1.5;
+    }
+
+    /* ── ZONA 3 e 4: Login ─────────────────────────────────────────── */
+    .z34 {
+        background: rgba(4,6,12,0.97);
+        padding: 52px 36px 48px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        min-height: 100vh;
+    }
+    .z34-top {}
+    .z34-eyebrow {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.55rem; font-weight: 600;
         letter-spacing: 4px; text-transform: uppercase;
         color: rgba(197,165,102,0.38); margin-bottom: 10px;
     }
-    .lx-form-title {
+    .z34-logo {
         font-family: 'Cormorant Garamond', serif;
-        font-size: clamp(2.2rem, 3.2vw, 3rem);
-        font-weight: 600; color: #EDE5D4;
-        margin-bottom: 8px; line-height: 1.0;
+        font-size: 2.8rem; font-weight: 600; line-height: 1;
+        color: #EDE5D4; margin-bottom: 6px;
     }
-    .lx-form-title span { color: #C5A566; }
-    .lx-form-sub {
+    .z34-logo span { color: #C5A566; }
+    .z34-tagline {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 1.0rem; font-style: italic;
-        color: rgba(197,165,102,0.42); margin-bottom: 36px;
+        font-size: 0.9rem; font-style: italic;
+        color: rgba(197,165,102,0.42); margin-bottom: 32px;
     }
-    .lx-orn {
-        display: flex; align-items: center;
-        gap: 12px; margin-bottom: 32px;
+    .z34-orn {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 28px;
     }
-    .lx-orn-l { flex: 1; height: 1px; background: rgba(197,165,102,0.14); }
-    .lx-orn-d { font-size: 0.4rem; color: rgba(197,165,102,0.3); }
+    .z34-orn-l { flex: 1; height: 1px; background: rgba(197,165,102,0.14); }
+    .z34-orn-d { font-size: 0.35rem; color: rgba(197,165,102,0.3); }
 
-    /* ── Inputs ─────────────────────────────────────────────────────────── */
+    /* Inputs */
     [data-testid="stForm"] {
         background: transparent !important;
         border: none !important; padding: 0 !important;
     }
     [data-testid="stForm"] label {
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.64rem !important; font-weight: 600 !important;
+        font-size: 0.6rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        color: rgba(197,165,102,0.42) !important;
+        color: rgba(197,165,102,0.4) !important;
     }
     [data-testid="stForm"] label span { display: none !important; }
     [data-testid="stForm"] input {
         background: rgba(197,165,102,0.04) !important;
         border: 1px solid rgba(197,165,102,0.16) !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         color: #EDE5D4 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.92rem !important; font-weight: 300 !important;
-        padding: 14px 18px !important;
+        font-size: 0.88rem !important; font-weight: 300 !important;
+        padding: 12px 16px !important;
         caret-color: #C5A566 !important;
         outline: none !important; box-shadow: none !important;
         transition: all 0.25s ease !important;
@@ -952,131 +979,212 @@ if not st.session_state["autenticado"]:
     [data-testid="stForm"] input:focus {
         border-color: rgba(197,165,102,0.5) !important;
         background: rgba(197,165,102,0.07) !important;
-        box-shadow: 0 0 0 3px rgba(197,165,102,0.07) !important;
+        box-shadow: 0 0 0 3px rgba(197,165,102,0.06) !important;
     }
     [data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
-        background: rgba(197,165,102,0.09) !important;
-        border: 1px solid rgba(197,165,102,0.35) !important;
-        border-radius: 10px !important;
+        background: rgba(197,165,102,0.12) !important;
+        border: 1px solid rgba(197,165,102,0.4) !important;
+        border-radius: 8px !important;
         color: #C5A566 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.74rem !important; font-weight: 600 !important;
+        font-size: 0.7rem !important; font-weight: 600 !important;
         letter-spacing: 3px !important; text-transform: uppercase !important;
-        padding: 15px !important; margin-top: 10px !important;
+        padding: 14px !important; margin-top: 10px !important;
         transition: all 0.3s ease !important;
     }
     [data-testid="stFormSubmitButton"] > button:hover {
-        background: rgba(197,165,102,0.16) !important;
+        background: rgba(197,165,102,0.2) !important;
         border-color: #C5A566 !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 28px rgba(197,165,102,0.14) !important;
+        box-shadow: 0 8px 24px rgba(197,165,102,0.14) !important;
     }
     [data-testid="stAlert"] {
         background: rgba(180,60,60,0.06) !important;
         border: 1px solid rgba(180,60,60,0.22) !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         color: rgba(220,110,110,0.8) !important;
-        font-size: 0.78rem !important;
+        font-size: 0.75rem !important;
     }
     [data-testid="stAlert"] svg { display: none !important; }
 
-    /* ── Rodapé centralizado ─────────────────────────────────────────────── */
-    .lx-footer {
-        position: fixed;
-        bottom: 14px; left: 50%; transform: translateX(-50%);
+    /* Métricas de impacto */
+    .z34-metrics {
+        display: flex; gap: 20px;
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(197,165,102,0.1);
+    }
+    .z34-metric { flex: 1; }
+    .z34-metric-num {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2rem; font-weight: 600;
+        color: #C5A566; line-height: 1;
+    }
+    .z34-metric-label {
         font-family: 'Inter', sans-serif;
-        font-size: 0.6rem; letter-spacing: 2.5px;
-        text-transform: uppercase;
-        color: rgba(197,165,102,0.2);
-        white-space: nowrap;
-        pointer-events: none; z-index: 100;
+        font-size: 0.58rem; font-weight: 500;
+        color: rgba(237,229,212,0.28);
+        letter-spacing: 1.5px; text-transform: uppercase;
+        margin-top: 4px;
     }
 
-    /* ── Selo de fundação ────────────────────────────────────────────────── */
+    /* Rodapé */
+    .lx-footer {
+        position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.58rem; letter-spacing: 2.5px;
+        text-transform: uppercase; color: rgba(197,165,102,0.18);
+        white-space: nowrap; pointer-events: none; z-index: 100;
+    }
+
+    /* Selo */
     .em-founder-seal {
-        position: fixed;
-        bottom: 48px; right: 28px;
-        z-index: 9999;
+        position: fixed; bottom: 48px; right: 28px; z-index: 9999;
         display: flex; flex-direction: column; align-items: flex-end;
-        gap: 2px;
-        pointer-events: none; opacity: 0.65;
+        gap: 2px; pointer-events: none; opacity: 0.6;
         transition: opacity 0.4s ease;
     }
     .em-founder-seal:hover { opacity: 1; pointer-events: auto; }
     .em-seal-line {
         width: 100%; height: 1px;
         background: linear-gradient(90deg, transparent, rgba(197,165,102,0.5));
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
     .em-seal-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.46rem; font-weight: 600;
-        letter-spacing: 3.5px; text-transform: uppercase;
-        color: rgba(197,165,102,0.35); text-align: right;
+        font-family: 'Inter', sans-serif; font-size: 0.44rem; font-weight: 600;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(197,165,102,0.32); text-align: right;
     }
     .em-seal-name {
-        font-family: 'Great Vibes', cursive;
-        font-size: 1.6rem; color: rgba(197,165,102,0.6);
-        line-height: 1; text-align: right;
+        font-family: 'Great Vibes', cursive; font-size: 1.5rem;
+        color: rgba(197,165,102,0.55); line-height: 1; text-align: right;
     }
     .em-seal-sub {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.42rem; font-weight: 500;
+        font-family: 'Inter', sans-serif; font-size: 0.4rem; font-weight: 500;
         letter-spacing: 2px; text-transform: uppercase;
-        color: rgba(197,165,102,0.22); text-align: right;
-        margin-top: 1px;
+        color: rgba(197,165,102,0.2); text-align: right; margin-top: 1px;
     }
-    .em-seal-ornament {
-        font-size: 0.35rem; color: rgba(197,165,102,0.28);
-        letter-spacing: 4px; margin-top: 4px;
-    }
+    .em-seal-ornament { font-size: 0.33rem; color: rgba(197,165,102,0.25); letter-spacing: 4px; margin-top: 3px; }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── LAYOUT: colunas 50/50 em tela cheia ─────────────────────────────────
-    col_esq, col_dir = st.columns([1.1, 0.9])
+    # ── LAYOUT 3 COLUNAS (zona1 | zona2 | zona3+4) ──────────────────────────
+    c1, c2, c3 = st.columns([0.85, 0.9, 1.25])
 
-    with col_esq:
+    # ── ZONA 1: Identidade ───────────────────────────────────────────────────
+    with c1:
         st.markdown("""
-        <div class="lx-left">
-            <div class="lx-eyebrow">Escritório de Assessoria Jurídica</div>
-            <div class="lx-name">Edson<br><em>Medeiros</em></div>
-            <div class="lx-role">Consultorias &amp; Compliance</div>
-            <div class="lx-sig">E. Medeiros</div>
-            <div class="lx-sep"></div>
-            <p class="lx-desc">
-                Sistema especializado em auditoria bancária inteligente.
-                Identificamos cobranças indevidas com precisão e geramos
-                relatórios prontos para uso jurídico.
-            </p>
-            <div class="lx-feat">
-                <div class="lx-feat-row">
-                    <div class="lx-dot"></div>
-                    <div class="lx-feat-t">Extrai débitos indevidos do extrato PDF</div>
-                </div>
-                <div class="lx-feat-row">
-                    <div class="lx-dot"></div>
-                    <div class="lx-feat-t">Gera planilhas com cálculo em dobro (Art. 42 CDC)</div>
-                </div>
-                <div class="lx-feat-row">
-                    <div class="lx-dot"></div>
-                    <div class="lx-feat-t">Suporta extratos Bradesco · múltiplas páginas</div>
+        <div class="z1">
+            <!-- Ícone SVG animado: balança da justiça + engrenagem -->
+            <div class="z1-icon">
+                <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="rgba(197,165,102,0.15)"/>
+                            <stop offset="100%" stop-color="rgba(197,165,102,0)"/>
+                        </radialGradient>
+                        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#D4B87A"/>
+                            <stop offset="100%" stop-color="#A8883E"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Halo de fundo -->
+                    <circle cx="65" cy="65" r="58" fill="url(#glow)"/>
+                    <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(197,165,102,0.18)" stroke-width="1"/>
+                    <circle cx="65" cy="65" r="48" fill="none" stroke="rgba(197,165,102,0.08)" stroke-width="1" stroke-dasharray="4 4"/>
+                    <!-- Coluna central da balança -->
+                    <rect x="63" y="28" width="4" height="50" rx="2" fill="url(#goldGrad)"/>
+                    <!-- Base -->
+                    <rect x="48" y="76" width="34" height="4" rx="2" fill="url(#goldGrad)"/>
+                    <rect x="55" y="80" width="20" height="3" rx="1.5" fill="rgba(197,165,102,0.4)"/>
+                    <rect x="61" y="83" width="8" height="8" rx="1" fill="rgba(197,165,102,0.3)"/>
+                    <!-- Barra horizontal -->
+                    <rect x="30" y="35" width="70" height="3" rx="1.5" fill="url(#goldGrad)"/>
+                    <!-- Correntes -->
+                    <line x1="32" y1="38" x2="32" y2="50" stroke="rgba(197,165,102,0.6)" stroke-width="1.2"/>
+                    <line x1="98" y1="38" x2="98" y2="50" stroke="rgba(197,165,102,0.6)" stroke-width="1.2"/>
+                    <!-- Pratos -->
+                    <ellipse cx="32" cy="52" rx="14" ry="4" fill="none" stroke="url(#goldGrad)" stroke-width="1.8"/>
+                    <ellipse cx="98" cy="52" rx="14" ry="4" fill="none" stroke="url(#goldGrad)" stroke-width="1.8"/>
+                    <!-- Reflexo nos pratos -->
+                    <ellipse cx="32" cy="52" rx="10" ry="2" fill="rgba(197,165,102,0.06)"/>
+                    <ellipse cx="98" cy="52" rx="10" ry="2" fill="rgba(197,165,102,0.06)"/>
+                    <!-- Estrela central -->
+                    <circle cx="65" cy="35" r="5" fill="rgba(197,165,102,0.15)" stroke="rgba(197,165,102,0.6)" stroke-width="1"/>
+                    <circle cx="65" cy="35" r="2" fill="url(#goldGrad)"/>
+                    <!-- Detalhes decorativos -->
+                    <path d="M20 95 Q65 88 110 95" stroke="rgba(197,165,102,0.1)" stroke-width="1" fill="none"/>
+                </svg>
+            </div>
+            <div>
+                <div class="z1-badge">Escritório de Assessoria Jurídica</div>
+                <div class="z1-title">Edson<br><em>Medeiros</em></div>
+                <div class="z1-sub">Consultorias &amp; Compliance</div>
+                <p class="z1-desc">
+                    Sistema especializado em auditoria bancária inteligente.
+                    Identificamos cobranças indevidas com precisão e geramos
+                    relatórios prontos para uso jurídico.
+                </p>
+                <div class="z1-bullets">
+                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Extrai débitos indevidos do extrato PDF</div>
+                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Gera planilhas com cálculos automáticos</div>
+                    <div class="z1-bullet"><div class="z1-bullet-dot"></div>Gera relatórios prontos para uso jurídico</div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    with col_dir:
+    # ── ZONA 2: Features + Por quê ───────────────────────────────────────────
+    with c2:
         st.markdown("""
-        <div class="lx-right">
-            <div class="lx-form-label">Sistema de Auditoria Bancária</div>
-            <div class="lx-form-title">Extrato<span>X</span></div>
-            <div class="lx-form-sub">Acesse sua conta para continuar</div>
-            <div class="lx-orn">
-                <div class="lx-orn-l"></div>
-                <div class="lx-orn-d">◆</div>
-                <div class="lx-orn-l"></div>
+        <div class="z2">
+            <div class="z2-headline">Nossas <em>Soluções</em> de<br>Auditoria Bancária</div>
+
+            <div class="z2-cards">
+                <div class="z2-card">
+                    <div class="z2-card-icon">⚖</div>
+                    <div class="z2-card-title">Extrai dados indevidos de extratos PDF</div>
+                    <div class="z2-card-desc">Identifica cobranças abusivas: CESTA, MORA, ANUIDADE, ENCARGOS, parcelas, seguros e mais.</div>
+                </div>
+                <div class="z2-card">
+                    <div class="z2-card-icon">📊</div>
+                    <div class="z2-card-title">Gera planilhas com cálculo em dobro (Art. 42)</div>
+                    <div class="z2-card-desc">Tabela mensal e anual com total em dobro conforme o Código de Defesa do Consumidor.</div>
+                </div>
+            </div>
+
+            <div class="z2-why">Por que o <em>ExtratoX</em>?</div>
+            <div class="z2-pillars">
+                <div class="z2-pillar">
+                    <div class="z2-pillar-title">Precisão e Velocidade</div>
+                    <div class="z2-pillar-desc">Leitura posicional por coluna — distingue débito de crédito com precisão milimétrica.</div>
+                </div>
+                <div class="z2-pillar">
+                    <div class="z2-pillar-title">Suporte Legal</div>
+                    <div class="z2-pillar-desc">Relatórios formatados para peticionamento jurídico e processos consumeristas.</div>
+                </div>
+                <div class="z2-pillar">
+                    <div class="z2-pillar-title">Segurança</div>
+                    <div class="z2-pillar-desc">Acesso restrito por credenciais. Dados processados localmente, sem armazenamento externo.</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── ZONA 3+4: Login + Métricas ───────────────────────────────────────────
+    with c3:
+        st.markdown("""
+        <div class="z34">
+            <div class="z34-top">
+                <div class="z34-eyebrow">Conheça o Sistema ExtratoX</div>
+                <div class="z34-logo">Extrato<span>X</span></div>
+                <div class="z34-tagline">O portal seguro para sua auditoria.</div>
+                <div class="z34-orn">
+                    <div class="z34-orn-l"></div>
+                    <div class="z34-orn-d">◆</div>
+                    <div class="z34-orn-l"></div>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1084,7 +1192,7 @@ if not st.session_state["autenticado"]:
         with st.form("login_form", clear_on_submit=False):
             _email = st.text_input("E-mail", placeholder="seu@email.com", key="login_email")
             _senha = st.text_input("Senha", placeholder="••••••••••", type="password", key="login_senha")
-            _submitted = st.form_submit_button("◆  Acessar o Sistema")
+            _submitted = st.form_submit_button("◆  Acessar o Portal")
 
         if _submitted:
             if _check_login(_email, _senha):
@@ -1092,6 +1200,23 @@ if not st.session_state["autenticado"]:
                 st.rerun()
             else:
                 st.error("Credenciais inválidas — verifique e-mail e senha")
+
+        st.markdown("""
+        <div class="z34-metrics">
+            <div class="z34-metric">
+                <div class="z34-metric-num">19</div>
+                <div class="z34-metric-label">Rubricas<br>Monitoradas</div>
+            </div>
+            <div class="z34-metric">
+                <div class="z34-metric-num">100%</div>
+                <div class="z34-metric-label">Precisão<br>Posicional</div>
+            </div>
+            <div class="z34-metric">
+                <div class="z34-metric-num">Art.42</div>
+                <div class="z34-metric-label">CDC<br>Automatizado</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="lx-footer">
