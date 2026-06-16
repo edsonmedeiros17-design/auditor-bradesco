@@ -1075,18 +1075,18 @@ RUBRICAS_MESTRE = {
     # NÃO captura "SAQUE DIN CORBAN CARTAO" (saque do cliente — não é tarifa).
     # NÃO captura "SAQUE DINHEIRO ATM" (saque do cliente — não é tarifa).
     # NÃO captura "CESTA B.EXPRESSO4" (sublinha diferente — capturada pela rubrica CESTA).
-    "SAQUE TERMINAL": r"\bSAQUECORRESPONDENTE\b|\bSAQUETERMINAL\b|\bSAQUE\s+CORRESPONDENTE\b|\bSAQUE\s+TERMINAL\b|\bSAQUEPREMIUM\b",
+    # SAQUE TERMINAL → sublinha "SAQUEterminal" (tarifa cobrada no terminal físico)
+    "SAQUE TERMINAL": r"\bSAQUETERMINAL\b|\bSAQUE\s+TERMINAL\b|\bSAQUEPREMIUM\b",
 
-    # "TARIFA EMISSAO EXTRATO" / "EXTRATOmes(E)" — tarifa de emissão de extrato mensal
-    # No extrato Bradesco aparece em duas formas:
-    #   Forma A (linha completa): "TARIFA EMISSAO EXTRATO 0210220 1,35 1,00" → TEM o valor
-    #   Forma B (sublinha):       "EXTRATOMES(E)"  →  sem valor, a linha anterior TEM o valor
-    #
-    # ATENÇÃO: capturamos APENAS a Forma A (linha completa com valor).
-    # A sublinha EXTRATOMES(E) é ignorada pois o valor já foi capturado na linha anterior.
-    # Isso evita duplicatas e valores errados causados pelo Caso C pegando lançamentos vizinhos.
+    # SAQUE CORRESPONDENTE → sublinha "SAQUEcorrespondente" (tarifa via correspondente bancário)
+    "SAQUE CORRESPONDENTE": r"\bSAQUECORRESPONDENTE\b|\bSAQUE\s+CORRESPONDENTE\b",
+
+    # TARIFA EMISSAO EXTRATO
     "EXTRATO MES": r"TARIFA\s+EMISSAO\s+EXTRATO",
-    "TARIFA BANCARIA SAQUE": r"TARIFA\s*BANCARIA\s*SAQUE|TARIFABANCARIASAQUE|TAR\s*BANC\s*SAQUE|TARIFA\s*BANC\s*SAQUE|TBSAQUE|SAQUEcorrespondente|SAQUECORRESPONDENTE|SAQUEterminal|SAQUETERMINAL",
+
+    # TARIFA BANCARIA com outras sublinhas (ex: TARIFA BANCARIA SAQUEcorrespondente genérico)
+    "TARIFA BANCARIA SAQUE": r"TARIFA\s*BANCARIA\s*SAQUE|TARIFABANCARIASAQUE|TAR\s*BANC\s*SAQUE|TARIFA\s*BANC\s*SAQUE",
+
     "SERVICO CARTAO PROTEGIDO": r"SERVI[CÇ]O\s*CART[AÃ]O\s*PROTEGIDO|SERV\s*CART\s*PROT|CART[AÃ]O\s*PROTEGIDO|CARTAOPROTEGIDO|PROTEG\s*CART[AÃ]O",
     "PARCELA OPER CREDITO": r"PARCELA\s*OPER\s*CR[EÉ]DITO|PARC\s*OPER\s*CRED|PARCELAOPERCREDITO|PARCELA\s*OP\s*CRED|PARC\s*OP\s*CR",
 }
@@ -1405,7 +1405,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 #   sem data própria na coluna. A data correta é a da próxima linha
                 #   datada (data inferior), não a última vista.
                 #   Ex: TARIFA EMISSAO EXTRATO entre 11/04 e 14/04 → data = 14/04
-                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL", "TARIFA BANCARIA SAQUE", "SERVICO CARTAO PROTEGIDO", "PARCELA OPER CREDITO"}
+                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL", "SAQUE CORRESPONDENTE", "TARIFA BANCARIA SAQUE", "SERVICO CARTAO PROTEGIDO", "PARCELA OPER CREDITO"}
 
                 usa_data_inferior = apos_excl or (
                     rubrica in RUBRICAS_DATA_INFERIOR and not linha["data_col"]
