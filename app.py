@@ -1495,6 +1495,15 @@ def fix_date(d):
 
 def gerar_excel_calculos(df, rubrica_nome):
     df = df.copy()
+    # Proteção contra dados nulos
+    rubrica_nome = str(rubrica_nome).strip() if rubrica_nome else "RUBRICA"
+    df['DATA']  = df['DATA'].fillna('00/00/0000').astype(str)
+    df['VALOR'] = df['VALOR'].fillna('0').astype(str)
+    if 'V_NUM' not in df.columns:
+        df['V_NUM'] = (df['VALOR']
+                       .str.replace('.', '', regex=False)
+                       .str.replace(',', '.', regex=False)
+                       .apply(lambda x: float(x) if x else 0.0))
     df['DT']      = pd.to_datetime(df['DATA'].apply(fix_date), format='%d/%m/%Y', errors='coerce')
     df['ANO']     = df['DT'].dt.year
     df['MES_NUM'] = df['DT'].dt.month
@@ -2039,19 +2048,37 @@ if upload:
 </div>
 ''', unsafe_allow_html=True)
 
-            cats = df['CATEGORIA'].unique()
+            # Garante que CATEGORIA não tem NaN e VALOR é conversível
+            df['CATEGORIA'] = df['CATEGORIA'].fillna('').astype(str).str.strip()
+            df['VALOR']     = df['VALOR'].fillna('0').astype(str).str.strip()
+            df['V_NUM']     = (df['VALOR']
+                               .str.replace('.', '', regex=False)
+                               .str.replace(',', '.', regex=False)
+                               .apply(lambda x: float(x) if x else 0.0))
+            df = df[df['CATEGORIA'] != '']
+
+            cats = sorted(df['CATEGORIA'].unique().tolist())
             cols_dl = st.columns(2)
             for idx_cat, cat in enumerate(cats):
-                df_cat     = df[df['CATEGORIA'] == cat]
-                excel_file = gerar_excel_calculos(df_cat, cat)
-                total_cat  = df_cat['V_NUM'].sum()
+                cat = str(cat).strip()
+                if not cat or cat == 'nan':
+                    continue
+                df_cat    = df[df['CATEGORIA'] == cat].copy()
+                if df_cat.empty:
+                    continue
+                try:
+                    excel_file = gerar_excel_calculos(df_cat, cat)
+                except Exception as e:
+                    continue
+                total_cat    = float(df_cat['V_NUM'].sum())
+                nome_arquivo = re.sub(r'[^\w\-]', '_', cat)
                 with cols_dl[idx_cat % 2]:
                     st.download_button(
                         label=f"◆  {cat}  ·  R$ {total_cat:,.2f}",
                         data=excel_file,
-                        file_name=f"Tabela_{cat.replace(' ', '_')}.xlsx",
+                        file_name=f"Tabela_{nome_arquivo}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_{cat}"
+                        key=f"dl_{nome_arquivo}_{idx_cat}"
                     )
 
             st.markdown(f'''
