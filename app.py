@@ -1086,6 +1086,9 @@ RUBRICAS_MESTRE = {
     # A sublinha EXTRATOMES(E) é ignorada pois o valor já foi capturado na linha anterior.
     # Isso evita duplicatas e valores errados causados pelo Caso C pegando lançamentos vizinhos.
     "EXTRATO MES": r"TARIFA\s+EMISSAO\s+EXTRATO",
+    "TARIFA BANCARIA SAQUE": r"TARIFA\s*BANCARIA\s*SAQUE|TARIFABANCARIASAQUE|TAR\s*BANC\s*SAQUE|TARIFA\s*BANC\s*SAQUE|TBSAQUE|SAQUEcorrespondente|SAQUECORRESPONDENTE|SAQUEterminal|SAQUETERMINAL",
+    "SERVICO CARTAO PROTEGIDO": r"SERVI[CÇ]O\s*CART[AÃ]O\s*PROTEGIDO|SERV\s*CART\s*PROT|CART[AÃ]O\s*PROTEGIDO|CARTAOPROTEGIDO|PROTEG\s*CART[AÃ]O",
+    "PARCELA OPER CREDITO": r"PARCELA\s*OPER\s*CR[EÉ]DITO|PARC\s*OPER\s*CRED|PARCELAOPERCREDITO|PARCELA\s*OP\s*CRED|PARC\s*OP\s*CR",
 }
 
 TERMOS_EXCLUSAO = r"TRANSF|SALDO|SDO|TRANSFERENCIA|SALARIO"
@@ -1335,8 +1338,25 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     continue
 
                 rubrica = _detectar_rubrica(txt, rubricas_alvo)
+
+                # ── CASO ESPECIAL: TARIFA BANCARIA + sublinha ──────────────────
+                # No extrato Bradesco, certas tarifas aparecem em 2 linhas:
+                #   Linha principal: "TARIFA BANCARIA"  → TEM o valor
+                #   Sublinha:        "SAQUEcorrespondente" ou "SAQUEterminal" → sem valor
+                # O motor detecta a sublinha (que bate no padrão) mas não tem valor.
+                # Precisamos olhar a linha ANTERIOR para pegar o valor de "TARIFA BANCARIA"
+                # e também verificar se a linha atual é sublinha de TARIFA BANCARIA.
                 if not rubrica:
-                    continue
+                    # Verifica se é sublinha de TARIFA BANCARIA
+                    if re.search(r'TARIFA\s*BANCARIA', txt) and idx + 1 < len(linhas):
+                        prox = linhas[idx + 1]
+                        sub  = _detectar_rubrica(prox['texto'], rubricas_alvo)
+                        if sub and sub == "TARIFA BANCARIA SAQUE":
+                            # A próxima linha é a sublinha que identifica o tipo
+                            # Este lançamento (TARIFA BANCARIA) tem o valor
+                            rubrica = sub
+                    else:
+                        continue
 
                 # Busca de valor (3 prioridades)
                 valor_final = linha['valor']
@@ -1346,7 +1366,9 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                     ant      = linhas[idx - 1]
                     rub_ant  = _detectar_rubrica(ant['texto'], rubricas_alvo)
                     excl_ant = bool(re.search(TERMOS_EXCLUSAO, ant['texto']))
-                    if ant['valor'] and not rub_ant and not excl_ant:
+                    # Também aceita linha anterior "TARIFA BANCARIA" pura como fonte de valor
+                    eh_tarifa_bancaria = re.search(r'TARIFA\s*BANCARIA', ant['texto'])
+                    if ant['valor'] and (not rub_ant or eh_tarifa_bancaria) and not excl_ant:
                         valor_final = ant['valor']
 
                 # Prioridade 3: próximas linhas (TIPO B — ENCARGOS, PARCELA)
@@ -1383,7 +1405,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 #   sem data própria na coluna. A data correta é a da próxima linha
                 #   datada (data inferior), não a última vista.
                 #   Ex: TARIFA EMISSAO EXTRATO entre 11/04 e 14/04 → data = 14/04
-                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL"}
+                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL", "TARIFA BANCARIA SAQUE", "SERVICO CARTAO PROTEGIDO", "PARCELA OPER CREDITO"}
 
                 usa_data_inferior = apos_excl or (
                     rubrica in RUBRICAS_DATA_INFERIOR and not linha["data_col"]
