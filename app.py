@@ -1084,9 +1084,6 @@ RUBRICAS_MESTRE = {
     # TARIFA EMISSAO EXTRATO
     "EXTRATO MES": r"TARIFA\s+EMISSAO\s+EXTRATO",
 
-    # TARIFA BANCARIA com outras sublinhas (ex: TARIFA BANCARIA SAQUEcorrespondente genérico)
-    "TARIFA BANCARIA SAQUE": r"TARIFA\s*BANCARIA\s*SAQUE|TARIFABANCARIASAQUE|TAR\s*BANC\s*SAQUE|TARIFA\s*BANC\s*SAQUE",
-
     "SERVICO CARTAO PROTEGIDO": r"SERVI[CÇ]O\s*CART[AÃ]O\s*PROTEGIDO|SERV\s*CART\s*PROT|CART[AÃ]O\s*PROTEGIDO|CARTAOPROTEGIDO|PROTEG\s*CART[AÃ]O",
     "PARCELA OPER CREDITO": r"PARCELA\s*OPER\s*CR[EÉ]DITO|PARC\s*OPER\s*CRED|PARCELAOPERCREDITO|PARCELA\s*OP\s*CRED|PARC\s*OP\s*CR",
 }
@@ -1405,7 +1402,7 @@ def realizar_auditoria(arquivo, rubricas_alvo):
                 #   sem data própria na coluna. A data correta é a da próxima linha
                 #   datada (data inferior), não a última vista.
                 #   Ex: TARIFA EMISSAO EXTRATO entre 11/04 e 14/04 → data = 14/04
-                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL", "SAQUE CORRESPONDENTE", "TARIFA BANCARIA SAQUE", "SERVICO CARTAO PROTEGIDO", "PARCELA OPER CREDITO"}
+                RUBRICAS_DATA_INFERIOR = {"EXTRATO MES", "SAQUE TERMINAL", "SAQUE CORRESPONDENTE", "SERVICO CARTAO PROTEGIDO", "PARCELA OPER CREDITO"}
 
                 usa_data_inferior = apos_excl or (
                     rubrica in RUBRICAS_DATA_INFERIOR and not linha["data_col"]
